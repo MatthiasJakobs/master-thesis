@@ -1,0 +1,27 @@
+# Credentials
+code/.app_keys.json
+
+# Python
+__pycache__/
+
+# Latex
+*.aux
+*.pdf
+*.loa
+*.log
+*.thm
+*.toc
+*.lof
+*.fdb_latexmk
+*.fls
+*.bbl
+*.blg
+*.synctex.gz
+*.latexmain
+*.run.xml
+*.bcf
+*.out
+
+# OS / other
+.DS_Store
+.idea

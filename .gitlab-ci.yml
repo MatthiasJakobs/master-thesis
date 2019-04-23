@@ -1,0 +1,17 @@
+compile_proposal:
+  image: aergus/latex
+  script:
+    - cd proposal
+    - latexmk -pdf main.tex
+  artifacts:
+    paths:
+      - proposal/main.pdf
+
+# compile_thesis:
+#   image: aergus/latex
+#   script:
+#     - cd thesis
+#     - latexmk -pdf main.tex
+#   artifacts:
+#     paths:
+#       - thesis/main.pdf
