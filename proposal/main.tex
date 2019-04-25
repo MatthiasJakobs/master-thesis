@@ -75,16 +75,48 @@
 
 \section{Motivation}
 
+Detecting human actions from video without any extra inputs. Example: Picking in a warehouse \cite{reining_towards_2018}. There, motion capturing using dedicated devices on a subjects body is used to get skeleton data. This is time consuming and cumbersome. Better would be to get skeleton directly from video.
+Poses can be incorporated into action recognition for better results \cite{khalid_multi-modal_2018}. But: Need good pose data.
+
+occlusion:
+    vital because not every joint is seen all the time
+
+
+
 %------------------------------------------------
 \section{Recent Work}
+Approaches focusing on single image, single person:
+    Stacked Hourglass \cite{newell_stacked_2016}
+    Convolutional Pose Machines \cite{wei_convolutional_2016}
+
+Approaches focusing on single image, multiple persons:
+
+Approaches focusing on video:
+
+Two- and Three stream models for action recognition could be used for just pose estimation
 
 %------------------------------------------------
 \section{Method}
 
+Using deep models (convolutional neural networks)
+
+Incorporate spatial and temporal information (ja? erstmal paper zu video lesen)
+
+Try to make robust against occlusion (welche datensätze bieten das?)
+
+
 %------------------------------------------------
 \section{Experiments}
 \subsection{Dataset}
+
+\textbf{single person, single image:} Leeds Sport Pose(LSP) \cite{johnson_clustered_2010}, LSP-Extended \cite{johnson_learning_2011}, MPII Human Pose (Single person) \cite{andriluka_2d_2014} Looking Into Person (kann wohl auch joints) \cite{gong_look_2017}
+
+\textbf{multi person, single image} PoseTrack \cite{andriluka_posetrack:_2018} (also video)
+
 \subsection{Metric}
+
+\textbf{single person, single image:} Percentage of Correct Keypoints (PCK), PCKh, Percent of Detected Joints (\cite{toshev_deeppose:_2014})
+
 
 %------------------------------------------------
 %   REFERENCE LIST
