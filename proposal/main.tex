@@ -74,48 +74,85 @@
 \begin{multicols}{2} % Two-column layout throughout the main article text
 
 \section{Motivation}
+\label{sec:motivation}
+Human Activity Recognition (HAR) is a task where a signal capturing different human activities (like video) is segmented and classified.
+The granularity of the activities to be classified depends on the domain in which HAR is used. 
 
-Detecting human actions from video without any extra inputs. Example: Picking in a warehouse \cite{reining_towards_2018}. There, motion capturing using dedicated devices on a subjects body is used to get skeleton data. This is time consuming and cumbersome. Better would be to get skeleton directly from video.
-Poses can be incorporated into action recognition for better results \cite{khalid_multi-modal_2018}. But: Need good pose data.
+This master thesis proposes an addition to the works of \cite{reining_towards_2018}, where a framework for HAR in the context of order picking in a warehouse is proposed.
+The authors used a motion capturing system in a controlled environment to create a skeleton of the person performing the action.
+They propose a pipeline for HAR using \textit{attributes} like \textit{arms reaching forward} and \textit{upper body moving back} as features, extracted from the skeleton data.
 
-occlusion:
-    vital because not every joint is seen all the time
+A motion capturing system requires strict laboratory conditions and additional manual annotation.
+The goal of this master thesis is to replace the need of motion capturing by utilizing recent advances in 3D human pose estimation from monocular video.
+With such a system, a large variety of training data in different, \textit{unconstrained} environments can be captured, hopefully improving the quality of the HAR process.
+Also, this will reduce the amount of time necessary to postprocess the raw sensor data since the output will already be aligned with the video.
 
+One advantage of using motion capturing systems to capture human poses is that they do not suffer from occlusion because of the variety of camera angles.
+In monocular video, however, occlusion is a serious concern.
+For example, the action of holding a phone to ones ear might occlude the hand joint, depending on the camera angle.
+Current state-of-the-art methods do not address this problem directly and thus evaluating these models on the occlusion problem and further experimentation in that regard will be the main proposal of this master thesis.
 
+In addition to the direct contribution to \cite{reining_towards_2018}, pose information can be incorporated into HAR for more accurate results \cite{khalid_multi-modal_2018}.
+While the authors focused on 2D pose data 3D pose data could improve the accuracy even more. 
 
 %------------------------------------------------
 \section{Recent Work}
-Approaches focusing on single image, single person:
-    Stacked Hourglass \cite{newell_stacked_2016}
-    Convolutional Pose Machines \cite{wei_convolutional_2016}
+\label{sec:recent}
+3D pose estimation from video developed in recent years, building on the work of 2D pose estimation in still images and video.
+The most common approach is to first generate the 2D pose using a dedicated estimator and then \textit{lift} it into the 3D space \cite{pavllo_3d_2018}\cite{martinez_simple_2017}.
+State-of-the-art 2D pose estimators like \cite{newell_stacked_2016}\cite{wei_convolutional_2016} are often used for generating 2D pose data.
+These two-step approaches outperform traditional end-to-end approaches \cite{pavllo_3d_2018}.
 
-Approaches focusing on single image, multiple persons:
+A state-of-the-art model for lifting 2D poses into 3D space was recently proposed by \cite{pavllo_3d_2018}.
+One of the key additions is the use of temporal information between single frames.
+While some work on video has been done prior (\cite{lin_recurrent_nodate}\cite{hossain_exploiting_2018}) the authors approach to temporal information processing achieves state-of-the-art performance on the common benchmarks. 
+Also, the authors use different 2D pose estimators based on \cite{he_mask_2017} and \cite{chen_cascaded_2018}.
 
-Approaches focusing on video:
-
-Two- and Three stream models for action recognition could be used for just pose estimation
+%Two- and Three stream models for action recognition could be used for just pose estimation
 
 %------------------------------------------------
 \section{Method}
 
-Using deep models (convolutional neural networks)
-
-Incorporate spatial and temporal information (ja? erstmal paper zu video lesen)
-
-Try to make robust against occlusion (welche datensätze bieten das?)
+The main focus of this master thesis will be to tackle the occlusion problem outlined before.
+In order to do this, this master thesis proposes to take a subset of the datasets presented in \ref{sec:dataset} where occlusion happens and evaluate state-of-the-art models on these subsets.
+Through this experimentation, a model will be developed which outperforms the state-of-the-art models on the task of overcoming occlusion while still being competetive on traditional benchmarks.
 
 
 %------------------------------------------------
 \section{Experiments}
 \subsection{Dataset}
+\label{sec:dataset}
 
-\textbf{single person, single image:} Leeds Sport Pose(LSP) \cite{johnson_clustered_2010}, LSP-Extended \cite{johnson_learning_2011}, MPII Human Pose (Single person) \cite{andriluka_2d_2014} Looking Into Person (kann wohl auch joints) \cite{gong_look_2017}
+In evaluating 2D pose estimators, three datasets are most commonly used.
+MPII Human Pose \cite{andriluka_2d_2014} is often used for single person and mutli person 2D pose estimation.
+Using Youtube videos as source the authors gathered approximately 40,000 annotated images of nearly 500 actions performed by humans. 
 
-\textbf{multi person, single image} PoseTrack \cite{andriluka_posetrack:_2018} (also video)
+In the sport domain, Leeds Sport Pose (LSP) \cite{johnson_clustered_2010} and LSP-Extended \cite{johnson_learning_2011} are often used.
+While they focus on a narrow domain many 2D pose estimators were evaluated using these medium sized datasets.
+
+For 3D pose benchmarks, Human3.6M \cite{ionescu_human3.6m:_2014} is widely used.
+11 actors perform 17 different scenarios (like eating, talking on phone etc.) in a controlled lab environment wearing motion capturing suits.
+The dataset provides 2D and 3D Pose at the same time and is thus widely used for evaluating the lifting task from 2D to 3D described in \ref{sec:recent}
+
+In addition to Human3.6M HumanEva I \cite{sigal_humaneva:_2010} is used.
+While smaller than Human3.6M, HumanEva I is often used to evaluate specific actions like walking and jogging.
+
+%Maybe: KTH Football II \cite{kazemi_multi-view_2013}
 
 \subsection{Metric}
 
-\textbf{single person, single image:} Percentage of Correct Keypoints (PCK), PCKh, Percent of Detected Joints (\cite{toshev_deeppose:_2014})
+Most models use the mean per-joint error (in millimeters) as their main metric.
+Given the predicted 3D joint locations $x_0^{*}, \dots, x_n^{*}$ for $n$ joints it computes the mean difference given the ground-truth $\hat{x_i}$ using
+
+\newcommand\norm[1]{\left\Vert#1\right\Vert}
+
+\[
+    e = \frac{1}{n} \sum_{i=1}^{n} \norm{\hat{x_i} - x_i^{*}}_2
+\]
+
+Because this metric does not take different scales and orientation into account, the root locations of the vectors are aligned to make the results translation invariant and better comparable.
+
+%\textbf{single person, single image:} Percentage of Correct Keypoints (PCK), PCKh, Percent of Detected Joints (\cite{toshev_deeppose:_2014})
 
 
 %------------------------------------------------
