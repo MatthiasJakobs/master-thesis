@@ -115,8 +115,14 @@ Also, the authors use different 2D pose estimators based on \cite{he_mask_2017} 
 
 The main focus of this master thesis will be to tackle the occlusion problem outlined before.
 In order to do this, this master thesis proposes to take a subset of the datasets presented in \ref{sec:dataset} where occlusion happens and evaluate state-of-the-art models on these subsets.
+The best overall model does not need to be the best regarding occlusion.
+Thus, incorporating features from well-performing models in terms of occlusion to state-of-the-art models may improve performance on occlusion.
 Through this experimentation, a model will be developed which outperforms the state-of-the-art models on the task of overcoming occlusion while still being competetive on traditional benchmarks.
+Because most of the state-of-the-art models incorporate convolutional neural networks the proposed model will also be based off of these models.
 
+One experiment will be to train a model using dropout on the training images.
+Dropout, in this context, refers to the practice of setting random superpixels to pure black while keeping the label unchanged.
+Through this procedure, the model may learn to substitute 3D joint locations when occlusion is present in the image.
 
 %------------------------------------------------
 \section{Experiments}
