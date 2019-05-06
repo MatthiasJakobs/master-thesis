@@ -37,6 +37,9 @@
 \usepackage{cite}
 \usepackage{paralist, tabularx}
 \usepackage{graphicx}
+\graphicspath{{../images/}}
+
+
 \usepackage{float}
 
 
@@ -127,7 +130,7 @@ Through experimentation new approaches for tackling occlusion will be proposed.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.4\textwidth]{images/dropout.png}
+    \includegraphics[width=0.4\textwidth]{dropout.png}
     \caption{Example coarse dropout augmentation. The black squares where placed randomly. Because a model needs to fill in the missing information (like a occluded joint) it should become more robust against occlusion. Original image is an example taken from \cite{ionescu_human3.6m:_2014}}
     \label{fig:dropout}
 \end{figure}
