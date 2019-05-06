@@ -93,7 +93,6 @@ useful for improving the prediction accuracy.},
 	title = {2D {Human} {Pose} {Estimation}: {New} {Benchmark} and {State} of the {Art} {Analysis}},
 	booktitle = {{IEEE} {Conference} on {Computer} {Vision} and {Pattern} {Recognition} ({CVPR})},
 	author = {Andriluka, Mykhaylo and Pishchulin, Leonid and Gehler, Peter and Schiele, Bernt},
-	month = jun,
 	year = {2014},
 	file = {Andriluka et al. - 2014 - 2D Human Pose Estimation New Benchmark and State .pdf:/home/matthias/Zotero/storage/5H69WV9S/Andriluka et al. - 2014 - 2D Human Pose Estimation New Benchmark and State .pdf:application/pdf}
 }
@@ -781,7 +780,7 @@ useful for improving the prediction accuracy.},
 	month = oct,
 	year = {2017},
 	note = {arXiv: 1710.06513},
-	keywords = {Computer Science - Artificial Intelligence, Computer Science - Computer Vision and Pattern Recognition},
+	keywords = {Computer Science - Computer Vision and Pattern Recognition, Computer Science - Artificial Intelligence},
 	annote = {Comment: Accepted by AAAI 2018},
 	file = {arXiv\:1710.06513 PDF:/home/matthias/Zotero/storage/6B323LJL/Fang et al. - 2017 - Learning Pose Grammar to Encode Human Body Configu.pdf:application/pdf;arXiv.org Snapshot:/home/matthias/Zotero/storage/YUY3KQHD/1710.html:text/html}
 }
@@ -857,15 +856,14 @@ Volume 2016, Issue 10},
 	file = {Pavlakos et al. - 2017 - Coarse-to-Fine Volumetric Prediction for Single-Im.pdf:/home/matthias/Zotero/storage/K5U5N76R/Pavlakos et al. - 2017 - Coarse-to-Fine Volumetric Prediction for Single-Im.pdf:application/pdf}
 }
 
-@article{pavllo_3d_2018,
+@inproceedings{pavllo_3d_2019,
 	title = {3D human pose estimation in video with temporal convolutions and semi-supervised training},
 	url = {http://arxiv.org/abs/1811.11742},
 	abstract = {In this work, we demonstrate that 3D poses in video can be effectively estimated with a fully convolutional model based on dilated temporal convolutions over 2D keypoints. We also introduce back-projection, a simple and effective semi-supervised training method that leverages unlabeled video data. We start with predicted 2D keypoints for unlabeled video, then estimate 3D poses and finally back-project to the input 2D keypoints. In the supervised setting, our fully-convolutional model outperforms the previous best result from the literature by 6 mm mean per-joint position error on Human3.6M, corresponding to an error reduction of 11\%, and the model also shows significant improvements on HumanEva-I. Moreover, experiments with back-projection show that it comfortably outperforms previous state-of-the-art results in semi-supervised settings where labeled data is scarce. Code and models are available at https://github.com/facebookresearch/VideoPose3D},
 	urldate = {2019-05-01},
-	journal = {arXiv:1811.11742 [cs]},
+	booktitle = {{IEEE} {Conference} on {Computer} {Vision} and {Pattern} {Recognition} ({CVPR})},
 	author = {Pavllo, Dario and Feichtenhofer, Christoph and Grangier, David and Auli, Michael},
-	month = nov,
-	year = {2018},
+	year = {2019},
 	note = {arXiv: 1811.11742},
 	keywords = {Computer Science - Computer Vision and Pattern Recognition},
 	annote = {Comment: CVPR 2019},
@@ -892,22 +890,24 @@ Volume 2016, Issue 10},
 	file = {Lee et al. - 2018 - Propagating LSTM 3D Pose Estimation Based on Join.pdf:/home/matthias/Zotero/storage/HDNNY4MB/Lee et al. - 2018 - Propagating LSTM 3D Pose Estimation Based on Join.pdf:application/pdf}
 }
 
-@article{lin_recurrent_nodate,
+@inproceedings{lin_recurrent_2017,
 	title = {Recurrent 3D {Pose} {Sequence} {Machines}},
+	abstract = {3D human articulated pose recovery from monocular image sequences is very challenging due to the diverse appearances, viewpoints, occlusions, and also the human 3D pose is inherently ambiguous from the monocular imagery. It is thus critical to exploit rich spatial and temporal long-range dependencies among body joints for accurate 3D pose sequence prediction. Existing approaches usually manually design some elaborate prior terms and human body kinematic constraints for capturing structures, which are often insufficient to exploit all intrinsic structures and not scalable for all scenarios. In contrast, this paper presents a Recurrent 3D Pose Sequence Machine(RPSM) to automatically learn the image-dependent structural constraint and sequence-dependent temporal context by using a multi-stage sequential refinement. At each stage, our RPSM is composed of three modules to predict the 3D pose sequences based on the previously learned 2D pose representations and 3D poses: (i) a 2D pose module extracting the image-dependent pose representations, (ii) a 3D pose recurrent module regressing 3D poses and (iii) a feature adaption module serving as a bridge between module (i) and (ii) to enable the representation transformation from 2D to 3D domain. These three modules are then assembled into a sequential prediction framework to refine the predicted poses with multiple recurrent stages. Extensive evaluations on the Human3.6M dataset and HumanEva-I dataset show that our RPSM outperforms all state-of-the-art approaches for 3D pose estimation.},
 	language = {en},
+	booktitle = {{IEEE} {Conference} on {Computer} {Vision} and {Pattern} {Recognition} ({CVPR})},
 	author = {Lin, Mude and Lin, Liang and Liang, Xiaodan and Wang, Keze and Cheng, Hui},
-	pages = {10},
+	year = {2017},
 	file = {Lin et al. - Recurrent 3D Pose Sequence Machines.pdf:/home/matthias/Zotero/storage/KJCW8AIZ/Lin et al. - Recurrent 3D Pose Sequence Machines.pdf:application/pdf}
 }
 
-@article{hossain_exploiting_2018,
+@inproceedings{hossain_exploiting_2018,
 	title = {Exploiting temporal information for 3D pose estimation},
 	volume = {11214},
 	url = {http://arxiv.org/abs/1711.08585},
 	doi = {10.1007/978-3-030-01249-6_5},
 	abstract = {In this work, we address the problem of 3D human pose estimation from a sequence of 2D human poses. Although the recent success of deep networks has led many state-of-the-art methods for 3D pose estimation to train deep networks end-to-end to predict from images directly, the top-performing approaches have shown the effectiveness of dividing the task of 3D pose estimation into two steps: using a state-of-the-art 2D pose estimator to estimate the 2D pose from images and then mapping them into 3D space. They also showed that a low-dimensional representation like 2D locations of a set of joints can be discriminative enough to estimate 3D pose with high accuracy. However, estimation of 3D pose for individual frames leads to temporally incoherent estimates due to independent error in each frame causing jitter. Therefore, in this work we utilize the temporal information across a sequence of 2D joint locations to estimate a sequence of 3D poses. We designed a sequence-to-sequence network composed of layer-normalized LSTM units with shortcut connections connecting the input to the output on the decoder side and imposed temporal smoothness constraint during training. We found that the knowledge of temporal consistency improves the best reported result on Human3.6M dataset by approximately \$12.2{\textbackslash}\%\$ and helps our network to recover temporally consistent 3D poses over a sequence of images even when the 2D pose detector fails.},
 	urldate = {2019-05-01},
-	journal = {arXiv:1711.08585 [cs]},
+	booktitle = {European {Conference} on {Computer} {Vision} ({ECCV})},
 	author = {Hossain, Mir Rayat Imtiaz and Little, James J.},
 	year = {2018},
 	note = {arXiv: 1711.08585},
@@ -934,17 +934,78 @@ Volume 2016, Issue 10},
 	file = {Chen et al. - 2018 - Cascaded Pyramid Network for Multi-person Pose Est.pdf:/home/matthias/Zotero/storage/WH96P26J/Chen et al. - 2018 - Cascaded Pyramid Network for Multi-person Pose Est.pdf:application/pdf}
 }
 
-@article{he_mask_2017,
+@inproceedings{he_mask_2017,
 	title = {Mask {R}-{CNN}},
-	url = {http://arxiv.org/abs/1703.06870},
-	abstract = {We present a conceptually simple, flexible, and general framework for object instance segmentation. Our approach efficiently detects objects in an image while simultaneously generating a high-quality segmentation mask for each instance. The method, called Mask R-CNN, extends Faster R-CNN by adding a branch for predicting an object mask in parallel with the existing branch for bounding box recognition. Mask R-CNN is simple to train and adds only a small overhead to Faster R-CNN, running at 5 fps. Moreover, Mask R-CNN is easy to generalize to other tasks, e.g., allowing us to estimate human poses in the same framework. We show top results in all three tracks of the COCO suite of challenges, including instance segmentation, bounding-box object detection, and person keypoint detection. Without bells and whistles, Mask R-CNN outperforms all existing, single-model entries on every task, including the COCO 2016 challenge winners. We hope our simple and effective approach will serve as a solid baseline and help ease future research in instance-level recognition. Code has been made available at: https://github.com/facebookresearch/Detectron},
-	urldate = {2019-05-01},
-	journal = {arXiv:1703.06870 [cs]},
-	author = {He, Kaiming and Gkioxari, Georgia and Dollár, Piotr and Girshick, Ross},
-	month = mar,
+	doi = {10.1109/ICCV.2017.322},
+	abstract = {We present a conceptually simple, flexible, and general framework for object instance segmentation. Our approach efficiently detects objects in an image while simultaneously generating a high-quality segmentation mask for each instance. The method, called Mask R-CNN, extends Faster R-CNN by adding a branch for predicting an object mask in parallel with the existing branch for bounding box recognition. Mask R-CNN is simple to train and adds only a small overhead to Faster R-CNN, running at 5 fps. Moreover, Mask R-CNN is easy to generalize to other tasks, e.g., allowing us to estimate human poses in the same framework. We show top results in all three tracks of the COCO suite of challenges, including instance segmentation, bounding-box object detection, and person keypoint detection. Without tricks, Mask R-CNN outperforms all existing, single-model entries on every task, including the COCO 2016 challenge winners. We hope our simple and effective approach will serve as a solid baseline and help ease future research in instance-level recognition. Code will be made available.},
+	booktitle = {{IEEE} {International} {Conference} on {Computer} {Vision} ({ICCV})},
+	author = {He, K. and Gkioxari, G. and Dollár, P. and Girshick, R.},
 	year = {2017},
-	note = {arXiv: 1703.06870},
-	keywords = {Computer Science - Computer Vision and Pattern Recognition},
-	annote = {Comment: open source; appendix on more results},
-	file = {arXiv\:1703.06870 PDF:/home/matthias/Zotero/storage/3XKIUURY/He et al. - 2017 - Mask R-CNN.pdf:application/pdf;arXiv.org Snapshot:/home/matthias/Zotero/storage/5VECJ7HZ/1703.html:text/html}
+	keywords = {bounding-box object detection, called Mask R-CNN, conceptually simple framework, Faster R-CNN, feature extraction, Feature extraction, high-quality segmentation mask, image segmentation, Image segmentation, object detection, Object detection, object instance segmentation, object mask, pose estimation, Quantization (signal), Robustness, Semantics},
+	pages = {2980--2988},
+	file = {He et al. - 2017 - Mask R-CNN.pdf:/home/matthias/Zotero/storage/CSVAFRTR/He et al. - 2017 - Mask R-CNN.pdf:application/pdf}
+}
+
+@inproceedings{grzeszick_deep_2017,
+	address = {Rostock, Germany},
+	title = {Deep {Neural} {Network} based {Human} {Activity} {Recognition} for the {Order} {Picking} {Process}},
+	isbn = {978-1-4503-5223-9},
+	url = {http://dl.acm.org/citation.cfm?doid=3134230.3134231},
+	doi = {10.1145/3134230.3134231},
+	abstract = {Although the fourth industrial revolution is already in pro-gress and advances have been made in automating factories, completely automated facilities are still far in the future. Human work is still an important factor in many factories and warehouses, especially in the ﬁeld of logistics. Manual processes are, therefore, often subject to optimization efforts. In order to aid these optimization efforts, methods like human activity recognition (HAR) became of increasing interest in industrial settings. In this work a novel deep neural network architecture for HAR is introduced. A convolutional neural network (CNN), which employs temporal convolutions, is applied to the sequential data of multiple intertial measurement units (IMUs). The network is designed to separately handle different sensor values and IMUs, joining the information step-by-step within the architecture. An evaluation is performed using data from the order picking process recorded in two different warehouses. The inﬂuence of different design choices in the network architecture, as well as pre- and post-processing, will be evaluated. Crucial steps for learning a good classiﬁcation network for the task of HAR in a complex industrial setting will be shown. Ultimately, it can be shown that traditional approaches based on statistical features as well as recent CNN architectures are outperformed.},
+	language = {en},
+	urldate = {2019-05-03},
+	booktitle = {Proceedings of the 4th international {Workshop} on {Sensor}-based {Activity} {Recognition} and {Interaction}  - {iWOAR} '17},
+	publisher = {ACM Press},
+	author = {Grzeszick, Rene and Lenk, Jan Marius and Rueda, Fernando Moya and Fink, Gernot A. and Feldhorst, Sascha and ten Hompel, Michael},
+	year = {2017},
+	pages = {1--6},
+	file = {Grzeszick et al. - 2017 - Deep Neural Network based Human Activity Recogniti.pdf:/home/matthias/Zotero/storage/CRZV79NB/Grzeszick et al. - 2017 - Deep Neural Network based Human Activity Recogniti.pdf:application/pdf}
+}
+
+@article{ordonez_deep_2016,
+	title = {Deep {Convolutional} and {LSTM} {Recurrent} {Neural} {Networks} for {Multimodal} {Wearable} {Activity} {Recognition}},
+	volume = {16},
+	copyright = {http://creativecommons.org/licenses/by/3.0/},
+	url = {https://www.mdpi.com/1424-8220/16/1/115},
+	doi = {10.3390/s16010115},
+	abstract = {Human activity recognition (HAR) tasks have traditionally been solved using engineered features obtained by heuristic processes. Current research suggests that deep convolutional neural networks are suited to automate feature extraction from raw sensor inputs. However, human activities are made of complex sequences of motor movements, and capturing this temporal dynamics is fundamental for successful HAR. Based on the recent success of recurrent neural networks for time series domains, we propose a generic deep framework for activity recognition based on convolutional and LSTM recurrent units, which: (i) is suitable for multimodal wearable sensors; (ii) can perform sensor fusion naturally; (iii) does not require expert knowledge in designing features; and (iv) explicitly models the temporal dynamics of feature activations. We evaluate our framework on two datasets, one of which has been used in a public activity recognition challenge. Our results show that our framework outperforms competing deep non-recurrent networks on the challenge dataset by 4\% on average; outperforming some of the previous reported results by up to 9\%. Our results show that the framework can be applied to homogeneous sensor modalities, but can also fuse multimodal sensors to improve performance. We characterise key architectural hyperparameters’ influence on performance to provide insights about their optimisation.},
+	language = {en},
+	number = {1},
+	urldate = {2019-05-03},
+	journal = {Sensors},
+	author = {Ordóñez, Francisco Javier and Roggen, Daniel},
+	month = jan,
+	year = {2016},
+	keywords = {deep learning, human activity recognition, LSTM, machine learning, neural network, sensor fusion, wearable sensors},
+	pages = {115},
+	file = {Full Text PDF:/home/matthias/Zotero/storage/977BV59L/Ordóñez and Roggen - 2016 - Deep Convolutional and LSTM Recurrent Neural Netwo.pdf:application/pdf;Snapshot:/home/matthias/Zotero/storage/CSZEEVZF/htm.html:text/html}
+}
+
+@article{hammerla_deep_2016,
+	title = {Deep, {Convolutional}, and {Recurrent} {Models} for {Human} {Activity} {Recognition} using {Wearables}},
+	url = {http://arxiv.org/abs/1604.08880},
+	abstract = {Human activity recognition (HAR) in ubiquitous computing is beginning to adopt deep learning to substitute for well-established analysis techniques that rely on hand-crafted feature extraction and classification techniques. From these isolated applications of custom deep architectures it is, however, difficult to gain an overview of their suitability for problems ranging from the recognition of manipulative gestures to the segmentation and identification of physical activities like running or ascending stairs. In this paper we rigorously explore deep, convolutional, and recurrent approaches across three representative datasets that contain movement data captured with wearable sensors. We describe how to train recurrent approaches in this setting, introduce a novel regularisation approach, and illustrate how they outperform the state-of-the-art on a large benchmark dataset. Across thousands of recognition experiments with randomly sampled model configurations we investigate the suitability of each model for different tasks in HAR, explore the impact of hyperparameters using the fANOVA framework, and provide guidelines for the practitioner who wants to apply deep learning in their problem setting.},
+	urldate = {2019-05-03},
+	journal = {arXiv:1604.08880 [cs, stat]},
+	author = {Hammerla, Nils Y. and Halloran, Shane and Ploetz, Thomas},
+	month = apr,
+	year = {2016},
+	note = {arXiv: 1604.08880},
+	keywords = {Computer Science - Artificial Intelligence, Computer Science - Human-Computer Interaction, Computer Science - Machine Learning, Statistics - Machine Learning},
+	annote = {Comment: Extended version has been accepted for publication at International Joint Conference on Artificial Intelligence (IJCAI)},
+	file = {arXiv\:1604.08880 PDF:/home/matthias/Zotero/storage/5R74EMIW/Hammerla et al. - 2016 - Deep, Convolutional, and Recurrent Models for Huma.pdf:application/pdf;arXiv.org Snapshot:/home/matthias/Zotero/storage/GEWLUX24/1604.html:text/html}
+}
+
+@inproceedings{rueda_learning_2018,
+	title = {Learning {Attribute} {Representation} for {Human} {Activity} {Recognition}},
+	doi = {10.1109/ICPR.2018.8545146},
+	abstract = {Attribute representations became relevant in image recognition and word spotting, providing support under the presence of unbalance and disjoint datasets. However, for human activity recognition using sequential data from on-body sensors, human-labeled attributes are lacking. This paper introduces a search for attributes that represent favorably signal segments for recognizing human activities. It presents three deep architectures, including temporal-convolutions and an IMU centered design, for predicting attributes. An empiric evaluation of random and learned attribute representations, and as well as the networks is carried out on two datasets, outperforming the state-of-the art.},
+	booktitle = {2018 24th {International} {Conference} on {Pattern} {Recognition} ({ICPR})},
+	author = {Rueda, F. M. and Fink, G. A.},
+	month = aug,
+	year = {2018},
+	keywords = {Activity recognition, attribute representation, Computer architecture, disjoint datasets, Feature extraction, Foot, human activity recognition, human-labeled attributes, image motion analysis, image recognition, image representation, image segmentation, image sequences, IMU centered design, learning (artificial intelligence), on-body sensors, signal segments, Task analysis, temporal-convolutions, Time series analysis, word spotting},
+	pages = {523--528},
+	file = {IEEE Xplore Abstract Record:/home/matthias/Zotero/storage/VC4858KI/8545146.html:text/html;IEEE Xplore Full Text PDF:/home/matthias/Zotero/storage/JSKBFP8A/Rueda and Fink - 2018 - Learning Attribute Representation for Human Activi.pdf:application/pdf}
 }
