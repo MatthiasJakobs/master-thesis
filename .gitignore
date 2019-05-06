@@ -21,6 +21,8 @@ __pycache__/
 *.run.xml
 *.bcf
 *.out
+*.snm
+*.nav
 
 # OS / other
 .DS_Store
