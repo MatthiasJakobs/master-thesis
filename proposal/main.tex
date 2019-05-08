@@ -47,7 +47,7 @@
 %	TITLE SECTION
 %----------------------------------------------------------------------------------------
 
-\title{\vspace{-15mm}\fontsize{24pt}{10pt}\selectfont\textbf{Master thesis proposal}} % Article title
+\title{\vspace{-15mm}\fontsize{24pt}{10pt}\selectfont\textbf{Towards a state-of-the-art end-to-end Human Activity Recognition framework}} % Article title
 
 \author{
 \large
@@ -82,24 +82,41 @@
 
 \section{Motivation}
 \label{sec:motivation}
+
+
+% With such a system, a large variety of training data in different, \textit{unconstrained} environments can be captured, hopefully improving the quality of the HAR process.
+
+% One advantage of using motion capturing systems to capture human poses is that they do not suffer from occlusion because of the variety of camera angles.
+% In monocular video, however, occlusion is a serious concern.
+% For example, the action of holding a phone to ones ear might occlude the hand joint, depending on the camera angle.
+% Current state-of-the-art methods do not address this problem directly and thus evaluating these models on the occlusion problem and further experimentation in that regard will be the main proposal of this master thesis.
+
+% In addition to the direct contribution to \cite{reining_towards_2018}, pose information can be incorporated into HAR for more accurate results \cite{khalid_multi-modal_2018}.
+% While the authors focused on 2D pose data 3D pose data could improve the accuracy even more. 
+
+
+% 1. HAR basics
+% 2. HAR im warenhaus. benutzt mocap. langsam, aufwändig, teuer
+% 3. optimal: nur aus video. Ein ansatz ist paper
+% 4. promising results. but: evaluation with regards to 2d action recognition on small dataset. better and bigger datasets available
+
 Human Activity Recognition (HAR) is a task where a signal capturing different human activities (like video) is segmented and classified.
 The granularity of the activities to be classified depends on the domain in which HAR is used. 
 
-This master thesis proposes an addition to the works of \cite{reining_towards_2018}, where a framework for HAR in the context of order picking in a warehouse is proposed.
+Recently,\cite{reining_towards_2018} proposed a framework for HAR in the context of order picking in a warehouse.
 The authors used a motion capturing system in a controlled environment to create a skeleton of the person performing the action.
-They propose a pipeline for HAR using \textit{attributes} like \textit{arms reaching forward} and \textit{upper body moving back} as features, extracted from the skeleton data.
+They propose a pipeline for HAR using \textit{attributes} like \textit{arms reaching forward} and \textit{upper body moving back} as features, extracted from skeleton data.
 
 A motion capturing system requires strict laboratory conditions.
-The goal of this master thesis is to replace the need of motion capturing by utilizing recent advances in 3D human pose estimation from monocular video.
-With such a system, a large variety of training data in different, \textit{unconstrained} environments can be captured, hopefully improving the quality of the HAR process.
+In recent years, approaches for 3D pose estimation were developed which can be used to generate skeleton data from monocular video and replace motion capturing systems (see \textbf{section \ref{sec:recent}}).
+These approaches are not only more cost efficient but also more practical since the training data can be more realistic and diverse (more "in-the-wild") as opposed to laboratory data.
 
-One advantage of using motion capturing systems to capture human poses is that they do not suffer from occlusion because of the variety of camera angles.
-In monocular video, however, occlusion is a serious concern.
-For example, the action of holding a phone to ones ear might occlude the hand joint, depending on the camera angle.
-Current state-of-the-art methods do not address this problem directly and thus evaluating these models on the occlusion problem and further experimentation in that regard will be the main proposal of this master thesis.
+Pose estimation and action recognition were mostly viewed as separate problems.
+\cite{luvizon_2d/3d_2018} proposed an end-to-end learning approach for jointly estimating pose and recognizing action, showing promising results on many standard benchmarks (see \textbf{section \ref{sec:experiment}.\ref{sec:dataset}} for an explanation).
+However, their evaluation benchmark for action recognition from 2D video, Penn Action \cite{zhang_actemes_2013}, is a small dataset with just 15 different action labels.
+For a better understanding of the benefits of jointly learning pose and action recognition evaluation on a more complex dataset is necessary.
 
-In addition to the direct contribution to \cite{reining_towards_2018}, pose information can be incorporated into HAR for more accurate results \cite{khalid_multi-modal_2018}.
-While the authors focused on 2D pose data 3D pose data could improve the accuracy even more. 
+Thus, this master thesis proposes to \textbf{a)} replicate the work of \cite{luvizon_2d/3d_2018} and evaluating it on more recent and complex benchmarks and \textbf{b)} extend their work by incorporating recent additions to pose estimators, presented in the next section.
 
 %------------------------------------------------
 \section{Recent Work}
@@ -116,37 +133,23 @@ Through skip connections features from previous layers are preserved for use in 
 
 A state-of-the-art model for lifting 2D poses into 3D space was recently proposed by \cite{pavllo_3d_2019}.
 One of the key additions is the use of temporal information between single frames.
-While some work on video has been done prior (\cite{lin_recurrent_2017}\cite{hossain_exploiting_2018}) the authors approach to temporal information processing achieves state-of-the-art performance on the common benchmarks. 
-Also, the authors use different 2D pose estimators based on \cite{he_mask_2017} and \cite{chen_cascaded_2018}.
+While some work on video has been done prior (\cite{lin_recurrent_2017}\cite{hossain_exploiting_2018}) the authors approach to temporal information processing by using temporal convolutions achieves state-of-the-art performance on the common benchmarks. 
+Also, the authors use different 2D pose estimators based on \cite{he_mask_2017} and \cite{chen_cascaded_2018}, suggesting that improvements in 2D pose estimators are still important and necessary to develop better 3D pose estimators.
 
-%Two- and Three stream models for action recognition could be used for just pose estimation
+As mentioned in \textbf{section \ref{sec:motivation}} \cite{luvizon_2d/3d_2018} use an end-to-end learning approach for jointly learning poses and recognize actions, outperforming previous 3D pose estimators like \cite{martinez_simple_2017}.
+Traditionally, skeletal joints are detected as heatmaps.
+Each heatmap $H_i$ contains the likelihood of each $(x,y)$ coordinate corresponding to the joint position $i$.
+The authors in \cite{luvizon_2d/3d_2018}, however, use a \textit{soft-argmax}\cite{luvizon_human_2017} to turn the heatmaps into $(x,y)$ coordinates instead of using traditional softmax as a post-processing step.
+Thus, their estimator is fully differentiable and can be incorporated into an end-to-end training pipeline.
 
 %------------------------------------------------
 \section{Method}
-% improve pose estimator with regards to occlusion
-The main focus of this master thesis will be to tackle the occlusion problem outlined before.
-Current 2D pose estimators like \cite{newell_stacked_2016} and \cite{wei_convolutional_2016} will be evalutated on their performance regarding occlusion.
-Through experimentation new approaches for tackling occlusion will be proposed.
 
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.4\textwidth]{dropout.png}
-    \caption{Example coarse dropout augmentation. The black squares where placed randomly. Because a model needs to fill in the missing information (like a occluded joint) it should become more robust against occlusion. Original image is an example taken from \cite{ionescu_human3.6m:_2014}}
-    \label{fig:dropout}
-\end{figure}
-
-One experiment will be to train a model using dropout on the training images.
-Dropout, in this context, refers to the practice of setting random squares of pixels to pure black while keeping the label unchanged (see \textbf{figure \ref{fig:dropout}}).
-Through this procedure, the model may learn to substitute 3D joint locations when occlusion is present in the image.
-
-% end to end training on HAR
-Once the pose estimator is robust enough with regards to occlusion a end-to-end training approach for Human Action Recognition is proposed.
-% Hier jetzt mehr aus der literatur
-
-%This master thesis proposes to take a subset of the datasets presented in \textbf{section \ref{sec:experiment}.\ref{sec:dataset}} where occlusion happens and evaluate state-of-the-art models on these subsets.
-%Through this experimentation, a model will be developed which outperforms the state-of-the-art models on the task of overcoming occlusion while still being competetive on traditional benchmarks.
-%Because most of the state-of-the-art models incorporate convolutional neural networks the proposed model will also be based off of these models.
-
+The primary goal of this master thesis is to reproduce the promising results presented in \cite{luvizon_2d/3d_2018}.
+After implementing their pipeline in PyTorch \cite{paszke_automatic_2017} the model will be evaluated against HMDB \cite{kuehne_hmdb:_2011} and Kinetics \cite{kay_kinetics_2017} benchmarks.
+Also, since the authors published their paper, better approaches for 2D and 3D pose estimation have emerged \cite{pavllo_3d_2019}, outperforming their model on the Human3.6M benchmark (see \textbf{section \ref{sec:experiment}.\ref{sec:dataset}}).
+Thus, the secondary goal of this thesis will be to incorporate these novel ideas into the end-to-end model.
+By incorporating these ideas this thesis proposes state-of-the-art performance on the previously mentioned action recognition and pose estimation benchmarks.
 
 %------------------------------------------------
 \section{Experiments}
@@ -169,11 +172,20 @@ The dataset provides 2D and 3D Pose at the same time and is thus widely used for
 In addition to Human3.6M HumanEva I \cite{sigal_humaneva:_2010} is used.
 While smaller than Human3.6M, HumanEva I is often used to evaluate specific actions like walking and jogging.
 
-%Maybe: KTH Football II \cite{kazemi_multi-view_2013}
+With regards to action recognition, \cite{luvizon_2d/3d_2018} focus on evaluating 2D action recognition on the Penn Action dataset \cite{zhang_actemes_2013}.
+This dataset features approximately 2300 video clips of 15 different actions.
+The authors gathered the video clips from youtube, which means that they are diverse with regards to setting and background.
+
+Another common action recognition benchmark is HMDB \cite{kuehne_hmdb:_2011}.
+It consists of 51 different actions with at least 101 video clips per action.
+The video files were gathered from Youtube as well as from movies.
+
+A more recent benchmark focuses on evaluating even more actions. Kinetics \cite{kay_kinetics_2017} features 400 different actions with at least 400 video clips per action. Again, these clips were collected from Youtube.
+
 
 \subsection{Metric}
 
-Most models use the mean per-joint error (in millimeters) as their main metric.
+Most 3D pose estimation models use the mean per-joint error (in millimeters) as their main metric.
 Given the predicted 3D joint locations $x_0^{*}, \dots, x_n^{*}$ for $n$ joints it computes the mean difference given the ground-truth $\hat{x_i}$ using
 
 \newcommand\norm[1]{\left\Vert#1\right\Vert}
@@ -184,7 +196,9 @@ Given the predicted 3D joint locations $x_0^{*}, \dots, x_n^{*}$ for $n$ joints 
 
 As this metric does not take different scales and orientation into account, the root locations of the vectors are aligned to make the results translation invariant and better comparable.
 
-%\textbf{single person, single image:} Percentage of Correct Keypoints (PCK), PCKh, Percent of Detected Joints (\cite{toshev_deeppose:_2014})
+When evaluating action recognition, accuracy is used.
+Each video clip evaluated consists of a person perfoming a single action.
+Thus, the overall accuracy over the test set is reported.
 
 
 %------------------------------------------------
