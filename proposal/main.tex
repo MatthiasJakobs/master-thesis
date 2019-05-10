@@ -92,7 +92,7 @@
 % Current state-of-the-art methods do not address this problem directly and thus evaluating these models on the occlusion problem and further experimentation in that regard will be the main proposal of this master thesis.
 
 % In addition to the direct contribution to \cite{reining_towards_2018}, pose information can be incorporated into HAR for more accurate results \cite{khalid_multi-modal_2018}.
-% While the authors focused on 2D pose data 3D pose data could improve the accuracy even more. 
+% While the authors focused on 2D pose data 3D pose data could improve the accuracy even more.
 
 
 % 1. HAR basics
@@ -101,7 +101,7 @@
 % 4. promising results. but: evaluation with regards to 2d action recognition on small dataset. better and bigger datasets available
 
 Human Activity Recognition (HAR) is a task where a signal capturing different human activities (like video) is segmented and classified.
-The granularity of the activities to be classified depends on the domain in which HAR is used. 
+The granularity of the activities to be classified depends on the domain in which HAR is used.
 
 Recently,\cite{reining_towards_2018} proposed a framework for HAR in the context of order picking in a warehouse.
 The authors used a motion capturing system in a controlled environment to create a skeleton of the person performing the action.
@@ -128,12 +128,12 @@ State-of-the-art 2D pose estimators like \cite{newell_stacked_2016}\cite{wei_con
 In \cite{wei_convolutional_2016} the authors propose a \textit{pose machine} based on fully convolutional neural networks which refines an initial, local estimation of joint positions through multiple stages.
 Each stage increases the receptive field, resolving the ambiguity of local features.
 In \cite{newell_stacked_2016} the authors utilize a sequence of \textit{hourglass} modules.
-Such a module consists of a symetric architecture where the input gets scaled down through convolution and pooling layers and then scaled back up by nearest neighbor upsampling.
+Such a module consists of a symmetric architecture where the input gets scaled down through convolution and pooling layers and then scaled back up by nearest neighbor upsampling.
 Through skip connections features from previous layers are preserved for use in later layers.
 
 A state-of-the-art model for lifting 2D poses into 3D space was recently proposed by \cite{pavllo_3d_2019}.
 One of the key additions is the use of temporal information between single frames.
-While some work on video has been done prior (\cite{lin_recurrent_2017}\cite{hossain_exploiting_2018}) the authors approach to temporal information processing by using temporal convolutions achieves state-of-the-art performance on the common benchmarks. 
+While some work on video has been done prior (\cite{lin_recurrent_2017}\cite{hossain_exploiting_2018}) the authors approach to temporal information processing by using temporal convolutions achieves state-of-the-art performance on the common benchmarks.
 Also, the authors use different 2D pose estimators based on \cite{he_mask_2017} and \cite{chen_cascaded_2018}, suggesting that improvements in 2D pose estimators are still important and necessary to develop better 3D pose estimators.
 
 As mentioned in \textbf{section \ref{sec:motivation}} \cite{luvizon_2d/3d_2018} use an end-to-end learning approach for jointly learning poses and recognize actions, outperforming previous 3D pose estimators like \cite{martinez_simple_2017}.
@@ -158,7 +158,7 @@ By incorporating these ideas this thesis proposes state-of-the-art performance o
 \label{sec:dataset}
 
 In evaluating 2D pose estimators, three datasets are most commonly used.
-MPII Human Pose \cite{andriluka_2d_2014} is often used for single person and mutli person 2D pose estimation.
+MPII Human Pose \cite{andriluka_2d_2014} is often used for single person and multi person 2D pose estimation.
 Using Youtube videos as source the authors gathered approximately 40,000 annotated images of nearly 500 different actions performed by humans.
 These actions include (but are not limited to) activities like skiing, playing music, carrying boxes etc.
 
@@ -174,7 +174,7 @@ While smaller than Human3.6M, HumanEva I is often used to evaluate specific acti
 
 With regards to action recognition, \cite{luvizon_2d/3d_2018} focus on evaluating 2D action recognition on the Penn Action dataset \cite{zhang_actemes_2013}.
 This dataset features approximately 2300 video clips of 15 different actions.
-The authors gathered the video clips from youtube, which means that they are diverse with regards to setting and background.
+The authors gathered the video clips from Youtube, which means that they are diverse with regards to setting and background.
 
 Another common action recognition benchmark is HMDB \cite{kuehne_hmdb:_2011}.
 It consists of 51 different actions with at least 101 video clips per action.
@@ -197,7 +197,7 @@ Given the predicted 3D joint locations $x_0^{*}, \dots, x_n^{*}$ for $n$ joints 
 As this metric does not take different scales and orientation into account, the root locations of the vectors are aligned to make the results translation invariant and better comparable.
 
 When evaluating action recognition, accuracy is used.
-Each video clip evaluated consists of a person perfoming a single action.
+Each video clip evaluated consists of a person performing a single action.
 Thus, the overall accuracy over the test set is reported.
 
 
