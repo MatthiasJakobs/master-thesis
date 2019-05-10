@@ -47,7 +47,7 @@
 %	TITLE SECTION
 %----------------------------------------------------------------------------------------
 
-\title{\vspace{-15mm}\fontsize{24pt}{10pt}\selectfont\textbf{Towards a state-of-the-art end-to-end Human Activity Recognition framework}} % Article title
+\title{\vspace{-15mm}\fontsize{24pt}{10pt}\selectfont\textbf{End-to-end Human Activity Recognition on Video Datasets}} % Article title
 
 \author{
 \large
@@ -108,7 +108,7 @@ The authors used a motion capturing system in a controlled environment to create
 They propose a pipeline for HAR using \textit{attributes} like \textit{arms reaching forward} and \textit{upper body moving back} as features, extracted from skeleton data.
 
 A motion capturing system requires strict laboratory conditions.
-In recent years, approaches for 3D pose estimation were developed which can be used to generate skeleton data from monocular video and replace motion capturing systems (see \textbf{section \ref{sec:recent}}).
+In recent years, approaches for 3D pose estimation were developed that can be used to generate skeleton data from monocular video and replace motion capturing systems (see \textbf{section \ref{sec:recent}}).
 These approaches are not only more cost efficient but also more practical since the training data can be more realistic and diverse (more "in-the-wild") as opposed to laboratory data.
 
 Pose estimation and action recognition were mostly viewed as separate problems.
@@ -125,18 +125,18 @@ Thus, this master thesis proposes to \textbf{a)} replicate the work of \cite{luv
 The most common approach is to first generate the 2D pose using a dedicated estimator and then \textit{lift} it into the 3D space \cite{pavllo_3d_2019}\cite{martinez_simple_2017}.
 This two-step approach outperforms traditional end-to-end approaches \cite{pavllo_3d_2019}.
 State-of-the-art 2D pose estimators like \cite{newell_stacked_2016}\cite{wei_convolutional_2016} are often used for generating 2D pose data.
-In \cite{wei_convolutional_2016} the authors propose a \textit{pose machine} based on fully convolutional neural networks which refines an initial, local estimation of joint positions through multiple stages.
+In \cite{wei_convolutional_2016}, the authors propose a \textit{pose machine} based on fully convolutional neural networks, which refines an initial, local estimation of joint positions through multiple stages.
 Each stage increases the receptive field, resolving the ambiguity of local features.
-In \cite{newell_stacked_2016} the authors utilize a sequence of \textit{hourglass} modules.
+In \cite{newell_stacked_2016}, the authors utilize a sequence of \textit{hourglass} modules.
 Such a module consists of a symmetric architecture where the input gets scaled down through convolution and pooling layers and then scaled back up by nearest neighbor upsampling.
 Through skip connections features from previous layers are preserved for use in later layers.
 
 A state-of-the-art model for lifting 2D poses into 3D space was recently proposed by \cite{pavllo_3d_2019}.
 One of the key additions is the use of temporal information between single frames.
-While some work on video has been done prior (\cite{lin_recurrent_2017}\cite{hossain_exploiting_2018}) the authors approach to temporal information processing by using temporal convolutions achieves state-of-the-art performance on the common benchmarks.
+While some work on video has been done prior (\cite{lin_recurrent_2017}\cite{hossain_exploiting_2018}), the authors approach to temporal information processing by using temporal convolutions achieves state-of-the-art performance on the common benchmarks.
 Also, the authors use different 2D pose estimators based on \cite{he_mask_2017} and \cite{chen_cascaded_2018}, suggesting that improvements in 2D pose estimators are still important and necessary to develop better 3D pose estimators.
 
-As mentioned in \textbf{section \ref{sec:motivation}} \cite{luvizon_2d/3d_2018} use an end-to-end learning approach for jointly learning poses and recognize actions, outperforming previous 3D pose estimators like \cite{martinez_simple_2017}.
+As mentioned in \textbf{section \ref{sec:motivation}}, \cite{luvizon_2d/3d_2018} use an end-to-end learning approach for jointly learning poses and recognize actions, outperforming previous 3D pose estimators like \cite{martinez_simple_2017}.
 Traditionally, skeletal joints are detected as heatmaps.
 Each heatmap $H_i$ contains the likelihood of each $(x,y)$ coordinate corresponding to the joint position $i$.
 The authors in \cite{luvizon_2d/3d_2018}, however, use a \textit{soft-argmax}\cite{luvizon_human_2017} to turn the heatmaps into $(x,y)$ coordinates instead of using traditional softmax as a post-processing step.
@@ -169,7 +169,7 @@ For 3D pose benchmarks, Human3.6M \cite{ionescu_human3.6m:_2014} is widely used.
 11 actors perform 17 different scenarios (like eating, talking on phone etc.) in a controlled lab environment wearing motion capturing suits.
 The dataset provides 2D and 3D Pose at the same time and is thus widely used for evaluating the lifting task from 2D to 3D described in \textbf{section \ref{sec:recent}}.
 
-In addition to Human3.6M HumanEva I \cite{sigal_humaneva:_2010} is used.
+In addition to Human3.6M, HumanEva I \cite{sigal_humaneva:_2010} is used.
 While smaller than Human3.6M, HumanEva I is often used to evaluate specific actions like walking and jogging.
 
 With regards to action recognition, \cite{luvizon_2d/3d_2018} focus on evaluating 2D action recognition on the Penn Action dataset \cite{zhang_actemes_2013}.
