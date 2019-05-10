@@ -27,7 +27,7 @@
 
 \usepackage{ifthen}
 \usepackage{calc}
-\usepackage{amsmath,amsfonts,amssymb} 
+\usepackage{amsmath,amsfonts,amssymb}
 \setbeamertemplate{navigation symbols}{}
 %\setbeamertemplate{footline}{}
 %\setbeamertemplate{footline}[frame number]{}
@@ -36,7 +36,7 @@
 
 \author{Matthias Jakobs}
 \title{INSERT TITLE OF PROPOSAL HERE}
-\date{\today} 
+\date{\today}
 \institute[TU Dortmund]{Pattern Recognition In Embedded Systems,\\ Department of Computer Science \\ LS XII, Technische Universität Dortmund}
 %
 % frame command
@@ -53,7 +53,7 @@
 
 \begin{document}
 \begin{frame}
- 
+
 \titlepage
 
 % bst modified by A.Plinge to have consistent given family name order
@@ -94,33 +94,95 @@
   \end{itemize}
 \end{myframe}
 
+\begin{myframe}[2D pose estimation]
+\begin{itemize}
+  \item \textbf{Mixture-of-parts model \fcite{yang_articulated_2011}}
+  \begin{itemize}
+    \item bla
+  \end{itemize}
+\end{itemize}
+\end{myframe}
+
+\begin{myframe}[2D pose estimation]
+\begin{itemize}
+    \item \textbf{Stacked hourglass network \fcite{newell_stacked_2016}}
+  \begin{itemize}
+    \item bla
+  \end{itemize}
+\end{itemize}
+\end{myframe}
+
 \subsection{Video-based HAR}
 % For Joint estimation AND HAR
-%   Shallow methods 
+%   Shallow methods
 %   Deep Learning
+\begin{myframe}[Video-based HAR]
+  \begin{itemize}
+    \item \textbf{shallow methods}
+    \begin{itemize}
+      \item shallow method
+    \end{itemize}
+    \item \textbf{deep methods}
+    \begin{itemize}
+      \item deep method
+    \end{itemize}
+    \item \textbf{joint, end-to-end methods}
+    \begin{itemize}
+        \item \fcite{luvizon_2d/3d_2018}
+    \end{itemize}
+  \end{itemize}
+\end{myframe}
 
 \section{Method}
+\begin{myframe}[Method]
+    \begin{itemize}
+        \item Reimplementation in PyTorch (citation needed)
+        \item Experimentation (new approaches for pose estimation from \fcite{pavllo_3d_2019}
+    \end{itemize}
+\end{myframe}
 
 \section{Datasets}
 % also: metrics?
+\begin{myframe}[2D / 3D pose estimation]
+  \begin{itemize}
+      \item \textbf{2D}
+      \begin{itemize}
+          \item MPII (citation needed)
+          \item LSP (citation needed)
+      \end{itemize}
+      \item \textbf{3D}
+      \begin{itemize}
+          \item Human 3.6M \fcite{ionescu_human3.6m:_2014}
+      \end{itemize}
+  \end{itemize}
+\end{myframe}
+
+\begin{myframe}[HAR datasets]
+  \begin{itemize}
+      \item Penn Action \fcite{zhang_actemes_2013}
+      \item NTU \fcite{shahroudy_ntu_2016}
+      \item HMDB \fcite{kuehne_hmdb:_2011}
+      \item Kinetics \fcite{kay_kinetics_2017}
+  \end{itemize}
+\end{myframe}
 
 \section{Conclusion}
 %also: Vielen Dank slide
 
-\begin{myframe}[Eine Folie mit Referenzen]
-Der Einfachheit halber zitiere ich mich einmal selbst \fcite{wang_approach_2013}
-und gleich nochmal \fcite{yang_articulated_2011}.
-\vspace*{3ex}
-
-Hinweis: bibtex ggf. von Hand zwischendurch aufrufen, wenn mal Referenzen fehlen.
- 
-\end{myframe}
+% \begin{myframe}[Eine Folie mit Referenzen]
+% Der Einfachheit halber zitiere ich mich einmal selbst \fcite{wang_approach_2013}
+% und gleich nochmal \fcite{yang_articulated_2011}.
+% \vspace*{3ex}
+%
+% Hinweis: bibtex ggf. von Hand zwischendurch aufrufen, wenn mal Referenzen fehlen.
+%
+% \end{myframe}
 
 % \begin{myframe}[Eine komlexere Folie mit Referenzen]
 % Wenn man etwas Spezielleres will, z.b. etwas zitieren
-% \footnotetext[1]{\bibentry{Bauer2012}}\footnotemark[1] 
-% was anderes \footnotetext[2]{\bibentry{Plinge2010-RNF}}\footnotemark[2] 
-% und auf derselben Folie später dasselbe nochmal, 
+% \footnotetext[1]{\bibentry{Bauer2012}}\footnotemark[1]
+% was anderes \footnotetext[2]{\bibentry{Plinge2010-RNF}}\footnotemark[2]
+% und auf derselben Folie später dasselbe nochmal,
 % \footnotemark[1]
 % muss man leider etwas basteln...
 % \end{myframe}
