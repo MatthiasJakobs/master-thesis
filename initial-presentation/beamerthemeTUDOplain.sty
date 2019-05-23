@@ -5,7 +5,7 @@
 % Time-stamp:	<2009/01/29 14:30:47 Thomas Ploetz>
 %
 % descr.:	spartanic version of a common beamer style
-%		for talks and presentations 
+%		for talks and presentations
 %
 
 %
@@ -34,7 +34,9 @@
 
 % define CI-conforme color of TU Dortmund
 \definecolor{tugreen1}{rgb}{.52,.72,.10}	% 84b819
+\definecolor{captiongrey}{rgb}{.12,.12,.12}
 \newcommand{\tugreen}[1]{{\color{tugreen1}{#1}}}
+\newcommand{\captiongrey}[1]{{\color{captiongrey}{#1}}}
 
 % define some icons
 \def\savesymbol#1{%
@@ -146,7 +148,7 @@
 \mode<presentation>
 
 
-% 
+%
 % beamer related settings and definitions
 %
 
@@ -267,14 +269,14 @@
   \centerline{\bf\insertframetitle}
 }
 
-% sidebar right 
+% sidebar right
 \defbeamertemplate*{sidebar right}{}{}  % i.e. empty
 
 % title page
 \defbeamertemplate*{title page}{}{%
   \thispagestyle{empty}
   \vspace*{-\headheight}
-  \beamer@typesetheadorfoot{headline}%	
+  \beamer@typesetheadorfoot{headline}%
   \begin{minipage}[t][\textheight]{\textwidth}
     \begin{minipage}[t][0.8\textheight]{\textwidth}
 	\ifx\titletopskip\undefined
@@ -291,13 +293,13 @@
 	  	{\small --- \insertsubtitle\ ---}
 	  \fi
 	}
-	
+
 	\vspace*{0.3cm}
 	\insertauthor\\[0.5em]
 	\insertinstitute
-	
+
 	\insertdate
-	
+
 	\vspace*{1cm}
 	\ifx\overview\undefined
 	%
@@ -337,7 +339,7 @@
   \Acrobatmenu{GoBack}{\begin{minipage}[b]{0.1cm}\mbox{~}\end{minipage}}
   \begin{minipage}[b]{\footlinetitlewidth}
     \textit{\insertshortauthor}\\
-    \insertshorttitle 
+    \insertshorttitle
   \end{minipage}
   \hfill
   \ifx\nonavi\undefined
@@ -354,8 +356,8 @@
     %
     \else
 	\hyperlinkframestart{\tugreen{\MoveUp}}
-	\hyperlinkframeend{\tugreen{\MoveDown}} 
-	\hspace*{-1em} 
+	\hyperlinkframeend{\tugreen{\MoveDown}}
+	\hspace*{-1em}
     \fi
     \insertsectionnavigationhorizontal{0.7\textwidth}{}{}
   \end{minipage}
@@ -418,7 +420,7 @@
       \def\inserttocsubsection{{\footnotesize\tugreen{$\blacktriangleright$\,\,}}\hyperlink{Navigation#4}{#3}}%
       \beamer@tocifnothide{\ifnum\c@section=#1\beamer@toc@oss\else\beamer@toc@ooss\fi}%
       {%
-        \def\beamer@breakhere{\\}%              
+        \def\beamer@breakhere{\\}%
         \beamer@tocact{\ifnum\c@section=#1\ifnum\c@subsection=#2\beamer@toc@css\else\beamer@toc@oss\fi\else\beamer@toc@ooss\fi}
         {subsection in toc}%
       }%
@@ -447,7 +449,7 @@
       \def\inserttocsubsubsection{{\footnotesize\tugreen{$\blacktriangleright$\,\,}}\hyperlink{Navigation#5}{#7}}%
       \beamer@tocifnothide{\ifnum\c@section=#2\beamer@toc@oss\else\beamer@toc@ooss\fi}%
       {%
-        \def\beamer@breakhere{\\}%              
+        \def\beamer@breakhere{\\}%
         \beamer@tocact{\ifnum\c@section=#2\ifnum\c@subsection=#3\beamer@toc@css\else\beamer@toc@oss\fi\else\beamer@toc@ooss\fi}
         {subsubsection in toc}%
       }%
