@@ -31,6 +31,17 @@
 \usepackage{graphicx}
 \graphicspath{{../images/}}
 
+\AtBeginSection[]{
+  \begin{frame}
+  \vfill
+  \centering
+  \begin{beamercolorbox}[sep=8pt,center,shadow=true,rounded=true]{title}
+    \usebeamerfont{title}\insertsectionhead\par%
+  \end{beamercolorbox}
+  \vfill
+  \end{frame}
+}
+
 \usepackage{ifthen}
 \usepackage{calc}
 \usepackage{amsmath,amsfonts,amssymb}
@@ -297,7 +308,7 @@
 
 \section{Method}
 
-\begin{myframe}[Joint methods]
+\begin{myframe}[Method - Joint methods]
 	\begin{columns}[T]
 	\begin{column}{.45\textwidth}
 		\begin{itemize}
