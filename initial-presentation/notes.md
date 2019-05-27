@@ -49,7 +49,15 @@ Improvisation
 - Interest Points dort wo starke Veränderungen in x, y und t stattfinden
 - Cluster mittels k-means, k = 4000, aus trainingsdaten
 
-## Deep
+## Deep - MiCT
+- 3D convolutions sind schwer dafür geeignet tiefe netze zu bilden da sie sehr viele parameter haben.
+- Darum werden auch sehr sehr sehr große Datensets benötigt weil schwerer zu lernen.
+    - Kurz: Geht nicht tief genug weil zu viele Ressourcen benötigt würden.
+- Darum: Kombination aus tiefen 2D und 3D
+- Zwei Ansätze zur Kombination:
+    - Konkatenation: 3D Convolution auf Input und dann auf die 2D output feature map nochmal 2D Convolution
+    - Addition: Output der 3D convolution wird addiert mit dem output einer 2D convolution auf dem letzten Frame.
+    - Kombination von beiden findet statt (siehe figure)
 
 # Method
 ## Multitask Learning
@@ -82,4 +90,3 @@ Improvisation
 - Losses:
     - Pose: Elastic Net Loss
     - Action: Categorical crossentropy
-
