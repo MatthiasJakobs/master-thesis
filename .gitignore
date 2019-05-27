@@ -27,3 +27,4 @@ __pycache__/
 # OS / other
 .DS_Store
 .idea
+code/.vscode/*
