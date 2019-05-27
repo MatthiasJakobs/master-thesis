@@ -4,6 +4,12 @@
 \providecommand{\btxandlong}{und}
 \providecommand{\newblock}{}
 
+% sourcing images
+\providecommand{\source}{\\ \footnotesize \tugreen{Source:} \footnotemark}
+\providecommand{\sourcefix}[1]{\\ \footnotesize \tugreen{Source:} [#1]}
+
+\renewcommand{\caption}[1]{\\ \footnotesize{\captiongrey{#1}}}
+
 \usepackage[english]{babel}
 \usepackage[style=authortitle]{biblatex}
 \addbibresource{../bibliography.bib}
@@ -24,6 +30,17 @@
 \usepackage{enumerate}
 \usepackage{graphicx}
 \graphicspath{{../images/}}
+
+\AtBeginSection[]{
+  \begin{frame}
+  \vfill
+  \centering
+  \begin{beamercolorbox}[sep=8pt,center,shadow=true,rounded=true]{title}
+    \usebeamerfont{title}\insertsectionhead\par%
+  \end{beamercolorbox}
+  \vfill
+  \end{frame}
+}
 
 \usepackage{ifthen}
 \usepackage{calc}
@@ -56,25 +73,21 @@
 
 \titlepage
 
-% bst modified by A.Plinge to have consistent given family name order
-% feel free to use others if required
-%\bibliographystyle{gerabbrv3}
-%  put all .bib files here
-%\nobibliography{../bibliography}
-
 \end{frame}
 
 \section{Motivation}
 \begin{myframe}[Motivation]
   \begin{figure}
     \includegraphics[width=\textwidth]{har-image-skeleton.png}
-    \caption{Example of human activities in a warehouse context. Taken from \fcite{reining_towards_2018}}
+    \caption{Example of human activities in a warehouse context.}
+    \source
   \end{figure}
   \begin{itemize}
       \item Motion capturing costly
       \item Pose estimators become better rapidly
       \item End-to-end training recently proposed
   \end{itemize}
+  \footnotetext[1]{\cite{reining_towards_2018}}
 \end{myframe}
 
 \tableofcontents
@@ -83,30 +96,60 @@
 \subsection{Human Activity Recognition}
 
 \begin{myframe}[Fundamentals - HAR]
-    \begin{itemize}
-        \item Identify action performed by human
-        \item Multiple sources for detection
-        \begin{itemize}
-            \item Inertial Measurement Units (IMUs)
-            \item Images (or video)
-        \end{itemize}
-    \end{itemize}
+    \begin{columns}
+        \begin{column}{.48\textwidth}
+            \begin{itemize}
+                \item Identify actions performed by humans
+                \item Some use-cases:
+                    \begin{itemize}
+                        \item Video surveillance
+                        \item Human-computer interaction
+                        \item Warehouse scenario from before
+                    \end{itemize}
+                \item Multiple sources for detection
+                \begin{itemize}
+                    \item Inertial Measurement Units (IMUs)
+                    \item Images (or video)
+                \end{itemize}
+            \end{itemize}
+        \end{column}
+        \begin{column}{.48\textwidth}
+            \begin{figure}
+                \includegraphics[width=0.99\textwidth]{imu.jpg}
+                \caption{Inertial Measurement Units manufactured by Surrey Sensors}
+                \source
+            \end{figure}
+        \end{column}
+    \end{columns}
+    \footnotetext[1]{\url{http://surreysensors.com/wp-content/uploads/2017/02/IMU.jpg}}
 \end{myframe}
 
 \begin{myframe}[Fundamentals - HAR]
-    \begin{itemize}
-        \item How fine-grained?
-        \begin{itemize}
-            \item \textit{Raising left arm} or
-            \item \textit{Waving}
-        \end{itemize}
-    \end{itemize}
-    $\Rightarrow$ \textit{attributes} vs. \textit{actions} \fcite{reining_towards_2018}
+    \begin{columns}
+        \begin{column}{.48\linewidth}
+            \begin{itemize}
+                \item High degree of interclass variance
+                \item How fine-grained?
+                \begin{itemize}
+                    \item \textit{Raising left arm} or
+                    \item \textit{Waving}
+                    \item \textit{attributes} vs. \textit{actions} \footnotemark
+                \end{itemize}
+            \end{itemize}
+        \end{column}
+        \begin{column}{.48\linewidth}
+            \begin{figure}
+                \includegraphics[width=0.99\textwidth]{attributes-actions.png}
+                \sourcefix{1}
+            \end{figure}
+        \end{column}
+    \end{columns}
+    \footnotetext[1]{\cite{reining_towards_2018}}
 \end{myframe}
 
-\subsection{Pose estimation}
+\subsection{Pose Estimation}
 
-\begin{myframe}[Fundamentals - Pose estimation]
+\begin{myframe}[Fundamentals - Pose Estimation]
     \begin{columns}[T]
         \begin{column}{0.45\textwidth}
             \vspace{30px}
@@ -119,77 +162,78 @@
         \end{column}
         \begin{column}{0.55\textwidth}
             \begin{figure}
-                \includegraphics[width=.99\textwidth]{pe-singlehumna.png}
+                \includegraphics[width=.89\textwidth]{pe-singlehumna.png}
+                \source
             \end{figure}
         \end{column}
     \end{columns}
     \begin{figure}
         \includegraphics[height=50px]{2dheatmaps.png}
+        \source
     \end{figure}
+    \footnotetext[1]{\url{https://blog.nanonets.com/content/images/2019/04/Screen-Shot-2019-04-11-at-5.17.56-PM.png}}
+    \footnotetext[2]{\cite{newell_stacked_2016}}
 \end{myframe}
 
-\begin{myframe}[Fundamentals - Pose estimation]
+\begin{myframe}[Fundamentals - Pose Estimation]
     \begin{figure}
         \includegraphics[width=.99\textwidth]{pe-multihuman.png}
+        \caption{Example of hard multi-person pose estimation situations.}
+        \source
     \end{figure}
+    \footnotetext[1]{\url{http://pages.iai.uni-bonn.de/iqbal_umar/multiperson-pose/}}
 \end{myframe}
 
 \section{Related Work}
-\subsection{2D / 3D pose estimation}
+\subsection{Pose Estimation}
 
-% \begin{myframe}[2D pose estimation]
-%   \begin{itemize}
-%     \item \textbf{shallow methods}
-%     \begin{itemize}
-%       \item Pictorial structure framework
-%     \end{itemize}
-%     \item \textbf{deep methods}
-%     \begin{itemize}
-%       \item Stacked hourglass \fcite{newell_stacked_2016}
-%       \item Convolutional pose machine \fcite{wei_convolutional_2016}
-%     \end{itemize}
-%   \end{itemize}
-% \end{myframe}
-%
-\begin{myframe}[Shallow methods]
+\begin{myframe}[Pose Estimation - Shallow Methods]
     \begin{columns}[T]
         \begin{column}{.48\textwidth}
             \begin{itemize}
-                \item \textbf{Pictorial structure framework \footnotemark\footnotemark\footnotemark}
+                \item \textbf{Pictoral Structures for Object Recognition \footnotemark}
               \begin{itemize}
-                  \item Model human pose as tree of parts
+                  \item Based on initial work by \footnotemark
+                  \item Binary images (background subtraction)
+                  \item \textit{Model each limb}
                   \begin{itemize}
-                      \item coordinates, size, orientation and type
+                      \item Approximate each limb as rectangle using $\ell = (x,y,s,\theta)$
+                      \item Maximize covered foreground pixels by parts $p(I \lvert \ell,c)$
                   \end{itemize}
-                  \item Choose configuration with max score
+                  \item \textit{Relation between limbs}
                   \begin{itemize}
-                      \item Learned from training data
+                      \item Relative positions / rotations between limbs $p(\ell_i,\ell_j \lvert c_{ij})$
                   \end{itemize}
+                  \item Maximum likelihood estimation for $c$
+                  \item Chamfer Distance to evaluate sampled configurations
               \end{itemize}
             \end{itemize}
         \end{column}
-        \footnotetext[1]{\cite{fischler_representation_1973}}
-        \footnotetext[2]{\cite{felzenszwalb_pictorial_2005}}
-        \footnotetext[3]{\cite{yang_articulated_2011}}
+        \footnotetext[1]{\cite{felzenszwalb_pictorial_2005}}
+        \footnotetext[2]{\cite{fischler_representation_1973}}
         \begin{column}{.48\textwidth}
             \begin{figure}
-                \includegraphics[height=150px]{pictoralexample.png}
+                \includegraphics[width=.99\textwidth]{felzenszwalb-overview.png}
+                \sourcefix{1}
             \end{figure}
         \end{column}
     \end{columns}
 \end{myframe}
 
-\begin{myframe}[2D pose estimation]
+\begin{myframe}[Pose Estimation - Deep Methods]
     \begin{columns}[T]
         \begin{column}{.48\textwidth}
             \begin{itemize}
-                \vspace{25px}
+                %\vspace{25px}
                 \item \textbf{Stacked hourglass network \footnotemark}
                   \begin{itemize}
                     \item Pooling, upsampling, skip-connections
+                    \item 8 hourglasses back-to-back
+                    \item Intermediate supervision
                     \item Residual modules~\footnotemark
-                    \item Refine result each block
-                    \item Most SOTA methods build on top
+                    \item Mean-squared Error
+                    \item Refine result with each hourglass
+                    \item Most state-of-the-art methods build on top
                   \end{itemize}
             \end{itemize}
         \end{column}
@@ -197,132 +241,206 @@
         \footnotetext[2]{\cite{he_deep_2016}}
         \begin{column}{.48\textwidth}
             \begin{figure}
-                \includegraphics[width=.75\textwidth]{single-hourglass.png}
-                \includegraphics[width=.75\textwidth]{residualmodule.png}
+                \includegraphics[width=.65\textwidth]{single-hourglass.png}
+                \sourcefix{1}
+            \end{figure}
+            \begin{figure}
+                \includegraphics[width=.65\textwidth]{residualmodule.png}
+                \sourcefix{2}
             \end{figure}
         \end{column}
     \end{columns}
     \begin{figure}
-        \includegraphics[width=.99\textwidth]{stackedhourglass.png}
+        \includegraphics[width=.65\textwidth]{stackedhourglass.png}
+        \sourcefix{1}
     \end{figure}
 \end{myframe}
 
-\begin{myframe}[3D pose estimation]
-    \begin{itemize}
-        \item \textbf{Lifting}
-        \begin{itemize}
-            \item \textit{Convert} 2D coordinates into 3D
-			\item Better results than end-to-end
-			\begin{itemize}
-				\item Predominant approach
-			\end{itemize}
-			\item Even simple approaches gain state-of-the-art \fcite{martinez_simple_2017}
-        \end{itemize}
-    \end{itemize}
-\end{myframe}
+\subsection{Video-based HAR}
 
-% \subsection{Video-based HAR}
-% \begin{myframe}[Video-based HAR]
-%   \begin{itemize}
-%     \item \textbf{shallow methods}
-%     \begin{itemize}
-%         \item Learning Realistic Human Actions from Movies \fcite{laptev_learning_2008}
-%     \end{itemize}
-%     \item \textbf{deep methods}
-%     \begin{itemize}
-%         \item Mixed Convolutional Tube \fcite{zhou_mict:_2018}
-%     \end{itemize}
-%     \item \textbf{joint, end-to-end methods}
-%     \begin{itemize}
-%         \item Multitask Deep Learning Framework \fcite{luvizon_2d/3d_2018}
-%     \end{itemize}
-%   \end{itemize}
-% \end{myframe}
-
-\begin{myframe}[Video-based HAR]
+\begin{myframe}[Video-based HAR - Shallow Methods]
 	\begin{itemize}
 		\item \textbf{Learning Realistic Human Actions from Movies \fcite{laptev_learning_2008}}
 		\begin{itemize}
 			\item Spatio-temporal extension of Harris corner detection
 			\item Volume around interest points
 			\begin{itemize}
-				\item \textit{HoG}
-				\item \textit{HoF}
+                \item \textit{Histogram of oriented gradients (HoG)}
+                \item \textit{Histogram of optical flow (HoF)}
 				\item concatenation and normalization
 			\end{itemize}
-			\item Clustering into BoF
+			\item Clustering into Bag-of-features
+            \item Classification using Support Vector Machines (SVM)
 		\end{itemize}
 	\end{itemize}
 	\begin{figure}
 		\includegraphics[width=.7\textwidth]{spacetimeinterestpoints.png}
-		\caption{Left: Shaking hand, right: getting out of car.}
+        \caption{Left: Shaking hand, right: getting out of car.}
+        \sourcefix{1}
 	\end{figure}
 \end{myframe}
 
-\begin{myframe}[Video-based HAR]
+\begin{myframe}[Video-based HAR - Deep Methods]
 	\begin{itemize}
 		\item \textbf{MiCT: Mixed Convolutional Tube \fcite{zhou_mict:_2018}}
 		\begin{itemize}
 			\item Third dimension $\Rightarrow$ temporal dimension
 			\item Combining 2D and 3D convolutions more accurate than just 3D
-			\item 4 MiCT blocks, followed by FC
+			\item 4 MiCT blocks, followed by fully-connected layer
 			\item State-of-the-art on HMDB51 for RGB-only methods
 		\end{itemize}
 	\end{itemize}
 	\begin{figure}
 		\includegraphics[width=.7\textwidth]{mict-block.png}
-		\caption{Combining simple 2D convolutions with 3D convolutions}
+        \caption{Combining simple 2D convolutions with 3D convolutions.}
+        \sourcefix{1}
 	\end{figure}
 \end{myframe}
 
 \begin{myframe}[MiCT-Net]
 	\begin{figure}
 		\includegraphics[width=.99\textwidth]{mict-full.png}
-		\caption{Full architecture of MiCT-Net.}
+        \caption{Full architecture of MiCT-Net.}
+        \source
 	\end{figure}
+    \footnotetext[1]{\cite{zhou_mict:_2018}}
 \end{myframe}
 
-\begin{myframe}[End-to-end pose and HAR frameworks]
+\section{Method}
+
+\begin{myframe}[Method - Joint methods]
 	\begin{columns}[T]
 	\begin{column}{.45\textwidth}
 		\begin{itemize}
-			\item \textbf{Multitask Deep Learning}\footnotemark
+			\item \textbf{Multitask Deep HAR}\footnotemark
 			\begin{itemize}
+                \item Jointly train pose and action recognition
+                \item Pre-train pose estimation part, then fine-tune end-to-end
 				\item \textit{Soft-argmax}\footnotemark~makes end-to-end learning possible
 			\end{itemize}
 		\end{itemize}
         \begin{figure}
             \includegraphics[width=0.99\textwidth]{softargmax.png}
-            %\caption{Soft-argmax, graphical representation}
+            \sourcefix{1}
         \end{figure}
-		\begin{figure}
-            \includegraphics[width=.99\textwidth]{jointsovertime.png}
-		\end{figure}
 	\end{column}
     \footnotetext[1]{\cite{luvizon_2d/3d_2018}}
     \footnotetext[2]{\cite{luvizon_human_2017}}
 	\begin{column}{.45\textwidth}
 		\begin{figure}
 			\includegraphics[width=.99\textwidth]{endtoend-concept.png}
+            \sourcefix{1}
             %\caption{Complete network pipeline.}
 		\end{figure}
 	\end{column}
 	\end{columns}
 \end{myframe}
 
-\section{Method}
+\begin{myframe}[Multitask Deep HAR - Architecture]
+	\begin{columns}[T]
+        \begin{column}{.45\textwidth}
+            \begin{itemize}
+                \item \textit{Multitask CNN}
+                \begin{itemize}
+                    \item Blocks similar to hourglasses
+                    \item Refine prediction with each additional block
+                    \item In addition to providing visual features and heatmaps:
+                    \begin{itemize}
+                        \item Coordinates from Soft-argmax
+                        \item Join visibility vector using sigmoid
+                    \end{itemize}
+                \end{itemize}
+            \end{itemize}
+        \end{column}
+        \begin{column}{.45\textwidth}
+            \begin{figure}
+                \includegraphics[width=.99\textwidth]{multitask-part.png}
+                \sourcefix{1}
+            \end{figure}
+        \end{column}
+	\end{columns}
+    \footnotetext[1]{\cite{luvizon_2d/3d_2018}}
+\end{myframe}
+
+\begin{myframe}[Multitask Deep HAR - Architecture]
+	\begin{columns}[T]
+        \begin{column}{.45\textwidth}
+            \begin{itemize}
+                \item \textit{Pose recognition}
+                \begin{itemize}
+                    \item Arrange joint values over time in 2D matrix
+                    \item Action heatmaps
+                    \begin{itemize}
+                        \item Through softmax: action probabilities
+                    \end{itemize}
+                    \item \textit{Max-min pooling}
+                    \item Loss function $$L_p = \frac{1}{N_J}\sum_{n=1}^{N_J}(~ \lvert\lvert \hat{p}_n - p_n \rvert\rvert_1 ~+~ \lvert\lvert \hat{p}_n - p_n \rvert\rvert^2_2 ~ )$$
+                \end{itemize}
+            \end{itemize}
+        \end{column}
+        \begin{column}{.45\textwidth}
+            \begin{figure}
+                \includegraphics[width=.99\textwidth]{jointsovertime.png}
+                \sourcefix{1}
+            \end{figure}
+        \end{column}
+	\end{columns}
+    \footnotetext[1]{\cite{luvizon_2d/3d_2018}}
+\end{myframe}
+
+\begin{myframe}[Multitask Deep HAR - Architecture]
+	\begin{columns}[T]
+        \begin{column}{.45\textwidth}
+            \begin{itemize}
+                \item \textit{Appearance recognition}
+                \begin{itemize}
+                    \item Combination of visual features and joint positions
+                    \item Then: Identical architecture to pose recognition part
+                \end{itemize}
+                \item \textit{Aggregation}
+                \begin{itemize}
+                    \item Combine pose recognition and appearance recognition for final result
+                    \item \textit{Categorical cross-entropy}
+                \end{itemize}
+            \end{itemize}
+        \end{column}
+        \begin{column}{.45\textwidth}
+            \begin{figure}
+                \includegraphics[width=.99\textwidth]{appearance-features.png}
+                \sourcefix{1}
+            \end{figure}
+        \end{column}
+	\end{columns}
+    \footnotetext[1]{\cite{luvizon_2d/3d_2018}}
+\end{myframe}
+
 \begin{myframe}[Method]
     \begin{itemize}
         \item Reimplementation in PyTorch \fcite{paszke_automatic_2017}
         \begin{itemize}
-            \item Evaluate against HMDB \fcite{kuehne_hmdb:_2011} and Kinetics datasets \fcite{kay_kinetics_2017}
+            \item Evaluate against HMDB \fcite{kuehne_hmdb:_2011}
         \end{itemize}
         \item Experimentation
         \begin{itemize}
-            \item Better incorporation of temporal dimension \fcite{pavllo_3d_2019}
+            %\item Better incorporation of temporal dimension \fcite{pavllo_3d_2019}
             \item Compare with state-of-the-art methods not using pose \fcite{zhou_mict:_2018}
+            \item Different representation of temporal information (next slide)
+            \item Combined loss function of pose and action for \emph{real} end-to-end training
         \end{itemize}
     \end{itemize}
+\end{myframe}
+
+\begin{myframe}[Method]
+    \begin{figure}
+        \includegraphics[width=.65\textwidth]{jointsovertime.png}
+        \caption{Approach used by \footnotemark. Convolution over all sensors at once. \sourcefix{1}}
+    \end{figure}
+    \begin{figure}
+        \includegraphics[width=.65\textwidth]{sensor-time.png}
+        \caption{Impression of pixel coordinates of joints over time \source}
+    \end{figure}
+    \footnotetext[1]{\cite{luvizon_2d/3d_2018}}
+    \footnotetext[2]{\url{https://avtech.com/articles/wp-content/uploads/2015/06/Intro.-Pic.png}}
 \end{myframe}
 
 \section{Datasets}
@@ -341,65 +459,55 @@
 %   \end{itemize}
 % \end{myframe}
 
-\begin{myframe}[2D pose datasets]
+\begin{myframe}[2D Pose Datasets]
   \begin{columns}[T]
       \begin{column}{.48\textwidth}
           \begin{itemize}
               \item \textbf{MPII Human Pose\footnotemark}
               \begin{itemize}
                   \item 40,000 annotated images
-                  \item single and multi person
-                  \item over 401 different activities
-              \end{itemize}
-              \vspace{50px}
-              \item \textbf{Leeds Sport Pose \footnotemark \footnotemark}
-              \begin{itemize}
-                  \item 2,000 pose images, 14 joints
-                  \item sport context
-                  \item \textbf{LSP-Extended}: Additional 10,000 images
+                  \item Single and multi person
+                  \item Over 401 different activities
               \end{itemize}
           \end{itemize}
       \end{column}
       \footnotetext[1]{\cite{andriluka_2d_2014}}
-      \footnotetext[2]{\cite{johnson_clustered_2010}}
-      \footnotetext[3]{\cite{johnson_learning_2011}}
       \begin{column}{.48\textwidth}
           \begin{figure}
               \includegraphics[width=0.99\textwidth]{mpii.png}
-          \end{figure}
-          \begin{figure}
-              \includegraphics[width=0.48\textwidth]{lsp-original.jpg}
-              \includegraphics[width=0.48\textwidth]{lsp-annotated.jpg}
+              \sourcefix{1}
           \end{figure}
       \end{column}
   \end{columns}
 \end{myframe}
 
-\begin{myframe}[3D pose datasets]
-  \begin{columns}[T]
-      \begin{column}{.48\textwidth}
-          \vspace{50px}
-          \begin{itemize}
-              \item \textbf{Human3.6m\footnotemark}
-              \begin{itemize}
-                  \item 3,600,000 annotated images
-                  \item annotated using motion capturing system
-                  \item 11 male and female actors recreate daily situations
-                  \item 17 different scenarios
-              \end{itemize}
-          \end{itemize}
-      \end{column}
-      \footnotetext[1]{\cite{ionescu_human3.6m:_2014}}
-      \begin{column}{.48\textwidth}
-          \begin{figure}
-              \includegraphics[width=0.48\textwidth]{human-01.jpg}
-              \includegraphics[width=0.48\textwidth]{human-02.jpg}
-              \includegraphics[width=0.48\textwidth]{human-03.jpg}
-              \includegraphics[width=0.48\textwidth]{human-04.jpg}
-          \end{figure}
-      \end{column}
-  \end{columns}
-\end{myframe}
+% \begin{myframe}[3D Pose Datasets]
+%   \begin{columns}[T]
+%       \begin{column}{.48\textwidth}
+%           \vspace{50px}
+%           \begin{itemize}
+%               \item \textbf{Human3.6m\footnotemark}
+%               \begin{itemize}
+%                   \item 3,600,000 annotated images
+%                   \item Annotated using motion capturing system
+%                   \item 11 male and female actors recreate daily situations
+%                   \item 17 different scenarios
+%               \end{itemize}
+%           \end{itemize}
+%       \end{column}
+%       \footnotetext[1]{\cite{ionescu_human3.6m:_2014}}
+%       \begin{column}{.48\textwidth}
+%           \begin{figure}
+%               \includegraphics[width=0.48\textwidth]{human-01.jpg}
+%               \includegraphics[width=0.48\textwidth]{human-02.jpg}
+%               \includegraphics[width=0.48\textwidth]{human-03.jpg}
+%               \includegraphics[width=0.48\textwidth]{human-04.jpg}
+%               \source
+%           \end{figure}
+%       \end{column}
+%   \end{columns}
+%   \footnotetext[2]{\url{http://vision.imar.ro/human3.6m/description.php}}
+% \end{myframe}
 
 % \begin{myframe}[2D HAR datasets]
 %   \begin{itemize}
@@ -409,7 +517,7 @@
 %   \end{itemize}
 % \end{myframe}
 
-\begin{myframe}[2D action recognition datasets]
+\begin{myframe}[Action Recognition Datasets]
   \begin{columns}[T]
       \begin{column}{.48\textwidth}
           \vspace{20px}
@@ -417,82 +525,85 @@
               \item \textbf{Penn Action\footnotemark}
               \begin{itemize}
                   \item 2,400 video clips of 15 actions
-                  \item very limited number of actions (mainly sport)
-              \end{itemize}
-              \vspace{40px}
-              \item \textbf{Kinetics \footnotemark}
-              \begin{itemize}
-                  \item 500,000 action-annotated video clips
-                  \item 600 classes with at least 600 clips each
-                  \item clips from Youtube
-                  \item Pitched as the \textit{ImageNet for video}
+                  \item Very limited number of actions (mainly sport)
               \end{itemize}
           \end{itemize}
       \end{column}
       \footnotetext[1]{\cite{zhang_actemes_2013}}
-      \footnotetext[2]{\cite{kay_kinetics_2017}}
       \begin{column}{.48\textwidth}
           \begin{figure}
-              \includegraphics[height=40px]{pa-01.jpg}
-              \includegraphics[height=40px]{pa-02.jpg}
-              \includegraphics[height=40px]{pa-03.jpg}
-              \includegraphics[height=40px]{pa-04.jpg}
-          \end{figure}
-          \begin{figure}
-              \includegraphics[width=0.69\textwidth]{kinetics-example.png}
+              \includegraphics[height=45px]{pa-01.jpg}
+              \includegraphics[height=45px]{pa-02.jpg}
+              \includegraphics[height=45px]{pa-03.jpg}
+              \includegraphics[height=45px]{pa-04.jpg}
+              \source
           \end{figure}
       \end{column}
   \end{columns}
+  \footnotetext[2]{\url{https://upenn.app.box.com/v/PennAction}}
 \end{myframe}
 
-\begin{myframe}[2D action recognition datasets]
+\begin{myframe}[Action Recognition Datasets]
   \begin{columns}[T]
       \begin{column}{.48\textwidth}
-          \vspace{50px}
           \begin{itemize}
               \item \textbf{HMDB51\footnotemark}
               \begin{itemize}
                   \item 6,800 video clips of 51 actions
-                  \item video clips from youtube
-                  \item at least 101 clips per action category
+                  \item Video clips from youtube
+                  \item At least 101 clips per action category
               \end{itemize}
           \end{itemize}
       \end{column}
       \footnotetext[1]{\cite{kuehne_hmdb:_2011}}
       \begin{column}{.48\textwidth}
           \begin{figure}
-              \includegraphics[height=190px]{hmdb-example.png}
+              \includegraphics[height=.55\textheight]{hmdb-example.png}
+              \source
           \end{figure}
       \end{column}
   \end{columns}
+  \footnotetext[2]{\url{http://serre-lab.clps.brown.edu/wp-content/uploads/2012/08/HMDB_snapshot1.png}}
 \end{myframe}
 
-\begin{myframe}[3D HAR datasets]
+\begin{myframe}[Action Recognition Datasets]
   \begin{columns}[T]
       \begin{column}{.48\textwidth}
-          \vspace{35px}
           \begin{itemize}
-              \item \textbf{NTU RGB+D \footnotemark}
+              \item \textbf{J-HMDB\footnotemark}
               \begin{itemize}
-                  \item 56,000 videos of 60 different actions
-                  \item recorded by multiple cameras
-                  \item additional depth information
-                  \item lab setting
+                  \item Fully-annotated subset of HMDB
+                  \begin{itemize}
+                      \item 2D pose, person segmentation maps etc.
+                  \end{itemize}
+                  \item 928 clips of 21 actions
+                  \item Can be used for end-to-end training
               \end{itemize}
           \end{itemize}
       \end{column}
-      \footnotetext[1]{\cite{shahroudy_ntu_2016}}
+      \footnotetext[1]{\cite{jhuang_towards_2013}}
       \begin{column}{.48\textwidth}
           \begin{figure}
-              \includegraphics[width=0.99\textwidth]{ntu-example.png}
+              \includegraphics[height=.55\textheight]{jhmdb.png}
+              \centering
+              \source
           \end{figure}
       \end{column}
   \end{columns}
+  \footnotetext[2]{\url{http://jhmdb.is.tue.mpg.de/puppet_tool}}
 \end{myframe}
+
 \section{Conclusion}
 \begin{myframe}[Conclusion]
     \begin{itemize}
-        \item Conclusion goes here
+        \item Promising results combining pose and action recognition
+        \item But: Barely any publications in the past year
+        \item Much experimentation possible
+        \item Future work:
+        \begin{itemize}
+            \item Multi-person end-to-end pipeline
+            \item Bigger pose-annotated \emph{in-the-wild} action datasets necessary
+        \end{itemize}
     \end{itemize}
 \end{myframe}
 
