@@ -33,15 +33,18 @@ Improvisation
 - Chamfer Distanz gibt an wie gut matching ist
 
 # Stacked Hourglass
-- Durch Pooling Auflösung verringern und durch Upsampling wiederherstellen.
-    - Features aus den Zwischenschritten über Skip-connections weiterverwenden
-        - Wichtig für Kombination von feinen (Hand) und groben (allgemeine Pose) Features
-- Jedes Houglass 64x64 pixel
-- Maximal 3x3, inspiriert durch Inception
 - Durch aufeinanderfolgen: Initiale Ergebnisse werden immer weiter verfeinert und verbessert
     - Häufiger Ansatz in Pose Estimation mittels CNNs
+    - Loss nach jedem Hourglass Modul
+    - Laut Autoren: Durch frühzeitigen Loss soll frühzeitig globales Verständnis von Pose erzwungen werden
+- Durch Pooling Auflösung verringern und durch Upsampling wiederherstellen.
+    - Features aus den Zwischenschritten über Skip-connections weiterverwenden
+        - Wichtig für Kombination von Features auf verschiedenen skalierungsstufen
 - Geben keine Begründung für die Residual Modules. Normalerweise z.B. damit kein vanishing gradient auftritt
     - Keine Aktivierungsfunktionen angegeben, also keine Ahnung warum kein ReLU
+- Qualitativ: Verfeinern der initialen Vorhersage und korrigieren von Fehlern
+    - z.B. Rechte Hand von anderer Person im Bild fälschlicherweise erkannt
+    - Dadurch, dass spätere Module die Informationen von vorherigen bekommen können sie beispielsweise bei der Entscheidung "Welche Pixel gehöhren zum rechten Ellenbogen?" die vorherigen Ergebnisse für "Rechte Schulter" miteinbeziehen, welche in der Praxis oft einfacher zu finden sind. Selbst wenn noisy trotzdem von Vorteil.
 
 # Video-based HAR
 ## Shallow
@@ -69,6 +72,7 @@ Improvisation
     - Oft ist die Ausgabe von neuronalen Netzen zur Posenbestimmung eine Heatmap. Heatmap stellt Softmaxverteilung da.
     - Argmax als postprocessing schritt nötig damit exakte Koordinaten. Wenn man end-to-end trainieren will ist ein nicht-differentierbares Argmax aber problematisch.
         - Darum: soft-argmax
+    - Normalisierte Version des Erwartungswerts des Softmax in x und y Dimension
 - Multitask CNN
     - Basiert auf Inception v4 um Features zu extrahieren
     - Prediction Block: Ähnlich zu Hourglasses von vorhin. Nach jedem Block ein Zwischenergebnis welches verfeinert wird.
