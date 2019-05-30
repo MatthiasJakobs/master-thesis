@@ -8,6 +8,7 @@ No abstract
     - Pose Estimation
         (- Regression-based)
         (- Heatmaps)
+        (- sometimes joints, sometimes body parts)
     - Human Action Recognition
         - Video-based HAR
         - Action Granularity
@@ -22,17 +23,18 @@ No abstract
             - Convolutional Layer
                 - Perceptive Field
             - Pooling Layer
-            - Perceptive Field
             - Fully-connected Layer
 3. Related Work
     - 2D Pose Estimation
         - Pictoral Structure Framework
             (- Pictoral Structures for Object Recognition)
             (- Articulated pose estimation with flexible mixture-of-parts)
+            (- An approach to pose-based action recognition (as example for video))
         - Deep Learning Methods
             (- DeepPose)
             (- Stacked Hourglass)
             (- Convolutional Pose Machine)
+            (- Thin-Slicing Network: A Deep Structured Model for Pose Estimation in Videos (as example of video))
         - 3D Pose Estimation
             (- A Simple Yet Effective Baseline for 3d Human Pose Estimation)
     - Video-based Human Action Recognition
