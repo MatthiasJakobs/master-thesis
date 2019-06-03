@@ -14,11 +14,196 @@
 \subsection{Action Granularity}
 
 \section{Neural Networks}
+% TODO: Short section about motivation by biology
 
 \subsection{Artificial Neural Networks}
-\subsubsection{Perceptrons}
+
+\subsubsection{McCulloch-Pitts-Neuron}
+One early approach inspired by the human neuron was proposed by Warren McCulloch and Walter Pitts in 1943.
+The McCulloch-Pitts-Neuron (MCP), also referred to as the McCulloch-Pitts unit, takes binary input values $\bm{x} = (x_1, \dots, x_n) \in \mathbb{B}^n$ and computes a binary value $f(x_1, \dots, x_n)$.
+Additionaly, the neuron itself contains a threshold value $\theta \in \mathbb{N}$.
+After adding all input signals, the sum (also referred to as \textit{excitation}) is compared to $\theta$ \eref{eq:mcculloch-binary}.
+%The function computing the sum is also referred to as the units \textit{excitation function} $\psi: \mathbb{B}^n \to \mathbb{N}$ while the function which evaluates the excitatin is referred to as the \textit{activation function} $\phi: \mathbb{N} \times \mathbb{N} \to \{0,1\}$.
+
+\begin{equation}
+    \begin{split}
+        \label{eq:mcculloch-binary}
+        f(\bm{x}, \theta) 
+        &= 
+        \begin{cases}
+            1 & \text{if } \sum_{i=0}^n x_i \geq \theta \\
+            0 & \text{otherwise}
+        \end{cases}
+%        \\
+%        &= \phi(\psi(\bm{x}), \theta)
+    \end{split}
+\end{equation}
+
+Even this simple neuron is capable of realizing some binary operators by choosing different values for $\theta$.
+For example, the \textbf{boolean OR} operator is realized by setting $\theta = 1$ and the \textbf{boolean AND} operator can be achieved by choosing $\theta = n$.
+
+A geometrical explanation of the MCP is that it separates its input space into two half-spaces, assigning the output $1$ to all input combinations on one side and $0$ on the other.
+For example, for two dimensional input spaces (two input variables $x_1$ and $x_2$) this means that a MCP defines a separating line while for three dimensional input spaces the MCP becomes a separating hyperplane.
+A visualization for the \textbf{boolean OR} function with three input variables is shown in \fref{fig:mcp-geometric-or}
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.6\textwidth]{mcp-geometric-or.png}
+    \caption{Example of MCP dividing the three-dimensional input space using a hyperplane. The MCP is configured to model the \textbf{boolean OR} function. \cite{rojas_neural_1996}}
+    \label{fig:mcp-geometric-or}
+\end{figure}
+
+The MCP looked at so far is also called an \textit{uninhibited} MCP.
+\cite{rojas_neural_1996} show that \textit{uninhibited} MCP's can only model monotonic logical functions.
+By adding \textit{inhibitory inputs} $\bm{y} = (y_1, \dots, y_m) \in \mathbb{B}^m$ to the MCP, however, non-monotonic logical functions like \textbf{boolean NOT} can be implemented.
+The output of the MCP changes to 
+
+\begin{equation}
+    \hat{f}(\bm{x}, \bm{y}, \theta) = f(\bm{x}, \theta) \cdot \prod_{j = 0}^m (1 - y_j)
+\end{equation}
+
+Because of this definition it is possible to incorporate negated input values into the unit, giving it the ability to model a combination of negated and non-negated inputs aggregated with the \textbf{boolean AND} operator.
+For example, modeling the boolean function $x_1 \wedge \neg x_2 \wedge x_3$ results to 
+
+\begin{equation}
+    \hat{f}(x_1, x_2, x_3, \theta=1) = f(x_1, x_3, \theta=1) \cdot (1 - x_2)
+\end{equation}
+
+By using two layers of units where the first layer models conjunctions just as presented above and the second layer models a simple \textbf{boolean OR} function over the outputs of the first layer it is possible to model any boolean function $f: \mathbb{B}^n \to \mathbb{B}$ because any such function can be represented in disjunctive normal form.
+
+The obvious limitation of McCulloch-Pitts-Networks is that they are limited to the domain of logical functions.
+Additionaly, they have to be constructed rather than being able to learn an approximation of the desired function because they rely on fixed connections.
+
+% weighted vs unweighted. MCP can model this but then fixed architecture
+% also: weights can thus not be learned because part of architecture (no free parameters). Want to learn these parameters. Thus: perceptron
+
+
+\subsubsection{Perceptron}
+
+In contrast to the McCulloch-Pitts-Neuron a Perceptron uses real valued inputs $\bm{x} = (x_1, \dots, x_n) \in \mathbb{R}^n$ as well as real valued weights $\bm{w} = (w_1, \dots, w_n) \in \mathbb{R}^n$ for each edge.
+
+\begin{equation}
+    f(\bm{x}, \bm{w}, \theta) = 
+    \begin{cases}
+        1 & \text{if } \sum_{i=0}^n w_i \cdot x_i \geq \theta \\
+        0 & \text{otherwise}
+    \end{cases}    
+\end{equation}
+
+Instead of setting $\theta$ as part of the neuron it is prefered to treat it as an additional training parameter.
+To achieve this, a new fixed input value $x_b = 1$ with the corresponding weight $w_b = -\theta$ is added to the model and the previously \emph{internal} $\theta$ is fixed to $0$ \eref{eq:full-perceptron}.
+This additional weight is called the \textit{bias} of the perceptron.
+
+\begin{equation}
+    \label{eq:full-perceptron}
+    f(\bm{x}, \bm{w}) = 
+    \begin{cases}
+        1 & \text{if } ~ -w_b + \sum_{i=0}^n w_i \cdot x_i \geq 0 \\
+        0 & \text{otherwise}
+    \end{cases}    
+\end{equation}
+
+For notational convenience, from now on the bias is assumed to be part of $\bm{w}$, i.e. $\bm{w} = (w_1, \dots, w_n, -\theta)$ and the additional input $x_b = 1$ ispart of $\bm{x}$, i.e. $\bm{x} = (x_1, \dots, x_n, -1)$.
+
+The \textit{excitation} of a perceptron is still just a (weighted) linear combination.
+This means that the perceptron, like the MCP, separates the input space by a hyperplane.
+In \fref{fig:perceptron-logic} examples for some common logical functions for two input variables are provided.
+
+\begin{figure}[htb!]
+    \includegraphics[width=0.9\textwidth]{perceptron-linear-seperable.png}
+    \caption{Logical functions modelled by a single perceptron. The blue line indicates where the input space is divided. All input combinations on one side of the line are going to be assigned to $1$ while being assigned to $0$ on the other side. Notice that there are infinitely many possibilites for dividing lines since the input space is real valued \cite{rudolph_lecture_2018}}
+    \label{fig:perceptron-logic}
+\end{figure}
+
+While MCP's were designed to model logical functions like \textbf{boolean OR} or \textbf{boolean AND} by setting $\theta$ as well as categorizing the input variables as either \textit{inhibitory} or \textit{non-inhibitory} perceptrons are able to infer these parameters by themselves through a \textit{learning process}.
+
+Learning in the context of perceptrons means determining a parameter vector $\bm{w}$ which satisfies the following inequalities for all \textbf{positive points} $\bm{p} \in \bm{P}$ with $\hat{f}(\bm{p}, w) = 1$ as well as all \textbf{negative points} $\bm{n} \in \bm{N}$ with $\hat{f}(\bm{n}, w) = 0$
+
+\begin{equation}
+    \bm{w} \cdot \bm{p} \geq 0
+\end{equation}
+
+\begin{equation}
+    \bm{w} \cdot \bm{n} < 0
+\end{equation}
+
+A parameter vector which satisfies these inequalities then defines the hyperplane separating the positive from the negative points.
+
+The general algorithmic approach for perceptron learning is the following:
+\begin{enumerate}
+    \item Start with a random weight vector $\bm{w}$
+    \item Evaluate how accurate the hyperplane defined by $\bm{w}$ separates the input space
+    \item If positive and negative points are separated correctly:
+    \begin{enumerate}
+        \item Done
+    \end{enumerate}
+    \item Else
+    \begin{enumerate}
+        \item Update weight vector in a way which further reduces the error function 
+        \item Go to step 2
+    \end{enumerate}
+\end{enumerate}
+
+In order for the learning algorithm to determine the accuracy of a given weight vector $\bm{w}_i$ an \textbf{error function} needs to be provided.
+Such a function takes all positive and negative points and calculates the amount of error (i.e. number of wrongfully classified points) when assuming $\bm{w} = \bm{w}_i$.
+One example of an error function for binary functions is presented in \eref{eq:error-binary}\cite{rojas_neural_1996}.
+
+\begin{equation}
+    \label{eq:error-binary}
+    E(\bm{w}_i) = \sum_{\bm{x} \in P} (1 - \hat{f}(\bm{x},\bm{w_i})) + \sum_{\bm{x} \in N} \hat{f}(\bm{x},\bm{w_i})
+\end{equation}
+
+It is trivial to see that the minimum error $E(\bm{w}) = 0$ is achieved if and only if $\hat(f)(\bm{x}) = 1$ for all positive points and $\hat{f}(\bm{x}) = 0$ else.
+
+Iteratively pdating the weight vector needs a strategy that guarantees that the error will be less than it was before after updating.
+There are many ways to ensure that this is the case.
+One algorithm, presented in \cite{rojas_neural_1996} and simply called \textit{perceptron learning algorithm}, uses the following method.
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.55\textwidth]{perceptron-learning-update.png}
+    \caption{Visualization of the weight plane $\bm{w} \cdot \bm{x}$ separating two positive and two negative vectors. The weight vector $\bm{w}$ is the normal of the hyperplane \cite{rojas_neural_1996}.}
+    \label{fig:perceptron-learning-update}
+\end{figure}
+
+Given $M = P \cup N$, a point $x \in M$ is chosen randomly. 
+Also, as discussed before, an random weight vector $\bm{w}_t = \bm{w}_0$ is initialized.
+If $x \in P$ and $\bm{w}_t x \leq 0$ then the weight vector needs to be updated.
+This is done by adding $x$ to $\bm{w}_t$.
+The idea is that, in the case above, the two vectors $\bm{x}$ and $\bm{w}$ must have an angle bigger than 90 degrees (see \fref{fig:perceptron-learning-update}).
+By rotating $\bm{w}$ towards $\bm{x}$ the angle will be reduced, eventually putting $\bm{x}$ on the correct side of the hyperplane.
+In order to rotate $\bm{w}$ the algorithm proposes $\bm{w}_{t+1} = \bm{w}_{t} + \bm{x}$.
+Analogously, if $x \in N$ and $\bm{w}_t x \geq 0$ the algorithm proposes $\bm{w}_{t+1} = \bm{w}_{t} - \bm{x}$.
+This is done for each $x \in M$ where $x$ is chosen randomly.
+
+Because $P$ and $N$ are linearly separable and there are a finite number of points it can be proven that, after a finite amount of steps, the error will be reduced to zero and the hyperplane will correctly separate the two sets.
+
+% TODO: Maybe pocket algorithm? gives best result for when the set is not linearly seperable
 
 \subsubsection{Multi-Layer Perceptron}
+Until now, the assumption was made that the two sets of points $P$ and $N$ are linearly separable.
+Many problems, however, are more complex and cannot be easily separated linearly.
+One example from the realm of logical functions is the \textbf{XOR} function.
+As an example, consider \textbf{XOR} with two input variables.
+If visualized in the same way as in \fref{fig:perceptron-logic} it is quite trivial to see that no single line is able to divide the positive from the negative points.
+Therefor, a more complex model is necessary for modeling the \textbf{XOR} which uses \textit{regions} instead of hyperplanes (see \fref{fig:xor-convex}).
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.5\textwidth]{xor-convex.png}
+    \caption{Solving the \textbf{XOR} problem by using separating \textit{regions} instead of hyperplanes \cite{rojas_neural_1996}}
+    \label{fig:xor-convex}
+\end{figure}
+
+Such a \textit{convex solution space} can be achieved by using two layers of perceptrons.
+The first layer consists of multiple perceptrons, each with their own weight vector $\bm{w}_m$.
+Their outputs form the input of a perceptron in the second layer which learns the \textbf{boolean AND} function.
+Combining all the positive half-spaces of each perceptron creates a convex region where all perceptrons output $1$.
+
+When using three layers of perceptrons, the first layer separates the input space into half-spaces.
+Each of the second layer perceptron, again, combines these to form convex regions of agreement.
+In the third layer, a perceptron then combines these regions into non-convex regions using the learned \textbf{boolean OR} operator.
+Thus, a three layer perceptron network is enough to model any arbitrary function.
 
 \subsubsection{Activation Functions}
 
