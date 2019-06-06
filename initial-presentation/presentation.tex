@@ -4,6 +4,12 @@
 \providecommand{\btxandlong}{und}
 \providecommand{\newblock}{}
 
+\usepackage{pgfpages}
+\setbeameroption{show notes on second screen} % Both
+
+% link for how to present on mac with skim:
+% https://gist.github.com/andrejbauer/ac361549ac2186be0cdb
+
 % sourcing images
 \providecommand{\source}{\\ \footnotesize \tugreen{Source:} \footnotemark}
 \providecommand{\sourcefix}[1]{\\ \footnotesize \tugreen{Source:} [#1]}
@@ -77,6 +83,15 @@
 
 \section{Motivation}
 \begin{myframe}[Motivation]
+  \note[item]{Motivieren mit einem use case}
+  \note[item]{In Reining et al. sollen Handlungen von Menschen im Kontext Lagerhaus erkannt werden
+  }
+  \note[item]{Grund: Evaluieren, wie effizient der Pickingprozess ist}
+  \note[item]{Mittels motion capturing wurden Skeletdaten (posen) erstellt.}
+  \note[item]{Diese wurden dann als features für die action recognition verwendet}
+  \note[item]{Es gibt auch verfahren, welche pose und handlungen gemeinsam lernen.}
+  \note[item]{Dadurch sollen beide voneinander lernen. Ein solches verfahren schaue ich mir an, aber zunächst mal zur Inhalsübersicht.}
+
   \begin{figure}
     \includegraphics[width=\textwidth]{har-image-skeleton.png}
     \caption{Example of human activities in a warehouse context.}
@@ -96,6 +111,8 @@
 \subsection{Human Activity Recognition}
 
 \begin{myframe}[Fundamentals - HAR]
+    \note[item]{Human Action Recognition}
+    \note[item]{Beispiele: Gehen, hinlegen, telefonieren etc.}
     \begin{columns}
         \begin{column}{.48\textwidth}
             \begin{itemize}
@@ -125,6 +142,7 @@
 \end{myframe}
 
 \begin{myframe}[Fundamentals - HAR]
+    \note[item]{Menschliche Handlungen sind stark unterschiedlich da auch Menschen stark unterschiedlich sind (Kleidung, Körperform etc.)}
     \begin{columns}
         \begin{column}{.48\linewidth}
             \begin{itemize}
@@ -150,6 +168,10 @@
 \subsection{Pose Estimation}
 
 \begin{myframe}[Fundamentals - Pose Estimation]
+    \note[item]{Extrahierung von Gelenkpunkten aus Bild (Heatmap oder Regression, je nach Anstatz)}
+    \note[item]{Verwandt mit Objekterkennung}
+    \note[item]{Es gibt verschiedene Ansätze und Anzahl an Punkten. Manchmal Gesicht in verschiedene Punkte unterteilt}
+    \note[item]{3D Koordinaten Approximation möglich}
     \begin{columns}[T]
         \begin{column}{0.45\textwidth}
             \vspace{30px}
@@ -176,6 +198,7 @@
 \end{myframe}
 
 \begin{myframe}[Fundamentals - Pose Estimation]
+    \note[item]{Überlappung und Verdeckung Probleme, nicht nur bei mehreren Personen pro Bild}
     \begin{figure}
         \includegraphics[width=.99\textwidth]{pe-multihuman.png}
         \caption{Example of hard multi-person pose estimation situations.}
@@ -188,6 +211,9 @@
 \subsection{Pose Estimation}
 
 \begin{myframe}[Pose Estimation - Shallow Methods]
+    \note[item]{Ansatz: Menschliches Skelet besteht aus Strukturen (Gliedmaßen) welche mit "Federn" verbunden sind.}
+    \note[item]{$c$: Parameter welche gelernt werden. Sie geben an, wie die Gaussparameter sind etc.}
+    \note[item]{Chamfer Distanz gibt an wie gut matching ist}
     \begin{columns}[T]
         \begin{column}{.48\textwidth}
             \begin{itemize}
@@ -221,10 +247,17 @@
 \end{myframe}
 
 \begin{myframe}[Pose Estimation - Deep Methods]
+    \note[item]{Netz basiert vollständig aus Faltungsschichten (fully convolutional)}
+    \note[item]{Durch Pooling Auflösung verringern und durch Upsampling wiederherstellen.}
+    \note[item]{Features aus den Zwischenschritten über Skip-connections weiterverwenden}
+    \note[item]{Wichtig für Kombination von Features auf verschiedenen skalierungsstufen}
+    \note[item]{}
+    \note[item]{Durch aufeinanderfolgen: Initiale Ergebnisse werden immer weiter verfeinert und verbessert}
+    \note[item]{Geben keine Begründung für die Residual Modules. Normalerweise z.B. damit kein vanishing gradient auftritt}
+    \note[item]{Keine Aktivierungsfunktionen angegeben, also keine Ahnung warum kein ReLU}
     \begin{columns}[T]
         \begin{column}{.48\textwidth}
             \begin{itemize}
-                %\vspace{25px}
                 \item \textbf{Stacked hourglass network \footnotemark}
                   \begin{itemize}
                     \item Pooling, upsampling, skip-connections
@@ -257,6 +290,9 @@
 \end{myframe}
 
 \begin{myframe}[Stacking architectures - Qualitative evaluations]
+    \note[item]{Verfeinern der initialen Vorhersage und korrigieren von Fehlern z.B. Rechte Hand von anderer Person im Bild fälschlicherweise erkannt}
+    \note[item]{Dadurch, dass spätere Module die Informationen von vorherigen bekommen können sie beispielsweise bei der Entscheidung "Welche Pixel gehöhren zum rechten Ellenbogen?" die vorherigen Ergebnisse für "Rechte Schulter" miteinbeziehen, welche in der Praxis oft einfacher zu finden sind.}
+    \note[item]{Selbst wenn noisy trotzdem von Vorteil.}
     \begin{figure}
         \includegraphics[width=0.75\textwidth]{context-belief-maps.png}
         \caption{Easier to detect features like head and neck can influence the detection of harder features like elbows and knees. Thus, an inititally wrong result (see \textit{R. Elbow} in Stage 1) can be corrected in later stages.\fcite{newell_stacked_2016}}
@@ -270,6 +306,9 @@
 \subsection{Video-based HAR}
 
 \begin{myframe}[Video-based HAR - Shallow Methods]
+    \note[item]{Video als Würfel}
+    \note[item]{Interest Points dort wo starke Veränderungen in $x$, $y$ und $t$ stattfinden}
+    \note[item]{Cluster mittels k-means, $k = 4000$, aus Trainingsdaten}
 	\begin{itemize}
 		\item \textbf{Learning Realistic Human Actions from Movies \fcite{laptev_learning_2008}}
 		\begin{itemize}
@@ -292,6 +331,16 @@
 \end{myframe}
 
 \begin{myframe}[Video-based HAR - Deep Methods]
+    \note[item]{Dritte Dimension $\Rightarrow$ Zeit}
+    \note[item]{3D convolutions sind schwer dafür geeignet tiefe netze zu bilden da sie sehr viele parameter haben.}
+    \note[item]{Darum werden auch sehr sehr sehr große Datensets benötigt weil schwerer zu lernen.}
+    \note[item]{Kurz: Geht nicht tief genug weil zu viele Ressourcen benötigt würden.}
+    \note[item]{Darum: Kombination aus tiefen 2D und 3D}
+    \note[item]{Zwei Ansätze zur Kombination:}
+    \note[item]{\textbf{Konkatenation}: 3D Convolution auf Input und dann auf die 2D output feature map nochmal 2D Convolution}
+    \note[item]{\textbf{Addition}: Output der 3D convolution wird addiert mit dem output einer 2D convolution auf dem letzten Frame.}
+    \note[item]{Kombination von beiden findet statt (siehe figure)}
+
 	\begin{itemize}
 		\item \textbf{MiCT: Mixed Convolutional Tube \fcite{zhou_mict:_2018}}
 		\begin{itemize}
@@ -320,6 +369,13 @@
 \section{Method}
 
 \begin{myframe}[Method - Joint methods]
+    \note[item]{Handlungserkennung und Posenbestimmung gemeinsam trainieren. Idee: Profitieren voneinander}
+    \note[item]{ Pretraining von Pose (Verschiedene Datensätze für Pose und Action)}
+    \note[item]{Optimierung (fine-tuning) passiert end-to-end}
+    \note[item]{}
+    \note[item]{Oft ist die Ausgabe von neuronalen Netzen zur Posenbestimmung eine Heatmap. Heatmap stellt Softmaxverteilung da}
+    \note[item]{Argmax als postprocessing schritt nötig damit exakte Koordinaten. Wenn man end-to-end trainieren will ist ein nicht-differentierbares Argmax aber problematisch.}
+    \note[item]{Normalisierte Version des Erwartungswerts des Softmax in x und y Dimension}
 	\begin{columns}[T]
 	\begin{column}{.45\textwidth}
 		\begin{itemize}
@@ -348,7 +404,11 @@
 \end{myframe}
 
 \begin{myframe}[Multitask Deep HAR - Architecture]
-	\begin{columns}[T]
+    \note[item]{Basiert auf Inception v4 um Features zu extrahieren}
+    \note[item]{Prediction Blocks: Ähnlich zu Hourglasses von vorhin. Nach jedem Block ein Zwischenergebnis welches verfeinert wird.}
+    \note[item]{Nach letztem prediction block: Heatmap (Softargmax) und Wahrscheinlichkeitsvektor}
+
+    \begin{columns}[T]
         \begin{column}{.45\textwidth}
             \begin{itemize}
                 \item \textit{Multitask CNN}
@@ -374,6 +434,12 @@
 \end{myframe}
 
 \begin{myframe}[Multitask Deep HAR - Architecture]
+    \note[item]{Pipeline zu sehen.}
+    \note[item]{Auch hier: keine genauen Angaben zum Aufbau. Verweis auf Code}
+    \note[item]{Action Heatmap für jede Handlung. Mittles Pooling und Softmax dann Wahrscheinlichkeit}
+    \note[item]{Max+Min pooling: $f(x) = \text{MaxPooling}(x) - \text{MaxPooling}(-x)$}
+    \note[item]{Loss: Elstic Net loss}
+
 	\begin{columns}[T]
         \begin{column}{.45\textwidth}
             \begin{itemize}
@@ -400,6 +466,9 @@
 \end{myframe}
 
 \begin{myframe}[Multitask Deep HAR - Architecture]
+    \note[item]{Im Prinzip gleicher Aufbau wie vorher, nur mit Visual Features statt Posen}
+    \note[item]{\textbf{Am Ende:}}
+    \note[item]{Durch FC-Layer aggregation und mit softmax dann finales Ergebnis}
 	\begin{columns}[T]
         \begin{column}{.45\textwidth}
             \begin{itemize}
