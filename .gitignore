@@ -3,6 +3,7 @@ code/.app_keys.json
 
 # Python
 __pycache__/
+code/.ipynb_checkpoints
 
 # Latex
 *.aux
