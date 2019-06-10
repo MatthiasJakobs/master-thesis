@@ -270,6 +270,7 @@ After computing the partial derivative for each $w_i \in \bm{w}$ the \textit{gra
 Finally, the current weights $\bm{w_t}$ can be updated by changing the weights a certain \textit{step size or learning rate} $\gamma$ towards a local minimum of the error function by applying 
 
 \begin{equation}
+    \label{eq:gradient-binary-update}
     \bm{w_{t+1}} = \bm{w_t} - \gamma \nabla E(P \cup N, \bm{w_t})
 \end{equation}
 
@@ -294,10 +295,16 @@ One way of incorporating more complexity is by grouping perceptrons into \textit
 \end{figure}
 
 Let $\bm{N} = (N_1, \dots, N_L)$ be a \textit{multi-layer perceptron (MLP)} consisting of $L$ layers.
-Each layer $N_l$ consists of $m_l \in \mathbb{N}$ perceptrons.
-Consecutive layers are connected by directed, weighted edges $e_{ij} \in \mathbb{R}$ with $n_i \in N_l$ and $n_j \in N_{l+1}$ so that each perceptron $n_i$ is connected to the input of each perceptron $n_j$ in the consecutive layer.
+In the literature, the inputs are also considered a layer, even though they do not consist of perceptrons.
+This then means that a MLP has one input layer, several \textit{hidden layer} with the last hidden layer also providing the output.
+When reffering to the number of layers of a MLP only the hidden layer are counted, meaning that a MLP consisting of $L=3$ layer has one input layer and three hidden layer.
+
+Each hidden layer $N_l$ consists of $m_l \in \mathbb{N}$ perceptrons.
+Consecutive layers are connected by directed, weighted edges $w_{ij} \in \mathbb{R}$ with $n_i \in N_l$ and $n_j \in N_{l+1}$ so that each perceptron $n_i$ is connected to the input of each perceptron $n_j$ in the consecutive layer.
 Two perceptrons inside the same layer are not allowed to be connected in traditional MLP definitions.
 Also, the inputs to the MLP are only allowed to be connected to the first layer $N_1$.
+
+%The name \textit{multi-layer perceptron} is often used interchangeably to \textit{artificial neural network} which is why, from now on, both will refer to the same concept.
 
 By choosing $L=2$ a MLP is capable of modeling every convex solution space \cite{rojas_neural_1996}.
 The perceptrons in the first layer each learn to linearly separate the solution space into two parts like described earlier.
@@ -314,7 +321,7 @@ This means that it is possible to learn a convex solution space similar to \fref
 Even with the ability to model every convex solution space, there are still problems which have a \textit{non-convex solution space}.
 However, by adding another layer to the MLP ($L=3$) these problems can be solved.
 
-The first layer behaves just like in the previous example with each perceptron splitting the input space into two.
+The first hidden layer behaves just like in the previous example with each perceptron splitting the input space into two.
 Each perceptron in the second layer again learns \textbf{boolean AND} functions, resulting in $\lVert N_2 \rVert$ regions.
 In the third layer, a perceptron then combines these regions into non-convex regions using the learned \textbf{boolean OR} operator.
 In fact, a three-layer MLP is able to model any arbitrary function (with enough perceptrons per layer).
@@ -323,6 +330,135 @@ These intuitive ideas of how the MLP is able to model any arbitrary function doe
 They just show that these MLPs are powerful enough to model any arbitrary function by combining simple features (separating lines) from previous layers to form new, more complex features (combinations of convex regions) with each consecutive layer.
 
 \subsubsection{Backpropagation}
+
+Probably the most common learning algorithm for training MLPs is the \textbf{backpropagation algorithm}, initially proposed by Paul Werbos in 1974 and popularized by Rumelhart, Hinton and Williams in 1986.
+It uses gradient descent with the addition of propagating the error backwards through the network by making use of the chain rule of derivation.
+
+For each point $\bm{x_i}$ in the training data, the algorithm follows these steps:
+
+\begin{enumerate}
+    \item Start with random weights $\bm{W}_0 = (\bm{w_{1_0}}, \dots, \bm{w_{N_0}})$ for each neuron.
+    \item Pass $\bm{x_i}$ into the network (called a \textit{forward pass})
+    \begin{itemize}
+        \item $\hat{f}(\bm{x_i}, \bm{w}_0) = \bm{y_i}$
+    \end{itemize}
+    \item Compute gradient at the last layer by using a loss function and the expected result $\hat{\bm{y_i}}$.
+    \item Compute gradient for the previous layers, incorporating the error from the consecutive layers (called a \textit{backward pass}).
+    \item Update the weights with their corresponding gradients.
+\end{enumerate}
+
+In order to show how the backpropagation algorithm works consider a MLP with $L=2$ hidden layer $L_1, L_2$ and $\left| \bm{x} \right| = N$ inputs.
+Also, let $\lVert L_1 \rVert = \lVert L_2 \rVert = M$ without loss of generality.
+
+First, the forward pass is performed.
+The output of each neuron $h_j(\bm{x}, \bm{w_j}) = y_j$ in the first hidden layer can be described using the following equation
+
+\begin{equation}
+    \begin{split}
+        h_j(\bm{x}, \bm{w_j}) 
+        &= S(\bm{x} \cdot \bm{w_j}) \\
+        &= \frac{1}{1 + e^{-(\bm{x} \cdot \bm{w_j})}}
+    \end{split}
+\end{equation}
+
+Similarly, after the second layer, the output $g_k$ for each neuron given the network input can be described as 
+
+\begin{equation}
+    \begin{split}
+        g_k(\bm{x}, \bm{w_k}) 
+        &= S\left(\sum_{j=0}^M w_{jk} \cdot h_j(\bm{x}, \bm{w_j})\right) \\
+        &= S\left(\sum_{j=0}^M w_{jk} \cdot \left(\sum_{i=0}^N w_{ij} x_i\right)\right)
+    \end{split}
+\end{equation}
+
+For notational convenience, instead of \eref{eq:error-binary}, consider the following loss function.
+Every differentiable loss function can be used in the backpropagation algorithm.
+
+\begin{equation}
+    SSE(\bm{w}) = \sum_{\bm{x} \in B} (\hat{f}(\bm{x}, \bm{w}) - y_x)^2
+\end{equation}
+
+This loss function, the \textbf{sum of squared errors}, computes the output of the perceptron $\hat{f}(\bm{x}, \bm{w})$ for a given weight vector $\bm{w}$ and subtracts the expected output $y_x$ for the input $\bm{x}$.
+By computing the square of the result the error value will be positve and larger errors will contribute more towards the error sum.
+
+% TODO: Ich glaube es wurde noch nirgendwo das wort training data benutzt. Das kommt am besten schon in perceptron learning vor
+
+After the forward pass through the network the loss for a single output neuron $g_k$ is given by
+
+\begin{equation}
+    \begin{split}
+        SSE(\bm{x}, (\bm{w_j}, \bm{w_k})) 
+        &= (y_k - \hat{y}_{k})^2 \\
+        &= (g_k(\bm{x},\bm{w_k}) - \hat{y}_{k})^2 \\
+        &= \left(S \left(\sum_{j=0}^M w_{jk} \cdot h_j(\bm{x}, \bm{w_j})\right) - \hat{y}_{k}\right)^2 \\
+        &=  \left( S\left(\sum_{j=0}^M w_{jk} \cdot S \left(\sum_{i=0}^N w_{ij} x_i\right)\right) - \hat{y}_{k}\right)^2
+    \end{split}
+\end{equation}
+
+By using the same approach as with gradient descent, the partial derivative of the loss function with regards to the weights of the second layer is given by 
+
+\begin{equation}
+    \begin{split}
+        \frac{\partial ~ SSE(\bm{x}, \bm{w})}{\partial w_{jk}}
+        &= \frac{\partial}{\partial w_{jk}} (g_k(\bm{x},\bm{w_k}) - \hat{y}_{k})^2
+    \end{split}
+\end{equation}
+
+Using the chain rule for derivation 
+
+\begin{equation}
+    (p(b(x)))' = p'(b(x)) \cdot b'(x)
+\end{equation}
+
+the partial derivative can be broken down into 
+
+\begin{equation}
+    \begin{split}
+        \frac{\partial ~ SSE(\bm{x}, \bm{w})}{\partial w_{jk}}
+        &= \frac{\partial}{\partial w_{jk}} ~ (g_k(\bm{x},\bm{w_k}) - \hat{y}_{k})^2 \\
+        &= 2 \cdot (g_k(\bm{x},\bm{w_k}) - \hat{y}_{k}) \cdot  S'\left(\sum_{j=0}^M w_{jk} \cdot h_j(\bm{x}, \bm{w_j})\right) \cdot h_j(\bm{x}, \bm{w}_j) \\
+        &= 2 \cdot (y_k - \hat{y}_{k}) \cdot  y_k \cdot (1 - y_k) \cdot h_j(\bm{x}, \bm{w_j}) \\
+        &= \delta_k \cdot h_j(\bm{x}, \bm{w_j}) \\
+        &= \delta_k \cdot y_j
+    \end{split}
+\end{equation}
+
+One can observe that the output of all neurons from layer $N_{k}$ are needed to compute the partial derivate for neurons in layer $N_{k+1}$, which is why the initial forward pass through is necessary.
+
+Similarly, the partial derivative of the loss function with regards to $w_{ij}$ is given by \eref{eq:backprop-partial-hidden}. 
+However, while running backpropagation, the partial derivatives of all nodes in layer $N_{k+1}$ need to be computed first in order to determine the partial derivative of nodes in layer $N_{k}$ \cite{rojas_neural_1996}.
+
+\begin{equation}
+    \label{eq:backprop-partial-hidden}
+    \begin{split}
+        \frac{\partial ~ SSE(\bm{x}, \bm{w})}{\partial w_{ij}}
+        &= \frac{\partial}{\partial w_{ij}} ~ (g_k(\bm{x},\bm{w_k}) - \hat{y}_{k})^2 \\
+        &= 2 \sum_{k=0}^{K} (g_k(\bm{x},\bm{w_k}) - \hat{y}_{k}) \cdot  S'\left(\sum_{j=0}^M w_{jk} \cdot h_j(\bm{x}, \bm{w_j})\right) \cdot w_{jk} \cdot S'(\bm{x} \cdot \bm{w_j}) \cdot x_i \\
+        &= 2 \sum_{k=0}^{K} (g_k(\bm{x},\bm{w_k}) - \hat{y}_{k}) \cdot  g_k(\bm{x},\bm{w_k}) \cdot (1-g_k(\bm{x},\bm{w_k})) \cdot w_{jk} \cdot h_j(\bm{x}, \bm{w_j}) \cdot (1-h_j(\bm{x}, \bm{w_j})) \cdot x_i \\
+        &= 2 \sum_{k=0}^{K} (y_k - \hat{y}_{k}) \cdot  y_k \cdot (1-y_k) \cdot w_{jk} \cdot y_j \cdot (1-y_j) \cdot x_i \\
+        &= x_i \cdot y_j \cdot (1-y_j) \cdot \sum_{k=0}^{K} 2 \cdot (y_k - \hat{y}_{k}) \cdot y_k \cdot (1 - y_k) \cdot w_{jk} \\
+        &= x_i \cdot y_j \cdot (1-y_j) \cdot \sum_{k=0}^{K} \delta_k \cdot w_{jk} \\
+        &= x_i \cdot \delta_j
+    \end{split}
+\end{equation}
+
+After computing all partial derivatives for all neurons in the network, the weights can be updated, similarly to \eref{eq:gradient-binary-update}, using the following formulas:
+
+\begin{equation}
+    \begin{split}
+        w_{jk_{t+1}} 
+        &= w_{jk_{t}}  - \gamma \cdot \frac{\partial ~ SSE(\bm{x}, \bm{w})}{\partial w_{jk}} \\
+        &= w_{jk_{t}}  - \gamma \cdot \delta_k \cdot y_j
+    \end{split}
+\end{equation}
+
+\begin{equation}
+    \begin{split}
+        w_{ij_{t+1}} 
+        &= w_{ij_{t}} - \gamma \cdot \frac{\partial ~ SSE(\bm{x}, \bm{w})}{\partial w_{ij}} \\
+        &= w_{ij_{t}} - \gamma \cdot \delta_j \cdot x_i
+    \end{split}
+\end{equation}
 
 
 \subsection{Convolutional Neural Networks}
