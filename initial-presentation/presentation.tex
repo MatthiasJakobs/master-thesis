@@ -83,12 +83,13 @@
 
 \section{Motivation}
 \begin{myframe}[Motivation]
-  \note[item]{Motivieren mit einem use case}
   \note[item]{In Reining et al. sollen Handlungen von Menschen im Kontext Lagerhaus erkannt werden
   }
   \note[item]{Grund: Evaluieren, wie effizient der Pickingprozess ist}
   \note[item]{Mittels motion capturing wurden Skeletdaten (posen) erstellt.}
   \note[item]{Diese wurden dann als features für die action recognition verwendet}
+  \note[item]{}
+  \note[item]{Es gibt \textbf{Pose estimation methoden für video} die man dafür benutzen könnte}
   \note[item]{Es gibt auch verfahren, welche pose und handlungen gemeinsam lernen.}
   \note[item]{Dadurch sollen beide voneinander lernen. Ein solches verfahren schaue ich mir an, aber zunächst mal zur Inhalsübersicht.}
 
@@ -112,6 +113,8 @@
 
 \begin{myframe}[Fundamentals - HAR]
     \note[item]{Human Action Recognition}
+    \note[item]{Kontrolle von Mitarbeitern}
+    \note[item]{Steuerung von Computern mit Gesten}
     \note[item]{Beispiele: Gehen, hinlegen, telefonieren etc.}
     \begin{columns}
         \begin{column}{.48\textwidth}
@@ -121,12 +124,13 @@
                     \begin{itemize}
                         \item Video surveillance
                         \item Human-computer interaction
+                        \item Computer animation
                         \item Warehouse scenario from before
                     \end{itemize}
                 \item Multiple sources for detection
                 \begin{itemize}
                     \item Inertial Measurement Units (IMUs)
-                    \item Images (or video)
+                    \item Images (or \textbf{video})
                 \end{itemize}
             \end{itemize}
         \end{column}
@@ -143,17 +147,23 @@
 
 \begin{myframe}[Fundamentals - HAR]
     \note[item]{Menschliche Handlungen sind stark unterschiedlich da auch Menschen stark unterschiedlich sind (Kleidung, Körperform etc.)}
+    \note[item]{Dicke Winterjacke vs. nur Unterhemd}
+    \note[item]{}
+    \note[item]{Action aus Attributen zusammengesetzt}
     \begin{columns}
         \begin{column}{.48\linewidth}
             \begin{itemize}
-                \item High degree of interclass variance
-                \item How fine-grained?
-                \begin{itemize}
-                    \item \textit{Raising left arm} or
-                    \item \textit{Waving}
-                    \item \textit{attributes} vs. \textit{actions} \footnotemark
-                \end{itemize}
-            \end{itemize}
+                \item \textbf{Some challenges:}
+                    \begin{itemize}
+                        \item High degree of interclass variance
+                        \item How fine-grained?
+                        \begin{itemize}
+                            \item \textit{Raising left arm} or
+                            \item \textit{Waving}
+                            \item \textit{attributes} vs. \textit{actions} \footnotemark
+                        \end{itemize}
+                    \end{itemize}
+            \end{itemize}        
         \end{column}
         \begin{column}{.48\linewidth}
             \begin{figure}
@@ -169,9 +179,7 @@
 
 \begin{myframe}[Fundamentals - Pose Estimation]
     \note[item]{Extrahierung von Gelenkpunkten aus Bild (Heatmap oder Regression, je nach Anstatz)}
-    \note[item]{Verwandt mit Objekterkennung}
     \note[item]{Es gibt verschiedene Ansätze und Anzahl an Punkten. Manchmal Gesicht in verschiedene Punkte unterteilt}
-    \note[item]{3D Koordinaten Approximation möglich}
     \begin{columns}[T]
         \begin{column}{0.45\textwidth}
             \vspace{30px}
@@ -179,7 +187,6 @@
                 \item Detect joint locations
                 \item Different definitions
                 \item Single vs. multi person
-                \item 2D and 3D methods
             \end{itemize}
         \end{column}
         \begin{column}{0.55\textwidth}
@@ -198,7 +205,7 @@
 \end{myframe}
 
 \begin{myframe}[Fundamentals - Pose Estimation]
-    \note[item]{Überlappung und Verdeckung Probleme, nicht nur bei mehreren Personen pro Bild}
+    \note[item]{\textbf{Probleme}: Überlappung und Verdeckung , nicht nur bei mehreren Personen pro Bild}
     \begin{figure}
         \includegraphics[width=.99\textwidth]{pe-multihuman.png}
         \caption{Example of hard multi-person pose estimation situations.}
@@ -211,9 +218,13 @@
 \subsection{Pose Estimation}
 
 \begin{myframe}[Pose Estimation - Shallow Methods]
-    \note[item]{Ansatz: Menschliches Skelet besteht aus Strukturen (Gliedmaßen) welche mit "Federn" verbunden sind.}
+    \note[item]{Ansatz: Menschliches Skelet besteht aus Strukturen (Gliedmaßen) welche mit "Federn" verbunden sind. (\textit{also keine Gelenkpunkte})}
     \note[item]{$c$: Parameter welche gelernt werden. Sie geben an, wie die Gaussparameter sind etc.}
     \note[item]{Chamfer Distanz gibt an wie gut matching ist}
+    \note[item]{}
+    \note[item]{Approximate each limb as rectangle using $\ell = (x,y,s,\theta)$}
+    \note[item]{Maximize covered foreground pixels by parts $p(I \lvert \ell,c)$}
+    \note[item]{Relative positions / rotations between limbs $p(\ell_i,\ell_j \lvert c_{ij})$}
     \begin{columns}[T]
         \begin{column}{.48\textwidth}
             \begin{itemize}
@@ -223,14 +234,14 @@
                   \item Binary images (background subtraction)
                   \item \textit{Model each limb}
                   \begin{itemize}
-                      \item Approximate each limb as rectangle using $\ell = (x,y,s,\theta)$
-                      \item Maximize covered foreground pixels by parts $p(I \lvert \ell,c)$
+                      \item Approximate each limb as rectangle
+                      \item Maximize covered foreground pixels by parts
                   \end{itemize}
                   \item \textit{Relation between limbs}
                   \begin{itemize}
-                      \item Relative positions / rotations between limbs $p(\ell_i,\ell_j \lvert c_{ij})$
+                      \item Relative positions / rotations between limbs 
                   \end{itemize}
-                  \item Maximum likelihood estimation for $c$
+                  \item Maximum likelihood estimation
                   \item Chamfer Distance to evaluate sampled configurations
               \end{itemize}
             \end{itemize}
@@ -253,33 +264,29 @@
     \note[item]{Wichtig für Kombination von Features auf verschiedenen skalierungsstufen}
     \note[item]{}
     \note[item]{Durch aufeinanderfolgen: Initiale Ergebnisse werden immer weiter verfeinert und verbessert}
-    \note[item]{Geben keine Begründung für die Residual Modules. Normalerweise z.B. damit kein vanishing gradient auftritt}
-    \note[item]{Keine Aktivierungsfunktionen angegeben, also keine Ahnung warum kein ReLU}
     \begin{columns}[T]
         \begin{column}{.48\textwidth}
             \begin{itemize}
                 \item \textbf{Stacked hourglass network \footnotemark}
                   \begin{itemize}
-                    \item Pooling, upsampling, skip-connections
-                    \item 8 hourglasses back-to-back
-                    \item Intermediate supervision
-                    \item Residual modules~\footnotemark
-                    \item Mean-squared Error
-                    \item Refine result with each hourglass
-                    \item Most state-of-the-art methods build on top
+                    \item \textbf{Hourglass}
+                    \begin{itemize}
+                        \item Pooling, upsampling, skip-connections
+                        \item Intermediate supervision
+                    \end{itemize}
+                    \item \textbf{Stacked architectures}
+                    \begin{itemize}
+                        \item 8 hourglasses back-to-back
+                        \item Refine result with each hourglass
+                    \end{itemize}
                   \end{itemize}
             \end{itemize}
         \end{column}
         \footnotetext[1]{\cite{newell_stacked_2016}}
-        \footnotetext[2]{\cite{he_deep_2016}}
         \begin{column}{.48\textwidth}
             \begin{figure}
                 \includegraphics[width=.65\textwidth]{single-hourglass.png}
                 \sourcefix{1}
-            \end{figure}
-            \begin{figure}
-                \includegraphics[width=.65\textwidth]{residualmodule.png}
-                \sourcefix{2}
             \end{figure}
         \end{column}
     \end{columns}
@@ -292,7 +299,7 @@
 \begin{myframe}[Stacking architectures - Qualitative evaluations]
     \note[item]{Verfeinern der initialen Vorhersage und korrigieren von Fehlern z.B. Rechte Hand von anderer Person im Bild fälschlicherweise erkannt}
     \note[item]{Dadurch, dass spätere Module die Informationen von vorherigen bekommen können sie beispielsweise bei der Entscheidung "Welche Pixel gehöhren zum rechten Ellenbogen?" die vorherigen Ergebnisse für "Rechte Schulter" miteinbeziehen, welche in der Praxis oft einfacher zu finden sind.}
-    \note[item]{Selbst wenn noisy trotzdem von Vorteil.}
+    \note[item]{Selbst wenn \textbf{noisy} trotzdem von Vorteil.}
     \begin{figure}
         \includegraphics[width=0.75\textwidth]{context-belief-maps.png}
         \caption{Easier to detect features like head and neck can influence the detection of harder features like elbows and knees. Thus, an inititally wrong result (see \textit{R. Elbow} in Stage 1) can be corrected in later stages.\fcite{newell_stacked_2016}}
@@ -374,7 +381,7 @@
     \note[item]{Optimierung (fine-tuning) passiert end-to-end}
     \note[item]{}
     \note[item]{Oft ist die Ausgabe von neuronalen Netzen zur Posenbestimmung eine Heatmap. Heatmap stellt Softmaxverteilung da}
-    \note[item]{Argmax als postprocessing schritt nötig damit exakte Koordinaten. Wenn man end-to-end trainieren will ist ein nicht-differentierbares Argmax aber problematisch.}
+    \note[item]{\textbf{Argmax als postprocessing schritt nötig} damit exakte Koordinaten. Wenn man end-to-end trainieren will ist ein nicht-differentierbares Argmax aber problematisch.}
     \note[item]{Normalisierte Version des Erwartungswerts des Softmax in x und y Dimension}
 	\begin{columns}[T]
 	\begin{column}{.45\textwidth}
@@ -406,7 +413,9 @@
 \begin{myframe}[Multitask Deep HAR - Architecture]
     \note[item]{Basiert auf Inception v4 um Features zu extrahieren}
     \note[item]{Prediction Blocks: Ähnlich zu Hourglasses von vorhin. Nach jedem Block ein Zwischenergebnis welches verfeinert wird.}
-    \note[item]{Nach letztem prediction block: Heatmap (Softargmax) und Wahrscheinlichkeitsvektor}
+    \note[item]{Nach \textbf{jedem} prediction block: Heatmap (Softargmax) und Wahrscheinlichkeitsvektor}
+    \note[item]{Loss: Elstic Net loss}
+
 
     \begin{columns}[T]
         \begin{column}{.45\textwidth}
@@ -420,6 +429,7 @@
                         \item Coordinates from Soft-argmax
                         \item Join visibility vector using sigmoid
                     \end{itemize}
+                    \item Loss function $$L_p = \frac{1}{N_J}\sum_{n=1}^{N_J}(~ \lvert\lvert \hat{p}_n - p_n \rvert\rvert_1 ~+~ \lvert\lvert \hat{p}_n - p_n \rvert\rvert^2_2 ~ )$$
                 \end{itemize}
             \end{itemize}
         \end{column}
@@ -438,7 +448,6 @@
     \note[item]{Auch hier: keine genauen Angaben zum Aufbau. Verweis auf Code}
     \note[item]{Action Heatmap für jede Handlung. Mittles Pooling und Softmax dann Wahrscheinlichkeit}
     \note[item]{Max+Min pooling: $f(x) = \text{MaxPooling}(x) - \text{MaxPooling}(-x)$}
-    \note[item]{Loss: Elstic Net loss}
 
 	\begin{columns}[T]
         \begin{column}{.45\textwidth}
@@ -450,8 +459,7 @@
                     \begin{itemize}
                         \item Through softmax: action probabilities
                     \end{itemize}
-                    \item \textit{Max-min pooling}
-                    \item Loss function $$L_p = \frac{1}{N_J}\sum_{n=1}^{N_J}(~ \lvert\lvert \hat{p}_n - p_n \rvert\rvert_1 ~+~ \lvert\lvert \hat{p}_n - p_n \rvert\rvert^2_2 ~ )$$
+
                 \end{itemize}
             \end{itemize}
         \end{column}
@@ -511,6 +519,7 @@
 \end{myframe}
 
 \begin{myframe}[Method]
+    \note[item]{Dadurch: Eine Repräsentation für Video features und IMU Datenströme. \textit{Kombination?}}
     \begin{figure}
         \includegraphics[width=.65\textwidth]{jointsovertime.png}
         \caption{Approach used by \footnotemark. Convolution over all sensors at once. \sourcefix{1}}
