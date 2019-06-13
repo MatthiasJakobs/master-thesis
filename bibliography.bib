@@ -1413,3 +1413,77 @@ Volume 2016, Issue 10},
 	month = oct,
 	year = {2018}
 }
+
+@phdthesis{pons-moll_human_2014,
+	type = {{PhD} {Thesis}},
+	title = {Human {Pose} {Estimation} from {Video} and {Inertial} {Sensors}},
+	abstract = {The analysis and understanding of human movement is central to many applications such as sports
+science, medical diagnosis and movie production. The ability to automatically monitor human activity in security sensitive areas such as airports, lobbies or borders is of great practical importance.
+Furthermore, automatic pose estimation from images leverages the processing and understanding of
+massive digital libraries available on the Internet. We build upon a model based approach where the
+human shape is modeled with a surface mesh and the motion is parameterized by a kinematic chain.
+We then seek for the pose of the model that best explains the available observations coming from
+different sensors.
+In a first scenario, we consider a calibrated multiview setup in an indoor studio. To obtain very
+accurate results, we propose a novel tracker that combines information coming from video and a small
+set of Inertial Measurement Units (IMUs). We do so by locally optimizing a joint energy consisting
+of a term that measures the likelihood of the video data and a term for the IMU data. This is the
+first work to successfully combine video and IMUs information for full body pose estimation. When
+compared to commercial marker based systems the proposed solution is more cost efficient and less
+intrusive for the user.
+In a second scenario, we relax the assumption of an indoor studio and we tackle outdoor scenes with
+background clutter, illumination changes, large recording volumes and difficult motions of people
+interacting with objects. Again, we combine information from video and IMUs. Here we employ
+a particle based optimization approach that allows us to be more robust to tracking failures. To
+satisfy the orientation constraints imposed by the IMUs, we derive an analytic Inverse Kinematics
+(IK) procedure to sample from the manifold of valid poses. The generated hypothesis come from a
+lower dimensional manifold and therefore the computational cost can be reduced. Experiments on
+challenging sequences suggest the proposed tracker can be applied to capture in outdoor scenarios.
+Furthermore, the proposed IK sampling procedure can be used to integrate any kind of constraints
+derived from the environment.
+Finally, we consider the most challenging possible scenario: pose estimation of monocular images.
+Here, we argue that estimating the pose to the degree of accuracy as in an engineered environment
+is too ambitious with the current technology. Therefore, we propose to extract meaningful semantic
+information about the pose directly from image features in a discriminative fashion. In particular,
+we introduce posebits which are semantic pose descriptors about the geometric relationships between
+parts in the body. The experiments show that the intermediate step of inferring posebits from images
+can improve pose estimation from monocular imagery. Furthermore, posebits can be very useful as
+input feature for many computer vision algorithms.},
+	language = {en},
+	school = {Gottfried Wilhelm Leibniz Universität Hannover},
+	author = {Pons-Moll, Gerard},
+	year = {2014},
+	file = {dissertation.pdf:/tmp/dissertation.pdf:application/pdf}
+}
+
+@phdthesis{zhu_articulated_2016,
+	type = {{PhD} {Thesis}},
+	title = {Articulated human pose estimation in images and video},
+	school = {Troyes},
+	author = {Zhu, Aichun},
+	year = {2016},
+	file = {Zhu - 2016 - Articulated human pose estimation in images and vi.pdf:/home/matthias/Zotero/storage/DHUVHZA3/Zhu - 2016 - Articulated human pose estimation in images and vi.pdf:application/pdf}
+}
+
+@article{kong_human_2018,
+	title = {Human {Action} {Recognition} and {Prediction}: {A} {Survey}},
+	shorttitle = {Human {Action} {Recognition} and {Prediction}},
+	url = {http://arxiv.org/abs/1806.11230},
+	abstract = {Derived from rapid advances in computer vision and machine learning, video analysis tasks have been moving from inferring the present state to predicting the future state. Vision-based action recognition and prediction from videos are such tasks, where action recognition is to infer human actions (present state) based upon complete action executions, and action prediction to predict human actions (future state) based upon incomplete action executions. These two tasks have become particularly prevalent topics recently because of their explosively emerging real-world applications, such as visual surveillance, autonomous driving vehicle, entertainment, and video retrieval, etc. Many attempts have been devoted in the last a few decades in order to build a robust and effective framework for action recognition and prediction. In this paper, we survey the complete state-of-the-art techniques in the action recognition and prediction. Existing models, popular algorithms, technical difficulties, popular action databases, evaluation protocols, and promising future directions are also provided with systematic discussions.},
+	urldate = {2019-06-06},
+	journal = {arXiv:1806.11230 [cs]},
+	author = {Kong, Yu and Fu, Yun},
+	month = jun,
+	year = {2018},
+	note = {arXiv: 1806.11230},
+	keywords = {Computer Science - Computer Vision and Pattern Recognition},
+	file = {arXiv\:1806.11230 PDF:/home/matthias/Zotero/storage/6U48DCI5/Kong and Fu - 2018 - Human Action Recognition and Prediction A Survey.pdf:application/pdf;arXiv.org Snapshot:/home/matthias/Zotero/storage/3AXIYAVR/1806.html:text/html}
+}
+
+@inproceedings{nair_rectified_2010,
+	title = {Rectified linear units improve {Restricted} {Boltzmann} {Machines}},
+	booktitle = {Proceedings of the 27th {International} {Conference} on {Machine} {Learning} ({ICML})},
+	author = {Nair, Vinod and Hinton, Geoffrey E},
+	year = {2010},
+	pages = {807--814}
+}

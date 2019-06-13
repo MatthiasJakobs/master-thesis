@@ -442,24 +442,50 @@ However, while running backpropagation, the partial derivatives of all nodes in 
     \end{split}
 \end{equation}
 
-After computing all partial derivatives for all neurons in the network, the weights can be updated, similarly to \eref{eq:gradient-binary-update}, using the following formulas:
+Generaly, the error signal $\delta$ can be computed like this for all layer $L_g$ in the network:
+
+\begin{equation}
+    \delta_j = 
+    \begin{cases}
+        y_j \cdot (1 - y_j) \cdot (y_j - \hat{y}_j) & ~ \text{if} ~ L_g ~ \text{is output layer} \\
+        y_j \cdot (1 - y_j) \cdot \sum_{k \in L_{g+1}} \delta_k \cdot w_{jk} & ~ \text{else} 
+    \end{cases}
+\end{equation}
+
+After computing the error signal, the weight can be updated, similarly to \eref{eq:gradient-binary-update}, using the following formula:
 
 \begin{equation}
     \begin{split}
-        w_{jk_{t+1}} 
-        &= w_{jk_{t}}  - \gamma \cdot \frac{\partial ~ SSE(\bm{x}, \bm{w})}{\partial w_{jk}} \\
-        &= w_{jk_{t}}  - \gamma \cdot \delta_k \cdot y_j
+        w_{jk_{(t+1)}} 
+        &= w_{jk_{(t)}}  - \gamma \cdot \delta_k \cdot y_j
     \end{split}
 \end{equation}
+
+One problem that held the development of deep networks with many hidden layers back is the \textbf{vanishing gradient} problem.
+As seen previously, part of the gradient that gets propagated back through the network to update the parameters is the derivative of the activation function.
+When choosing the activation function to be sigmoid, the following can be easily shown:
 
 \begin{equation}
-    \begin{split}
-        w_{ij_{t+1}} 
-        &= w_{ij_{t}} - \gamma \cdot \frac{\partial ~ SSE(\bm{x}, \bm{w})}{\partial w_{ij}} \\
-        &= w_{ij_{t}} - \gamma \cdot \delta_j \cdot x_i
-    \end{split}
+    \frac{dS(x)}{dx} \leq 0.25
 \end{equation}
 
+A similar behaviour is true for many other activation functions like $tanh(x)$.
+Thus, when multiplying many of such gradients together the overall gradient \textit{vanishes}, which means that the layers towards the beginning of the network are not trained efficiently.
+
+One way of dealing with this problem is using the \textbf{Rectified Linear Unit} nonlinearity as activation function, as proposed in \cite{nair_rectified_2010}:
+
+\begin{equation}
+    \text{ReLU}(x) = \max (0, x)
+\end{equation}
+
+When computing the derivative of \textbf{ReLU}, it becomes clear that the vanishing gradient problem cannot occur because the gradient is either propagated completely or not at all as opposed to being diminished:
+
+\begin{equation}
+    \frac{d \text{ReLU}(x)}{dx} = \begin{cases}
+        1 & if ~ x > 0 \\
+        0 & if ~ x < 0
+    \end{cases}
+\end{equation}
 
 \subsection{Convolutional Neural Networks}
 \subsubsection{Convolutional Layer}
