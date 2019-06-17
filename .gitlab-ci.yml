@@ -14,4 +14,4 @@ compile_thesis:
     - latexmk
   artifacts:
     paths:
-      - thesis/main.pdf
+      - thesis/thesis.pdf
