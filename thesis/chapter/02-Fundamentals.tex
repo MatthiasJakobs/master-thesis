@@ -15,6 +15,8 @@
 
 \section{Neural Networks}
 % TODO: Short section about motivation by biology
+Neural networks are becoming increasingly popular in modern computer vision and machine learning pipelines due to their high classification accuracy achieved by using deep architectures.
+In the following chapter, an introduction into their functionality is given, as well as an outline of how they learn from data.
 
 \subsection{Artificial Neural Networks}
 
@@ -295,6 +297,7 @@ One way of incorporating more complexity is by grouping perceptrons into \textit
 \end{figure}
 
 Let $\bm{N} = (N_1, \dots, N_L)$ be a \textit{multi-layer perceptron (MLP)} consisting of $L$ layers.
+From now on, the term \textit{multi-layer perceptron} and \textit{neural network} are used interchangeably as long as the properties discussed apply to both.
 In the literature, the inputs are also considered a layer, even though they do not consist of perceptrons.
 This then means that a MLP has one input layer, several \textit{hidden layer} with the last hidden layer also providing the output.
 When reffering to the number of layers of a MLP only the hidden layer are counted, meaning that a MLP consisting of $L=3$ layer has one input layer and three hidden layer.
@@ -533,7 +536,14 @@ For each index $(i,j)$ in the input image, the output of the convolution is the 
 \end{equation}
 
 with $s = \lfloor \frac{p}{2} \rfloor$.
-A visualization of this process can be seen in %TODO: Bild finden und einfügen
+A visualization of this process can be seen in \fref{fig:conv-vis}.
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.8\textwidth]{conv-freecodecamp}
+    \caption{Visualisation of one step of a convolutional layer. Image taken from \cite{dertat_applied_2017}}
+    \label{fig:conv-vis}
+\end{figure}
 
 In practice, each convolutional layer consists of multiple kernels, each with distinct weights.
 
@@ -565,7 +575,7 @@ For corner pixels, this cannot be the case, however, if the kernel size is bigge
 This then means that the output would be smaller in dimension because the corner pixels need to be ommited in order to calculate the convolution.
 
 Padding fills in the missing values when calculating convolutions.
-One popular approach is to fill the missing indices with $0$. Consider the following example for a $(3,3)$ kernel at the image position $(i,j) = (0,0)$:
+One popular approach is to fill the missing values with $0$. Consider the following example for a $(3,3)$ kernel at the image position $(i,j) = (0,0)$, which is defined as the top-left corner of the image:
 
 \begin{equation}
     \begin{split}
@@ -579,11 +589,44 @@ One popular approach is to fill the missing indices with $0$. Consider the follo
 % stride ?
 
 
-% receptive field
+% receptive field ?
 
-% stacking layers
+% stacking layers ?
 
 
 \subsubsection{Pooling Layer}
+Another important layer type when using Convolutional Neural Networks is a pooling layer.
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.8\textwidth]{pooling-tds.png}
+    \caption{Example of a $2 \times 2$ Max-Pooling operation. Image taken from \cite{cornelisse_intuitive_2018}}
+    \label{fig:pooling-tds}
+\end{figure}
+
+There are different types of pooling layer, however the most popular is the \textbf{Max-Pooling} layer where, for each $n \times n$ pixel block the maximum value is used as the output.
+This then means that the size of the image is reduced.
+For example, using a $2 \times 2$ Max-Pooling layer, the size is reduced by a factor of two in both dimensions.
+See \fref{fig:pooling-tds} for a visualization.
+
+Using a pooling layer, the representation becomes invariant to translations.
+This means that small translations in an input image do not change the output of the pooling layer.
+Pooling layers are useful if it is more important whether or not some feature is present in the image as opposed to finding the exact location.
+For the task of image classification, for example, knowing that the image contains a face is more useful than to know the exact location of the face.
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.8\textwidth]{pooling-goodfellow.png}
+    \caption{Illustration of a Max-Pooling layer learning invariance towards rotation. By comparing the input against multiple differently rotated versions and just propagating the highest activation no matter which of the filters ultimately detected the number. Image taken from \cite{goodfellow_deep_2016}}
+    \label{fig:pooling-goodfellow}
+\end{figure}
+
+This aspect of invariance towards translation is just an example, however.
+Using a pooling layer, invariance towards specific characteristics can be learned.
+Consider Fig. \ref{fig:pooling-goodfellow} where, using a pooling layer, invariance towards rotation is learned.
 
 \subsubsection{Fully-Connected Layer}
+After convolution and pooling layer for extracting features, many use cases require a classification step.
+Consider image classification or character recognition tasks as an example.
+For this purpose, traditional layer of neurons like introduced earlier can be added to a convolutional neural network.
+In the contxt of CNNs, these layers are referred to as \textbf{fully-connected} layers.
