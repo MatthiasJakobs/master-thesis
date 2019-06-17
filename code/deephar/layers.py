@@ -11,6 +11,13 @@ class SeparableConv2D(nn.Module):
         out = self.pointwise(out)
         return out
 
+class Residual(nn.Module):
+    def __init__(self, input_model):
+        super(Residual, self).__init__()
+        self.input_model = input_model
+
+    def forward(self, x):
+        return self.input_model(x) + x
 
 def CBA(input_filters=3, output_filters=32, kernel_size=(3,3), stride=(1,1), padding=1):
     return nn.Sequential(
@@ -26,10 +33,10 @@ def ACB(input_filters=3, output_filters=32, kernel_size=(3,3), stride=(1,1), pad
         nn.BatchNorm2d(output_filters, momentum=0.99, eps=0.001)
     )
 
-def Sep_ACB(input_filters=3, output_filters=32, kernel_size=(3,3), stride=(1,1), padding=1):
+def Sep_ACB(input_filters=384, output_filters=576, kernel_size=(3,3), stride=(1,1), padding=1):
     return nn.Sequential(
         nn.ReLU(),
-        SeparableConv2D(input_filters=384, output_filters=576, kernel_size=(3,3)),
+        SeparableConv2D(input_filters=input_filters, output_filters=output_filters, kernel_size=(3,3)),
         nn.BatchNorm2d(output_filters, momentum=0.99, eps=0.001)
     )
 
