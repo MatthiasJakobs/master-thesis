@@ -8,10 +8,61 @@
 \end{itemize}
 
 \section{Human Action Recognition}
+In \textit{Human Action Recognition}, often referred to simply by its acronym \textit{HAR}, the task is to attach a label of an \textit{action} to a signal, be it an image, a video or a set of other sensor values.
+Thus, HAR is a \textit{classification} problem where the classes are human actions.
+It is important to understand that HAR recognizes the action after it is completed, as opposed to \textit{action prediction} which tries to predict the action while it is still happening \cite{kong_human_2018}.
 
-\subsection{Video-based HAR}
+Typical use-cases of Human Action Recognition consists of evaluating human behaviour, for example in a warehouse context \cite{reining_towards_2018}, or analyzing video surveillance footage \cite{htike_human_2014}.
+An example of simple actions performed by multiple subjects is provided in \fref{fig:simple-actions}.
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.8\textwidth]{simple-actions.png}
+    \caption{Example of six actions performed by four different subjects, annotated with their corresponding label (top). Image taken from \cite{laptev_learning_2008} }
+    \label{fig:simple-actions}
+\end{figure}
 
 \subsection{Action Granularity}
+When discussing \textit{action}, it should be noted that there are different interpretations, not only of what consists an action but also how finely they should be specified.
+As an illustration, consider an image of a person waving with her left hand at the camera.
+It is not inherently clear whether the label attached to this action should be \textit{waving}, \textit{raising left arm} or else.
+This is why the choice of labels is often domain specific. 
+
+According to \cite{zhang_review_2017}, human actions can be categorized into three levels, referred to as \textit{action primitives, activities and interactions}.
+\textit{Action primitives} consists of actions where one part of the body is performing the actions.
+For example, \textit{waving} or \textit{clapping} would constitute action primitives since a specific part of the body is responsible.
+In contrast, \textit{activities} are actions where the whole body is involved in performing the action.
+As an example, consider \textit{jumping} or \textit{jogging}.
+When considering actions performed involving objects or other persons, i.e. \textit{shaking hands} or \textit{throwing a ball}, \cite{zhang_review_2017} categorize these actions as \textit{interactions}.
+
+\subsection{Video-based HAR}
+When considering HAR on video clips, some domain-specific problems arise, which are outlined in \cite{zhang_review_2017}.
+
+Firstly, depending on the camera and recording technique used, the background of the image can be highly dynamic.
+This means that the amount of information irrelevant for identifying the action can be very high and might change constantly.
+As an example, consider a video filmed with a hand-held modern smart phone.
+Because the camera is not stationary, the background will shift while recording.
+Also, depending on the scene, illumination changes and occlusion of the human subject might occur. 
+
+Secondly, different actions can have similar visual shapes.
+Consider \textit{talking on the phone} and \textit{military salute}.
+In both cases, the dominant hand is positioned at the side of the subjects head.
+Depending on factors like image quality, the subjects rotation towards the camera etc. these two actions might be hard to differentiate.
+Also, consider \textit{walking} and \textit{running}.
+It is not inherently clear where the boundary between these two classes are, i.e. up to which point is a subject still \textit{walking} and when does the subject begin to \textit{run}?
+This problem is referred to as \textit{interclass similarity}.
+Another similar problem is \textit{intraclass variation}, where the same action performed by different subjects might vary in its visual representation.
+As an example, consider \textit{throwing a ball}.
+The scene will differ a lot when considering different clothing of the subject, different shape and color of the ball as well as different contexts where the action is happening, i.e. in a backyard, in a baseball stadium etc.
+Also, performing actions at different intensities can alter their appearence, for example \textit{running} can be performed at slow to high speed and might even involve small jumps \cite{kong_human_2018}.
+
+Thirdly, \cite{zhang_review_2017} mention \textit{group activities}.
+When there are multiple subjects performing actions in a frame, it can be difficult to differentiate between many individual actions and a group action.
+An example would be the difference between \textit{running} and \textit{playing football}.
+Not only is a lot of context necessary to be able to determine a group activity but also to determine which subjects are part of the group activity and which are not.
+Consider the case where, in a single frame, two subjects are playing football and two subjects are sitting, reading a book.
+No single label is able to fully describe the human actions present in the image.
+Thus, a sizeable portion of literature focuses on single human, single action problems.
 
 \section{Neural Networks}
 Neural networks are becoming increasingly popular in modern computer vision and machine learning pipelines due to their high classification accuracy achieved by using deep architectures.
