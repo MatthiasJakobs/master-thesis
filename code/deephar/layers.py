@@ -89,4 +89,18 @@ class Softargmax(nn.Module):
         x = torch.cat((x_x, x_y))
         return x
 
+class JointProbability(nn.Module):
+    def __init__(self, filters=16, kernel_size=(32,32)):
+        super(JointProbability, self).__init__()
 
+        self.maxpool = nn.MaxPool2d(kernel_size=kernel_size, padding=0)
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+        x = self.maxpool(x)
+        x = self.sigmoid(x)
+        x = torch.squeeze(x, dim=-1)
+        x = torch.squeeze(x, dim=-1)
+        print(x.size())
+  
+        return x
