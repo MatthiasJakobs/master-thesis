@@ -7,11 +7,11 @@ compile_proposal:
     paths:
       - proposal/main.pdf
 
-# compile_thesis:
-#   image: aergus/latex
-#   script:
-#     - cd thesis
-#     - latexmk -pdf main.tex
-#   artifacts:
-#     paths:
-#       - thesis/main.pdf
+compile_thesis:
+  image: aergus/latex
+  script:
+    - cd thesis
+    - latexmk
+  artifacts:
+    paths:
+      - thesis/thesis.pdf
