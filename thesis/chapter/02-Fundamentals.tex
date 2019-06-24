@@ -19,7 +19,7 @@ An example of simple actions performed by multiple subjects is provided in \fref
 When discussing \textit{action}, it should be noted that there are different interpretations, not only of what consists an action but also how finely they should be specified.
 As an illustration, consider an image of a person waving with her left hand at the camera.
 It is not inherently clear whether the label attached to this action should be \textit{waving}, \textit{raising left arm} or else.
-This is why the choice of labels is often domain specific. 
+This is why the choice of labels is often domain specific.
 
 According to \cite{zhang_review_2017}, human actions can be categorized into three levels, referred to as \textit{action primitives, activities and interactions}.
 \textit{Action primitives} consists of actions where one part of the body is performing the actions.
@@ -35,7 +35,7 @@ Firstly, depending on the camera and recording technique used, the background of
 This means that the amount of information irrelevant for identifying the action can be very high and might change constantly.
 As an example, consider a video filmed with a hand-held modern smart phone.
 Because the camera is not stationary, the background will shift while recording.
-Also, depending on the scene, illumination changes and occlusion of the human subject might occur. 
+Also, depending on the scene, illumination changes and occlusion of the human subject might occur.
 
 Secondly, different actions can have similar visual shapes.
 Consider \textit{talking on the phone} and \textit{military salute}.
@@ -58,11 +58,61 @@ No single label is able to fully describe the human actions present in the image
 Thus, a sizeable portion of literature focuses on single human, single action problems.
 
 \section{Pose Estimation}
-\begin{itemize}
-    \item Regression-based
-    \item Heatmaps
-    \item sometimes joints, sometimes body parts
-\end{itemize}
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.9\textwidth]{tree-pose.png}
+    \caption{Examples of human pose estimation. The pose is represented using a tree structure of joint positions, forming a skeleton. Image taken from \cite{newell_stacked_2016}}
+    \label{fig:tree-skeleton}
+\end{figure}
+
+Pose estimation is defined by extracting the coordinates of human joints from an image or from other signals.
+In this thesis, however, the main focus is performing pose estimation using image-based methods.
+The joint positions are then often represented in a tree structure representing a skeleton.
+See \fref{fig:tree-skeleton} for an example.
+
+Such a representation of the human pose is useful in a lot of scenarios.
+Action recognition, presented previously, often incorporates the pose of a human to identify the action performed by that human.
+Additionally, since computer generated characters in movies become even more prevalent in recent years, pose estimation is often used for motion capturing, where an actors pose is used for animating a computer generated character.
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.9\textwidth]{2dheatmaps.png}
+    \caption{Representing joint coordinates as probability heatmaps. From left to right: Tree structure representation of all joints, left shoulder, left elbow, left hand, right knee and right ankle. Image taken from \cite{newell_stacked_2016}}
+    \label{fig:probability-heatmaps}
+\end{figure}
+
+The skeleton structure shown is just a visualization of the data generated.
+When computing pose, two main approaches are used.
+Firstly, many approaches use regression to directly compute the image coordinates.
+This approach was used in the early work because its reasoning is intuitive.
+Secondly, heatmaps are used which represent a discrete probability distribution over the $x$ and $y$ coordinates.
+One 2D heatmap corresponds to the position of one joint.
+An example is provided in \fref{fig:probability-heatmaps}.
+According to \cite{luvizon_2d/3d_2018}, in practice, heatmap based methods are preferred because the regression methods are often sub-optimal and result in lower accuracy of joint positions.
+In order to extract the joint coordinates from heatmaps, a post processing step like the \textit{argmax} is needed.
+
+When computing pose from images, one obvious challenge is variety in appearance because of different choices in \textbf{clothing}.
+Consider the difference between detecting elbows in a picture with a person wearing a T-shirt and a picture with a person wearing a jacket.
+Not only is the naked elbow exposed in the first example but the overall shape of the person is distorted because of the thick fabric of the jacket in the second example.
+This problem also applies when considering the substantial differences in human appearance based on height, weight etc.
+
+Another challenge is \textbf{occlusion} and \textbf{self-occlusion}. Occlusion happens when another object is in the line of sight of the camera, occluding parts of or the whole joint.
+Self-occlusion means that the subject in the image is positioned to the camera in such a way that their own body occludes the joints.
+When occlusion happens, image-based methods need to infer the most likely position from context and (depending on the approach) their information about human anatomy.
+
+When focusing on detecting the pose of a single human, other \textbf{humans in the background} might complicate the process because their joints could be wrongly recognized as belonging to the desired subject.
+Consider again the examples provided in \fref{fig:tree-skeleton}.
+It is easy to see how such errors can occur in crowded environments.
+
+According to \cite{zhu_articulated_2016}, there are two general approaches for pose estimation.
+First, in \textit{top-down pose estimation}, a generic model of a human is used as a starting point.
+This model is then updated based on the information gathered from the images.
+That way, there is always a model where all joints are present (i.e. occlusion is handled easily).
+This approach, however, requires a priori assumptions about the human body and may lead to subpar results when these assumptions are not true (i.e. people with disabilities, exceptionally tall or heavy people etc.).
+Second, \textit{bottom-up pose estimation} focuses on detecting individual body parts.
+These individual parts can then be combined together into the final pose representation.
+Because part detectors got significantly more accurate in recent years due to the development of \textit{deep convolutional neural networks} this is the predominant approach for pose estimation in the current literature and also the approach of all methods presented in detail later.
 
 \section{Neural Networks}
 Neural networks are becoming increasingly popular in modern computer vision and machine learning pipelines due to their high classification accuracy achieved by using deep architectures.
