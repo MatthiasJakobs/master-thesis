@@ -72,102 +72,91 @@ class PennActionDataset(data.Dataset):
 
         return {"action": action, "images": np.array(images), "poses": np.array(pose), "visibility": np.array(visibility)}
 
-def create_custom_mpii(root_dir):
-    print("create custom mpii into {}".format(root_dir))
-
-    labels = sio.loadmat(root_dir + "mpii_human_pose_v1_u12_1")["RELEASE"]
-    total_length = len(labels["annolist"][0][0][0])
-
-    # at this moment, I only use training data (for testing) because they have full annotation
-    train_binary = labels["img_train"][0][0][0]
-    indexes = np.where(np.array(train_binary))[0]
-    
-    data = []
-
-    for i, idx in enumerate(indexes):
-        label = labels["annolist"][0][0][0][idx]
-        image_name = label["image"]["name"][0][0][0]
-
-        #if len(labels["act"][0][0][idx][0][1]) == 0:
-        #    continue
-
-        # multiple action annotations possible
-        #actions = list(map(lambda x: x.strip(), labels["act"][0][0][idx][0][1][0].split(',')))
-
-        # TODO: 
-        # MPII has an attribute suggesting "sufficiently seperated persons".
-        # Here, I chose to use the first in the list (if any) and "1" (the first person in the image) else
-        # Need to check with code how they used it.
-        # For now, this should work fine for testing
-
-        try:
-            single_person_id = labels["single_person"][0][0][idx][0][0][0]
-        except IndexError:
-            single_person_id = 1
-
-        if len(label["annorect"]) == 0:
-            continue
-
-        try:
-            if len(label["annorect"]["annopoints"][0][0]) == 0:
-                continue
-        except ValueError:
-            continue
-
-        try:
-            x_coords = list(map(lambda x: x[0][0], label["annorect"]["annopoints"][0][single_person_id - 1]["point"][0][0]["x"][0]))
-            y_coords = list(map(lambda x: x[0][0], label["annorect"]["annopoints"][0][single_person_id - 1]["point"][0][0]["y"][0]))
-            visibility = list(map(lambda x: x[0][0] if len(x) > 0 else 0, label["annorect"]["annopoints"][0][single_person_id - 1]["point"][0][0]["is_visible"][0]))
-        except ValueError:
-            print("no coordinates for index {}".format(idx))
-        except Exception as error:
-            print(error)
-            print("error for index {}".format(idx))
-            return
-
-        pose = np.array([x_coords, y_coords]).T
-
-        frame_data = [i, image_name]
-        frame_data.extend([item for sublist in pose for item in sublist])
-        frame_data.extend(visibility)
-
-        data.append(frame_data)
-        
-
-    df = pd.DataFrame(data, columns=["id", "image_name", "joint_x_1", "joint_y_1", "joint_x_2", "joint_y_2", "joint_x_3", "joint_y_3", "joint_x_4", "joint_y_4", "joint_x_5", "joint_y_5", "joint_x_6","joint_y_6", "joint_x_7", "joint_y_7", "joint_x_8", "joint_y_8", "joint_x_9", "joint_y_9","joint_x_10", "joint_y_10", "joint_x_11", "joint_y_11", "joint_x_12", "joint_y_12", "joint_x_13", "joint_y_13", "joint_x_14", "joint_y_14","joint_x_15", "joint_y_15", "joint_x_16","joint_y_16", "visibility_1", "visibility_2", "visibility_3", "visibility_4", "visibility_5", "visibility_6", "visibility_7", "visibility_8", "visibility_9", "visibility_10", "visibility_11", "visibility_12", "visibility_13", "visibility_14", "visibility_15", "visibility_16"])
-    df.to_csv(root_dir + "custom_mpii.csv")
-
-
 class MPIIDataset(data.Dataset):
+
+    '''
+    What is (probably) happening with the train / val split of luvizon:
+        - They load training data only and extract each person. Afterwards, they split it up
+          into train / val and save it.
+        - When I do it like below, almost exactly size(me) = size(train_luvizon) + size(val_luvizon)
+    '''
 
     def __init__(self, root_dir, transform=None):
         self.root_dir = root_dir
 
-        if not "custom_mpii.csv" in os.listdir(self.root_dir):
-            create_custom_mpii(self.root_dir)
+        assert "annotations.mat" in os.listdir(self.root_dir)
+
+        annotations = sio.loadmat(self.root_dir + "annotations")["RELEASE"]
         
-        self.labels = pd.read_csv(self.root_dir + "custom_mpii.csv")
+        train_binary = annotations["img_train"][0][0][0]
+        train_indeces = np.where(np.array(train_binary))[0]
+        
+        self.labels = []
+        missing_annnotation_count = 0
+
+        for i, idx in enumerate(train_indeces):
+            label = annotations["annolist"][0][0][0][idx]
+            image_name = label["image"]["name"][0][0][0]
+
+            annorect = label["annorect"]
+            if len(annorect) == 0:
+                # some labels are not present in the annotation file
+                missing_annnotation_count += 1
+                continue
+
+
+            for rect_id in range(len(annorect[0])):
+                ann = annorect[0][rect_id]
+                
+                if len(ann) < 7 or len(ann) == 22 or len(ann[4]) == 0:
+                    missing_annnotation_count += 1
+                    continue
+                
+                head_coordinates = [ ann[0][0][0], ann[1][0][0], ann[2][0][0], ann[3][0][0]] # rect x1, y1, x2, y2
+
+                # some annotations contain additional fields, thus need to compensate indice choice
+                scale_index = len(ann)-2
+                obj_pose_index = len(ann)-1
+        
+                obj_pose = [ann[obj_pose_index][0][0][0][0][0], ann[obj_pose_index][0][0][1][0][0]] # rough position of human body (x,y)
+
+                scale = ann[scale_index][0][0]
+
+                pose = {"x": [], "y": [], "visible": [], "ids": []}
+
+                for joint_label in ann[4][0][0][0][0]:
+                    pose["x"].append(joint_label[0][0][0])
+                    pose["y"].append(joint_label[1][0][0])
+                    pose["ids"].append(joint_label[2][0][0])
+                    
+                    try:
+                        visible = joint_label[3][0][0]
+                    except IndexError:
+                        # For some reason, sometimes "not visible" is encoded as 0 and sometimes as an empty array
+                        visible = 0
+                    
+                    pose["visible"].append(visible)
+
+                final_label = {
+                    "head": head_coordinates,
+                    "scale": scale,
+                    "obj_pose": obj_pose,
+                    "pose": pose,
+                    "image_name": image_name
+                }
+
+                self.labels.append(final_label)
 
     def __len__(self):
         return len(self.labels)
 
     def __getitem__(self, idx):
-        item = self.labels.iloc[idx].to_dict()
+        label = self.labels[idx]
 
-        full_image_path = self.root_dir + "images/" + item["image_name"]
+        full_image_path = self.root_dir + "images/" + label["image_name"]
         image = io.imread(full_image_path)
 
-        pose = []
-        visibility = []
-        for i in range(1,17):
-            x = item["joint_x_" + str(i)]
-            y = item["joint_y_" + str(i)]
-            v = item["visibility_" + str(i)]
-
-            pose.append([x,y])
-            visibility.append(v)
-        
-        return {"pose": pose, "image": image, "visibility": visibility}
+        return image, label
 
     
 class JHMDBDataset(data.Dataset):
