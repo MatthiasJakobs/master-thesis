@@ -36,6 +36,34 @@ def show_pose_on_image(image, pose, visibility):
     plt.pause(0.001)
     plt.show()
 
+def show_pose_mpii(image, label):
+    xs = label["pose"]["x"]
+    ys = label["pose"]["y"]
+    vis = label["pose"]["visible"]
+
+    print(label["pose"])
+
+    plt.figure()
+    plt.imshow(image)
+
+    for i,joint in enumerate(xs):
+        x = xs[i]
+        y = ys[i]
+
+        if vis[i]:
+            c = "g"
+        else:
+            c = "r"
+        print(x,y)
+        plt.scatter(x, y, s=10, marker="*", c=c)
+
+    # print objpose in blue
+    print("objpose", label["obj_pose"][0], label["obj_pose"][1])
+    plt.scatter(label["obj_pose"][0], label["obj_pose"][1], s=10, marker="*", c="b")
+    plt.pause(0.001)
+    plt.show()
+
+
 class PennActionDataset(data.Dataset):
 
     def __init__(self, root_dir, transform=None):
@@ -72,6 +100,10 @@ class PennActionDataset(data.Dataset):
 
         return {"action": action, "images": np.array(images), "poses": np.array(pose), "visibility": np.array(visibility)}
 
+
+def superflatten(array):
+    return array.flatten()[0]
+
 class MPIIDataset(data.Dataset):
 
     '''
@@ -94,7 +126,7 @@ class MPIIDataset(data.Dataset):
         self.labels = []
         missing_annnotation_count = 0
 
-        for i, idx in enumerate(train_indeces):
+        for idx in train_indeces:
             label = annotations["annolist"][0][0][0][idx]
             image_name = label["image"]["name"][0][0][0]
 
@@ -107,35 +139,45 @@ class MPIIDataset(data.Dataset):
 
             for rect_id in range(len(annorect[0])):
                 ann = annorect[0][rect_id]
-                
-                if len(ann) < 7 or len(ann) == 22 or len(ann[4]) == 0:
-                    missing_annnotation_count += 1
+                head_coordinates = [ 
+                    superflatten(ann["x1"]), 
+                    superflatten(ann["y1"]), 
+                    superflatten(ann["x2"]), 
+                    superflatten(ann["y2"])
+                ] # rect x1, y1, x2, y2
+                try:
+                    scale = superflatten(ann["scale"])
+                    
+                    obj_pose = [
+                        # rough position of human body (x,y)
+                        superflatten(superflatten(ann["objpos"]["x"])),
+                        superflatten(superflatten(ann["objpos"]["y"]))
+                    ]
+
+                    point = superflatten(ann["annopoints"]["point"])
+                    
+                    xs = list(map(lambda x: superflatten(x), point["x"].flatten()))
+                    ys = list(map(lambda x: superflatten(x), point["y"].flatten()))
+
+                    # 0:r ankle 1:r knee 2:r hip 3:l hip 4:l knee 5:l ankle 6:pelvis 7:thorax 8:upper neck 9:head top 10:r wrist 11:r elbow 12:r shoulder 13:l shoulder 14:l elbow 15:l wrist
+                    ids = list(map(lambda x: superflatten(x), point["id"].flatten()))
+                    vs = []
+                    for i,v in enumerate(point["is_visible"].flatten()):
+                        try:
+                            if ids[i] == 8 or ids[i] == 9:
+                                # for some reason, upper neck and head annotations are always empty, probably  because they are always visible(?)
+                                # set them to be always visible
+                                vs.append(1)
+                            else:
+                                vs.append(superflatten(v))
+                        except IndexError:
+                            vs.append(0)
+                except (IndexError, ValueError):
+                    # all these fields are necessary, thus: skip if not present
+                    missing_annnotation_count = missing_annnotation_count + 1
                     continue
-                
-                head_coordinates = [ ann[0][0][0], ann[1][0][0], ann[2][0][0], ann[3][0][0]] # rect x1, y1, x2, y2
 
-                # some annotations contain additional fields, thus need to compensate indice choice
-                scale_index = len(ann)-2
-                obj_pose_index = len(ann)-1
-        
-                obj_pose = [ann[obj_pose_index][0][0][0][0][0], ann[obj_pose_index][0][0][1][0][0]] # rough position of human body (x,y)
-
-                scale = ann[scale_index][0][0]
-
-                pose = {"x": [], "y": [], "visible": [], "ids": []}
-
-                for joint_label in ann[4][0][0][0][0]:
-                    pose["x"].append(joint_label[0][0][0])
-                    pose["y"].append(joint_label[1][0][0])
-                    pose["ids"].append(joint_label[2][0][0])
-                    
-                    try:
-                        visible = joint_label[3][0][0]
-                    except IndexError:
-                        # For some reason, sometimes "not visible" is encoded as 0 and sometimes as an empty array
-                        visible = 0
-                    
-                    pose["visible"].append(visible)
+                pose = {"x": xs, "y": ys, "visible": vs, "ids": ids}
 
                 final_label = {
                     "head": head_coordinates,
