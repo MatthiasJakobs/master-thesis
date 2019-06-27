@@ -68,3 +68,6 @@ def translate(mat, x, y):
 
     return np.dot(t, mat)
 
+def superflatten(array):
+    return array.flatten()[0]
+

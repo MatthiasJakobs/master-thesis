@@ -14,7 +14,7 @@ from skimage import io
 from skimage.transform import resize
 
 from deephar.image_processing import center_crop, rotate_and_crop, normalize_channels
-from deephar.utils import transform_2d_point, translate, scale, flip_h
+from deephar.utils import transform_2d_point, translate, scale, flip_h, superflatten
 
 class PennActionDataset(data.Dataset):
 
@@ -52,9 +52,10 @@ class PennActionDataset(data.Dataset):
 
         return {"action": action, "images": np.array(images), "poses": np.array(pose), "visibility": np.array(visibility)}
 
+# train / val split
+#torch.utils.data.random_split(dataset, lengths)
 
-def superflatten(array):
-    return array.flatten()[0]
+
 
 class MPIIDataset(data.Dataset):
 
