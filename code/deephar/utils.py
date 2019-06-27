@@ -1,4 +1,6 @@
 import torch
+import numpy as np
+
 from numpy import linspace, empty
 
 def spatial_softmax(x):
@@ -26,5 +28,43 @@ def linspace_2d(rows, cols, dim):
 
     return x
 
+def transform_2d_point(A, x):
+    # point has shape (2,), so expansion is needed
+    x = np.expand_dims(x, axis=-1)
+    
+    y = transform(A, x)
+    y = np.squeeze(y)
 
+    return y
+
+def transform(A, x):
+    dim, n = x.shape
+    y = np.ones((dim+1, n))
+    y[0:dim, :] = x[0:dim, :]
+ 
+    return np.dot(A, y)[0:dim]
+
+def scale(mat, x, y):
+    t = np.eye(3)
+    t[0,0] *= x
+    t[1,1] *= y
+
+    return np.dot(t, mat)
+
+def flip(mat, a, d):
+    t = np.eye(3)
+    t[0,0] = a
+    t[1,1] = d
+
+    return np.dot(t, mat)
+
+def flip_h(mat):
+    return flip(mat, -1, 1)
+
+def translate(mat, x, y):
+    t = np.eye(3)
+    t[0,2] = x
+    t[1,2] = y
+
+    return np.dot(t, mat)
 

@@ -5,64 +5,16 @@ import os
 import re
 import glob
 
-import matplotlib.pyplot as plt
+
 import scipy.io as sio
 import numpy as np
 import pandas as pd
 
 from skimage import io
+from skimage.transform import resize
 
-def show_pose(clip, idx):
-    image = clip["images"][idx]
-    pose = clip["poses"][idx]
-    visibility = clip["visibility"][idx]
-
-    show_pose_on_image(image, pose, visibility)
-
-def show_pose_on_image(image, pose, visibility):
-
-    plt.figure()
-    plt.imshow(image)
-    for i,joint in enumerate(pose):
-        x = joint[0]
-        y = joint[1]
-        if visibility[i]:
-            c = "g"
-        else:
-            c = "r"
-
-        plt.scatter(x, y, s=10, marker="*", c=c)
-
-    plt.pause(0.001)
-    plt.show()
-
-def show_pose_mpii(image, label):
-    xs = label["pose"]["x"]
-    ys = label["pose"]["y"]
-    vis = label["pose"]["visible"]
-
-    print(label["pose"])
-
-    plt.figure()
-    plt.imshow(image)
-
-    for i,joint in enumerate(xs):
-        x = xs[i]
-        y = ys[i]
-
-        if vis[i]:
-            c = "g"
-        else:
-            c = "r"
-        print(x,y)
-        plt.scatter(x, y, s=10, marker="*", c=c)
-
-    # print objpose in blue
-    print("objpose", label["obj_pose"][0], label["obj_pose"][1])
-    plt.scatter(label["obj_pose"][0], label["obj_pose"][1], s=10, marker="*", c="b")
-    plt.pause(0.001)
-    plt.show()
-
+from deephar.image_processing import center_crop, rotate_and_crop, normalize_channels
+from deephar.utils import transform_2d_point, translate, scale, flip_h
 
 class PennActionDataset(data.Dataset):
 
@@ -113,7 +65,8 @@ class MPIIDataset(data.Dataset):
         - When I do it like below, almost exactly size(me) = size(train_luvizon) + size(val_luvizon)
     '''
 
-    def __init__(self, root_dir, transform=None):
+    def __init__(self, root_dir, transform=None, use_random_parameters=True):
+               
         self.root_dir = root_dir
 
         assert "annotations.mat" in os.listdir(self.root_dir)
@@ -122,6 +75,20 @@ class MPIIDataset(data.Dataset):
         
         train_binary = annotations["img_train"][0][0][0]
         train_indeces = np.where(np.array(train_binary))[0]
+
+        self.final_size=256
+        
+        if use_random_parameters:
+            self.angles=np.array(range(-40, 40+1, 5))
+            self.scales=np.array([0.7, 1., 1.3])
+            self.channel_power_exponent = 0.01*np.array(range(90, 110+1, 2))
+            self.flip_horizontal = np.array([0, 1])
+        else:
+            self.angles=np.array([0, 0, 0])
+            self.scales=np.array([1., 1., 1.])
+            self.per_channel_exponent = 1.
+            self.flip_horizontal = np.array([0, 0])
+            self.channel_power_exponent = None
         
         self.labels = []
         missing_annnotation_count = 0
@@ -140,10 +107,10 @@ class MPIIDataset(data.Dataset):
             for rect_id in range(len(annorect[0])):
                 ann = annorect[0][rect_id]
                 head_coordinates = [ 
-                    superflatten(ann["x1"]), 
-                    superflatten(ann["y1"]), 
-                    superflatten(ann["x2"]), 
-                    superflatten(ann["y2"])
+                    float(superflatten(ann["x1"])), 
+                    float(superflatten(ann["y1"])), 
+                    float(superflatten(ann["x2"])), 
+                    float(superflatten(ann["y2"]))
                 ] # rect x1, y1, x2, y2
                 try:
                     scale = superflatten(ann["scale"])
@@ -180,7 +147,7 @@ class MPIIDataset(data.Dataset):
                 pose = {"x": xs, "y": ys, "visible": vs, "ids": ids}
 
                 final_label = {
-                    "head": head_coordinates,
+                    "head": np.array(head_coordinates),
                     "scale": scale,
                     "obj_pose": obj_pose,
                     "pose": pose,
@@ -198,7 +165,91 @@ class MPIIDataset(data.Dataset):
         full_image_path = self.root_dir + "images/" + label["image_name"]
         image = io.imread(full_image_path)
 
-        return image, label
+        conf_scale = self.scales[np.random.randint(0, len(self.scales))]
+        conf_angle = self.angles[np.random.randint(0, len(self.angles))]
+        conf_flip = self.flip_horizontal[np.random.randint(0, len(self.flip_horizontal))]
+        if self.channel_power_exponent is not None:
+            conf_exponents = np.array([
+                self.channel_power_exponent[np.random.randint(0, len(self.channel_power_exponent))], 
+                self.channel_power_exponent[np.random.randint(0, len(self.channel_power_exponent))], 
+                self.channel_power_exponent[np.random.randint(0, len(self.channel_power_exponent))]
+            ])
+        else:
+            conf_exponents = None
+        
+        new_scale = label["scale"] * 1.25 # magic value
+        new_objpose = np.array([label["obj_pose"][0], label["obj_pose"][1] + 12 * new_scale]) # magic values, no idea where they are comming from
+
+        window_size = new_scale * conf_scale * 200
+
+        image_width = image.shape[1]
+        image_height = image.shape[0]
+
+        bbox = np.array([
+            max(new_objpose[0] - window_size / 2, 0), # x1, upper left
+            max(new_objpose[1] - window_size / 2, 0), # y1, upper left
+            min(new_objpose[0] + window_size / 2, image_width), # x2, lower right
+            min(new_objpose[1] + window_size / 2, image_height)  # y2, lower right
+        ])
+
+        # rotate, then crop
+        trans_matrix, image = rotate_and_crop(image, conf_angle, new_objpose, (window_size, window_size))
+        size_after_rotate = np.array([image.shape[1], image.shape[0]])
+
+        image = resize(image, (self.final_size, self.final_size))
+        trans_matrix = scale(trans_matrix, self.final_size / size_after_rotate[0], self.final_size / size_after_rotate[1])
+
+        image_normalized = normalize_channels(image, power_factors=conf_exponents)
+
+        old_pose = np.array([label["pose"]["x"], label["pose"]["y"]]).T
+        print(old_pose)
+        old_objpos = np.array(label["obj_pose"])
+
+        # randomly flip horizontal
+        if conf_flip:
+            image = np.fliplr(image)
+
+            trans_matrix = translate(trans_matrix, -image.shape[1] / 2, -image.shape[0] / 2)
+            trans_matrix = flip_h(trans_matrix)
+            trans_matrix = translate(trans_matrix, image.shape[1] / 2, image.shape[0] / 2)
+
+        output = {}
+        output["center"] = transform_2d_point(trans_matrix, old_objpos)
+        
+        new_x = []
+        new_y = []
+        for idx, (x, y) in enumerate(old_pose):
+            transformed_point = transform_2d_point(trans_matrix, np.array([x,y]))
+            new_x.append(transformed_point[0])
+            new_y.append(transformed_point[1])
+
+        original_pose = np.empty((len(new_x), 3))
+        original_pose[:,0] = np.array(new_x)
+        original_pose[:,1] = np.array(new_y)
+        original_pose[:,2] = np.array(label["pose"]["visible"])
+
+        normalized_pose = original_pose.copy()
+        normalized_pose[:,0:2] /= self.final_size
+
+        # According to paper:
+        lower_one = np.apply_along_axis(np.all, 1, normalized_pose[:,0:2] < 1.0)
+        bigger_zero = np.apply_along_axis(np.all, 1, normalized_pose[:,0:2] > 0.0)
+
+        in_interval = np.logical_and(lower_one, bigger_zero)
+        original_pose[:,2] = in_interval
+        normalized_pose[:,2] = in_interval
+
+        # calculating head size for pckh (according to paper)
+        head_size = 0.6 * np.linalg.norm(label["head"][0:2] - label["head"][2:4])
+        
+        output["original_image"] = image
+        output["bbox"] = bbox
+        output["normalized_image"] = image_normalized
+        output["normalized_pose"] = normalized_pose
+        output["original_pose"] = original_pose
+        output["head_size"] = head_size
+
+        return output
 
     
 class JHMDBDataset(data.Dataset):
