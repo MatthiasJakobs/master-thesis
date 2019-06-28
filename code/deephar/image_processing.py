@@ -5,7 +5,6 @@ from skimage.transform import rotate
 from deephar.utils import transform, transform_2d_point, translate
 
 def center_crop(image, center, size, trans_matrix):
-    print(size)
     half_width = size[0] / 2
     half_height = size[1] / 2
 
@@ -70,10 +69,7 @@ def rotate_and_crop(image, angle, center, window_size):
 
 def normalize_channels(input_image, power_factors=None):
     # power factors = vector of factors for each channel, i.e. (0.01, 0.001, 0.1)
-    image = input_image.copy()
-    print(image.shape)
-    if power_factors is not None:
-        print(power_factors.shape)      
+    image = input_image.copy()    
     image /= 255
     if power_factors is not None:
         assert len(power_factors) == 3

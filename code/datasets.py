@@ -162,7 +162,6 @@ class MPIIDataset(data.Dataset):
 
     def __getitem__(self, idx):
         label = self.labels[idx]
-
         full_image_path = self.root_dir + "images/" + label["image_name"]
         image = io.imread(full_image_path)
 
@@ -203,7 +202,6 @@ class MPIIDataset(data.Dataset):
         image_normalized = normalize_channels(image, power_factors=conf_exponents)
 
         old_pose = np.array([label["pose"]["x"], label["pose"]["y"]]).T
-        print(old_pose)
         old_objpos = np.array(label["obj_pose"])
 
         # randomly flip horizontal
@@ -224,10 +222,15 @@ class MPIIDataset(data.Dataset):
             new_x.append(transformed_point[0])
             new_y.append(transformed_point[1])
 
-        original_pose = np.empty((len(new_x), 3))
-        original_pose[:,0] = np.array(new_x)
-        original_pose[:,1] = np.array(new_y)
-        original_pose[:,2] = np.array(label["pose"]["visible"])
+        original_pose = np.empty((16, 3))
+        original_pose[:] = np.nan
+
+        for it, joint_index in enumerate(label["pose"]["ids"]):
+            original_pose[joint_index, 0] = new_x[it]
+            original_pose[joint_index, 1] = new_y[it]
+            original_pose[joint_index, 2] = label["pose"]["visible"][it]
+
+        original_pose[np.isnan(original_pose)] = -1e9
 
         normalized_pose = original_pose.copy()
         normalized_pose[:,0:2] /= self.final_size
@@ -249,7 +252,7 @@ class MPIIDataset(data.Dataset):
         output["normalized_pose"] = normalized_pose
         output["original_pose"] = original_pose
         output["head_size"] = head_size
-
+            
         return output
 
     
