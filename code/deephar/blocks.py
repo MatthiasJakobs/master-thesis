@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 from deephar.layers import *
 
 class Stem(nn.Module):
@@ -61,9 +62,9 @@ class Stem(nn.Module):
 
         return out
 
-class ReceptionBlock(nn.Module):
+class BlockA(nn.Module):
     def __init__(self):
-        super(ReceptionBlock, self).__init__()
+        super(BlockA, self).__init__()
 
         self.acb = ACB(input_filters=576, output_filters=288, kernel_size=(1,1), stride=(1,1), padding=0)
 
@@ -97,3 +98,55 @@ class ReceptionBlock(nn.Module):
 
         return b + self.sacb6(x)
 
+class BlockB(nn.Module):
+    def __init__(self, Pose_Regression_Module):
+        super(BlockB, self).__init__()
+
+        self.prm = Pose_Regression_Module
+
+        self.sacb = Sep_ACB(input_filters=576, output_filters=576, kernel_size=(5,5), stride=(1,1), padding=2)
+        self.ac = AC(input_filters=576, output_filters=self.prm.nr_heatmaps(), kernel_size=(1,1), stride=(1,1), padding=0)
+        self.acb = ACB(input_filters=self.prm.nr_heatmaps(), output_filters=576, kernel_size=(1,1), stride=(1,1), padding=0)
+
+    def forward(self, x):
+        a = self.sacb(x)
+        b = self.ac(a)
+        c = self.acb(b)
+
+        return self.prm(b), x + a + c
+
+class ReceptionBlock(nn.Module):
+    def __init__(self, num_context=0):
+        super(ReceptionBlock, self).__init__()
+
+        self.num_context = num_context
+        self.block_a = BlockA()
+        if self.num_context > 0:
+            raise("Not implemented")
+        else:
+            self.regression = PoseRegressionNoContext()
+
+        self.block_b = BlockB(self.regression)
+
+    def forward(self, x):
+        a = self.block_a(x)
+        return self.block_b(a)
+
+class PoseRegressionNoContext(nn.Module):
+    def __init__(self):
+        super(PoseRegressionNoContext, self).__init__()
+
+        self.softargmax = Softargmax(input_filters=16, output_filters=16, kernel_size=(32,32))
+        self.probability = JointProbability(filters=16, kernel_size=(32,32))
+
+    def nr_heatmaps(self):
+        return 16
+
+    def forward(self, x):
+        pose = self.softargmax(x)
+        visibility = self.probability(x)
+        heatmaps = x
+
+        output = torch.cat((pose, visibility), 2)
+
+        return output

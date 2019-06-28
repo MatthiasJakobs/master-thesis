@@ -52,6 +52,12 @@ def CB(input_filters=3, output_filters=32, kernel_size=(3,3), stride=(1,1), padd
         nn.BatchNorm2d(output_filters, momentum=0.99, eps=0.001)
     )
 
+def AC(input_filters=3, output_filters=32, kernel_size=(3,3), stride=(1,1), padding=1):
+    return nn.Sequential(
+        nn.ReLU(),
+        nn.Conv2d(input_filters, output_filters, kernel_size=kernel_size, stride=stride, padding=padding, bias=False)
+    )
+
 class Softargmax(nn.Module):
 
     def conv_linear_interpolation(self, input_filters, output_filters, kernel_size, dim):
@@ -74,6 +80,8 @@ class Softargmax(nn.Module):
     def __init__(self, input_filters=5, output_filters=5, kernel_size=(3,3)):
         super(Softargmax, self).__init__()
 
+        self.output_filters = output_filters
+
         self.xx = self.conv_linear_interpolation(input_filters, input_filters, kernel_size, 0)
         self.xy = self.conv_linear_interpolation(input_filters, input_filters, kernel_size, 1)
 
@@ -87,7 +95,7 @@ class Softargmax(nn.Module):
         x_y = torch.squeeze(x_y, dim=-1)        
 
         x = torch.cat((x_x, x_y))
-        return x
+        return x.reshape((-1, self.output_filters, 2))
 
 class JointProbability(nn.Module):
     def __init__(self, filters=16, kernel_size=(32,32)):
@@ -101,6 +109,5 @@ class JointProbability(nn.Module):
         x = self.sigmoid(x)
         x = torch.squeeze(x, dim=-1)
         x = torch.squeeze(x, dim=-1)
-        print(x.size())
   
-        return x
+        return x.reshape((-1, 16, 1))
