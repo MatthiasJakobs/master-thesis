@@ -5,6 +5,7 @@ import os
 import re
 import glob
 
+import matplotlib.pyplot as plt
 
 import scipy.io as sio
 import numpy as np
@@ -87,7 +88,6 @@ class MPIIDataset(data.Dataset):
         else:
             self.angles=np.array([0, 0, 0])
             self.scales=np.array([1., 1., 1.])
-            self.per_channel_exponent = 1.
             self.flip_horizontal = np.array([0, 0])
             self.channel_power_exponent = None
         
@@ -196,10 +196,8 @@ class MPIIDataset(data.Dataset):
         trans_matrix, image = rotate_and_crop(image, conf_angle, new_objpose, (window_size, window_size))
         size_after_rotate = np.array([image.shape[1], image.shape[0]])
 
-        image = resize(image, (self.final_size, self.final_size))
+        image = resize(image, (self.final_size, self.final_size), preserve_range=True)
         trans_matrix = scale(trans_matrix, self.final_size / size_after_rotate[0], self.final_size / size_after_rotate[1])
-
-        image_normalized = normalize_channels(image, power_factors=conf_exponents)
 
         old_pose = np.array([label["pose"]["x"], label["pose"]["y"]]).T
         old_objpos = np.array(label["obj_pose"])
@@ -245,6 +243,8 @@ class MPIIDataset(data.Dataset):
 
         # calculating head size for pckh (according to paper)
         head_size = 0.6 * np.linalg.norm(label["head"][0:2] - label["head"][2:4])
+
+        image_normalized = normalize_channels(image, power_factors=conf_exponents)
         
         output["original_image"] = image
         output["bbox"] = bbox

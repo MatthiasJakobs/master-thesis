@@ -26,6 +26,7 @@ def rotate_and_crop(image, angle, center, window_size):
     image_width = image.shape[1]
     image_height = image.shape[0]
     
+    #image = rotate(image, angle, resize=True, preserve_range=True)
     image = rotate(image, angle, resize=True)
 
     # find new center points
@@ -70,11 +71,10 @@ def rotate_and_crop(image, angle, center, window_size):
 def normalize_channels(input_image, power_factors=None):
     # power factors = vector of factors for each channel, i.e. (0.01, 0.001, 0.1)
     image = input_image.copy()    
-    image /= 255
     if power_factors is not None:
         assert len(power_factors) == 3
         for c in range(3):
             image[:,:,c] = np.power(image[:,:,c], power_factors[c])
 
     # equivalent to 1/127 * image - 1 from project group
-    return 2 * (image - 0.5)
+    return 2.0 * (image - 0.5)

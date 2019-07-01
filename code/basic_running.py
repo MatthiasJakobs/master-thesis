@@ -38,7 +38,7 @@ def collate_fn(data):
 train_loader = data.DataLoader(
    ds,
    num_workers=0,
-   batch_size=30,
+   batch_size=10,
    pin_memory=False,
    collate_fn=collate_fn
 )
@@ -49,7 +49,7 @@ def elastic_net_loss(y_pred, y_true):
    # note: not the one used in code but the one in the paper
    l1 = torch.sum(torch.abs(y_pred - y_true))
    l2 = torch.sum(torch.pow(y_pred - y_true, 2))
-   return (l1 + l2) / len(y_pred[1])
+   return (l1 + l2) / y_pred.size()[1]
 
 timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
@@ -57,13 +57,12 @@ with open('logs/basic_running_{}.csv'.format(timestamp), mode='w') as output_fil
 
    writer = csv.writer(output_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
    writer.writerow(['epoch', 'batch_nr', 'loss'])
+   model.train()
+
    for epoch in range(10):
-      model.train()
       for batch_idx, (images, poses) in enumerate(train_loader):
          images = images
          poses = poses
-
-         optimizer.zero_grad()
          
          output = model(images)
          # output shape: (batch_size, 16, 3)
@@ -79,15 +78,16 @@ with open('logs/basic_running_{}.csv'.format(timestamp), mode='w') as output_fil
          #vis_loss.backward(retain_graph=True)
 
          pose_loss = elastic_net_loss(pred_pose, ground_pose)
-         loss = vis_loss * 0.01 + pose_loss
-
+         loss = vis_loss * 0.01 + pose_loss         
+         
          loss.backward()
          
          optimizer.step()
+         optimizer.zero_grad()
 
-         if batch_idx % 10 == 0:
+         if batch_idx % 1 == 0:
             writer.writerow([epoch, batch_idx, loss.item()])
             output_file.flush()
-            print("epoch {} batch_nr {} loss pose {} loss vis {}".format(epoch, batch_idx, pose_loss.item(), vis_loss.item()))
+            print("epoch {} batch_nr {} loss {}".format(epoch, batch_idx, loss.item()))
       
 

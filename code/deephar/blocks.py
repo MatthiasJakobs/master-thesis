@@ -129,8 +129,9 @@ class ReceptionBlock(nn.Module):
         self.block_b = BlockB(self.regression)
 
     def forward(self, x):
-        a = self.block_a(x)
-        return self.block_b(a)
+        a = self.block_a(x) # Hourglass
+        b = self.block_b(a) # Pose Regression
+        return b
 
 class PoseRegressionNoContext(nn.Module):
     def __init__(self):
