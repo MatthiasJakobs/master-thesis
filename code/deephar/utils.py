@@ -37,6 +37,18 @@ def transform_2d_point(A, x):
 
     return y
 
+def transform_pose(A, pose, inverse=False):
+    new_pose = np.empty(pose.shape)
+
+    if inverse:
+        A = np.linalg.inv(A)
+
+    for i, (x,y) in enumerate(pose):
+        transformed_point = transform_2d_point(A, np.array([x, y]))
+        new_pose[i] = transformed_point
+    print(new_pose)
+    return new_pose
+
 def transform(A, x):
     dim, n = x.shape
     y = np.ones((dim+1, n))
@@ -70,4 +82,10 @@ def translate(mat, x, y):
 
 def superflatten(array):
     return array.flatten()[0]
+
+def get_valid_joints(pose):
+    valid = pose > 1e-6
+    valid_sum = np.sum(np.apply_along_axis(np.all, axis=2, arr=valid), 1)
+    
+    return valid.float(), torch.from_numpy(valid_sum).float()
 

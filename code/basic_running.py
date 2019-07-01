@@ -9,6 +9,7 @@ import torch.optim as optim
 import torch.nn as nn
 
 from deephar.models import Mpii_No_Context
+from deephar.utils import get_valid_joints
 from datasets import MPIIDataset
 
 ds = MPIIDataset("/data/mjakobs/data/mpii/", use_random_parameters=False)
@@ -47,9 +48,17 @@ optimizer = optim.RMSprop(model.parameters(), lr=0.001)
 
 def elastic_net_loss(y_pred, y_true):
    # note: not the one used in code but the one in the paper
-   l1 = torch.sum(torch.abs(y_pred - y_true))
-   l2 = torch.sum(torch.pow(y_pred - y_true, 2))
-   return (l1 + l2) / y_pred.size()[1]
+   valid, nr_valid = get_valid_joints(y_true)
+
+   y_pred = y_pred * valid
+   y_true = y_true * valid
+
+   l1 = torch.sum(torch.abs(y_pred - y_true), (1, 2))
+   l2 = torch.sum(torch.pow(y_pred - y_true, 2), (1, 2))
+
+   final_losses = (l1 + l2) / nr_valid
+   loss = torch.sum(final_losses)
+   return loss
 
 timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
