@@ -251,7 +251,7 @@ class MPIIDataset(data.Dataset):
         output["normalized_image"] = image_normalized
         output["normalized_pose"] = normalized_pose
         output["original_pose"] = original_pose
-        output["head_size"] = head_size
+        output["head_size"] = np.array([head_size])
         output["trans_matrix"] = trans_matrix.copy()
             
         return output
