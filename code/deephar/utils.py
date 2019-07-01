@@ -89,6 +89,6 @@ def get_valid_joints(pose):
     valid_sum_tensor = torch.from_numpy(valid_sum)
     if torch.cuda.is_available():
         valid_sum_tensor.to(torch.cuda.current_device())
-    
-    return valid.float(), valid_sum_tensor.cuda().float()
+        return valid.float(), valid_sum_tensor.cuda().float()
+    return valid.float(), valid_sum_tensor.float()
 
