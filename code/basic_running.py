@@ -109,9 +109,15 @@ with open('experiments/{}/loss.csv'.format(timestamp), mode='w') as output_file:
             optimizer.zero_grad()
 
             if batch_idx % 10 == 0:
+<<<<<<< HEAD
                 writer.writerow([epoch, batch_idx, loss.item()])
                 output_file.flush()
                 print("epoch {} batch_nr {} loss {}".format(epoch, batch_idx, loss.item()))
+=======
+            writer.writerow([epoch, batch_idx, loss.item()])
+            output_file.flush()
+            print("epoch {} batch_nr {} loss {}".format(epoch, batch_idx, loss.item()))
+>>>>>>> c0f38f7d23c225ce5caa76152b2034464e0af2e4
 
     torch.save(model.state_dict(), "experiments/{}/weights_{}".format(timestamp, epoch))
 
