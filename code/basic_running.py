@@ -15,6 +15,8 @@ from deephar.models import Mpii_No_Context
 from deephar.utils import get_valid_joints
 from datasets import MPIIDataset
 
+from socket import gethostname
+
 ds = MPIIDataset("/data/mjakobs/data/mpii/", use_random_parameters=False)
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -39,7 +41,11 @@ def collate_fn(data):
     #print("t_images size", t_images.size())
     return t_images, t_poses
 
-batch_size = 70
+if gethostname() == "ares":
+    batch_size = 70
+else:
+    batch_size = 10
+
 learning_rate = 0.00001
 
 train_loader = data.DataLoader(
@@ -109,15 +115,9 @@ with open('experiments/{}/loss.csv'.format(timestamp), mode='w') as output_file:
             optimizer.zero_grad()
 
             if batch_idx % 10 == 0:
-<<<<<<< HEAD
                 writer.writerow([epoch, batch_idx, loss.item()])
                 output_file.flush()
                 print("epoch {} batch_nr {} loss {}".format(epoch, batch_idx, loss.item()))
-=======
-            writer.writerow([epoch, batch_idx, loss.item()])
-            output_file.flush()
-            print("epoch {} batch_nr {} loss {}".format(epoch, batch_idx, loss.item()))
->>>>>>> c0f38f7d23c225ce5caa76152b2034464e0af2e4
 
     torch.save(model.state_dict(), "experiments/{}/weights_{}".format(timestamp, epoch))
 
