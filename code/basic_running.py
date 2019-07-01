@@ -4,6 +4,9 @@ import numpy as np
 import csv
 from datetime import datetime
 
+from os import makedirs
+from os.path import exists
+
 import torch
 import torch.optim as optim
 import torch.nn as nn
@@ -36,15 +39,17 @@ def collate_fn(data):
    #print("t_images size", t_images.size())
    return t_images, t_poses
 
+batch_size = 70
+learning_rate = 0.00001
+
 train_loader = data.DataLoader(
    ds,
    num_workers=0,
-   batch_size=10,
-   pin_memory=False,
+   batch_size=batch_size,
    collate_fn=collate_fn
 )
 
-optimizer = optim.RMSprop(model.parameters(), lr=0.001)
+optimizer = optim.RMSprop(model.parameters(), lr=learning_rate)
 
 def elastic_net_loss(y_pred, y_true):
    # note: not the one used in code but the one in the paper
@@ -62,8 +67,17 @@ def elastic_net_loss(y_pred, y_true):
 
 timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
-with open('logs/basic_running_{}.csv'.format(timestamp), mode='w') as output_file:
+if not exists("experiments"):
+    makedirs("experiments")
 
+makedirs("experiments/{}".format(timestamp))
+
+with open('experiments/{}/parameters.csv'.format(timestamp), 'w+') as parameter_file:
+    parameter_file.write("learning_rate={}\n".format(learning_rate))
+    parameter_file.write("batch_size={}\n".format(batch_size))
+
+
+with open('experiments/{}/loss.csv'.format(timestamp), mode='w') as output_file:
    writer = csv.writer(output_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
    writer.writerow(['epoch', 'batch_nr', 'loss'])
    model.train()
@@ -94,9 +108,10 @@ with open('logs/basic_running_{}.csv'.format(timestamp), mode='w') as output_fil
          optimizer.step()
          optimizer.zero_grad()
 
-         if batch_idx % 1 == 0:
+         if batch_idx % 10 == 0:
             writer.writerow([epoch, batch_idx, loss.item()])
             output_file.flush()
             print("epoch {} batch_nr {} loss {}".format(epoch, batch_idx, loss.item()))
-      
+    
+   torch.save(model.state_dict(), "experiments/{}/weights_{}".format(timestamp, epoch))
 
