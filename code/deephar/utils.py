@@ -85,7 +85,10 @@ def superflatten(array):
 
 def get_valid_joints(pose):
     valid = pose > 1e-6
-    valid_sum = np.sum(np.apply_along_axis(np.all, axis=2, arr=valid), 1)
+    valid_sum = np.sum(np.apply_along_axis(np.all, axis=2, arr=valid.cpu()), 1)
+    valid_sum_tensor = torch.from_numpy(valid_sum)
+    if torch.cuda.is_available():
+        valid_sum_tensor.to(torch.cuda.current_device())
     
-    return valid.float(), torch.from_numpy(valid_sum).float()
+    return valid.float(), valid_sum_tensor.cuda().float()
 
