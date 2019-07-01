@@ -38,7 +38,7 @@ def collate_fn(data):
 train_loader = data.DataLoader(
    ds,
    num_workers=0,
-   batch_size=10,
+   batch_size=30,
    pin_memory=False,
    collate_fn=collate_fn
 )
@@ -56,8 +56,8 @@ timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 with open('logs/basic_running_{}.csv'.format(timestamp), mode='w') as output_file:
 
    writer = csv.writer(output_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-   writer.writerow(['epoch', 'batch_nr', 'loss_pose', 'loss_vis'])
-   for epoch in range(3):
+   writer.writerow(['epoch', 'batch_nr', 'loss'])
+   for epoch in range(10):
       model.train()
       for batch_idx, (images, poses) in enumerate(train_loader):
          images = images
@@ -85,8 +85,9 @@ with open('logs/basic_running_{}.csv'.format(timestamp), mode='w') as output_fil
          
          optimizer.step()
 
-         writer.writerow([epoch, batch_idx, pose_loss.item(), vis_loss.item()])
          if batch_idx % 10 == 0:
+            writer.writerow([epoch, batch_idx, loss.item()])
+            output_file.flush()
             print("epoch {} batch_nr {} loss pose {} loss vis {}".format(epoch, batch_idx, pose_loss.item(), vis_loss.item()))
       
 
