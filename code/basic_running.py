@@ -69,7 +69,7 @@ def train_collate_fn(data):
     return t_images, t_poses
 
 if gethostname() == "ares":
-    batch_size = 70
+    batch_size = 40
 else:
     batch_size = 10
 
@@ -132,18 +132,20 @@ if not exists("experiments"):
     makedirs("experiments")
 
 makedirs("experiments/{}".format(timestamp))
+makedirs("experiments/{}/weights".format(timestamp))
 
 with open('experiments/{}/parameters.csv'.format(timestamp), 'w+') as parameter_file:
     parameter_file.write("learning_rate={}\n".format(learning_rate))
     parameter_file.write("batch_size={}\n".format(batch_size))
     parameter_file.write("number_of_datapoints={}\n".format(number_of_datapoints))
+    parameter_file.write("limit_data_percent={}\n".format(limit_data_percent))
 
 
 with open('experiments/{}/loss.csv'.format(timestamp), mode='w') as output_file:
     writer = csv.writer(output_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
     writer.writerow(['epoch', 'batch_nr', 'loss', 'val_accuracy'])
 
-    for epoch in range(10):
+    for epoch in range(100):
         for batch_idx, (images, poses) in enumerate(train_loader):
             model.train()
             images = images
@@ -170,17 +172,15 @@ with open('experiments/{}/loss.csv'.format(timestamp), mode='w') as output_file:
             optimizer.step()
             optimizer.zero_grad()
             
-            if batch_idx % 10 == 0:
-                print("epoch {} batch_nr {} loss {}".format(epoch, batch_idx, loss.item()))
+            print("epoch {} batch_nr {} loss {}".format(epoch, batch_idx, loss.item()))
 
         val_accuracy = []
 
         for batch_idx, (val_images, val_poses, val_headsizes, val_trans_matrices) in enumerate(val_loader):
             scores = eval_pckh_batch(model, val_images, val_poses, val_headsizes, val_trans_matrices)
             val_accuracy.extend(scores)
-        print(val_accuracy)
         writer.writerow([epoch, batch_idx, loss.item(), np.mean(np.array(val_accuracy))])
         output_file.flush()
 
-    torch.save(model.state_dict(), "experiments/{}/weights_{}".format(timestamp, epoch))
+    torch.save(model.state_dict(), "experiments/{}/weights/weights_{}".format(timestamp, epoch))
 
