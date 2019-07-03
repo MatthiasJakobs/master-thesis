@@ -41,7 +41,10 @@ def transform_pose(A, pose, inverse=False):
     new_pose = np.empty(pose.shape)
 
     if inverse:
-        A = np.linalg.inv(A)
+        if torch.cuda.is_available():
+            A = np.linalg.inv(A.cpu())
+        else:
+            A = np.linalg.inv(A)
 
     for i, (x,y) in enumerate(pose):
         transformed_point = transform_2d_point(A, np.array([x, y]))
