@@ -150,4 +150,4 @@ class PoseRegressionNoContext(nn.Module):
 
         output = torch.cat((pose, visibility), 2)
 
-        return output
+        return output.unsqueeze(0)

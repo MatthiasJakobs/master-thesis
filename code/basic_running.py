@@ -21,9 +21,6 @@ from socket import gethostname
 
 ds = MPIIDataset("/data/mjakobs/data/mpii/", use_random_parameters=False)
 
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
-model = Mpii_No_Context().to(device)
-
 def val_collate_fn(data):
     images = []
     poses = []
@@ -71,14 +68,18 @@ def train_collate_fn(data):
 if gethostname() == "ares":
     batch_size = 40
 else:
-    batch_size = 10
+    batch_size = 2
 
 learning_rate = 0.00001
-
+nr_epochs = 100
 validation_amount = 0.1 # 10 percent
-limit_data_percent = 0.02 # limit dataset to x percent (for testing)
-
+limit_data_percent = 0.01 # limit dataset to x percent (for testing)
 random_seed = 30004
+num_blocks = 8
+
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+model = Mpii_No_Context().to(device)
+
 number_of_datapoints = int(len(ds) * limit_data_percent) 
 indices = list(range(number_of_datapoints))
 split = int((1 - validation_amount) * number_of_datapoints)
@@ -112,15 +113,17 @@ val_loader = data.DataLoader(
 
 optimizer = optim.RMSprop(model.parameters(), lr=learning_rate)
 
-def elastic_net_loss(y_pred, y_true):
+def elastic_net_loss_paper(y_pred, y_true):
     # note: not the one used in code but the one in the paper
-    valid, nr_valid = get_valid_joints(y_true)
 
+    valid, nr_valid = get_valid_joints(y_true[:, 0, :, :])
+    valid = valid.unsqueeze(1)
+    valid = valid.expand(-1, y_pred.size()[1], -1, -1)
     y_pred = y_pred * valid
     y_true = y_true * valid
 
-    l1 = torch.sum(torch.abs(y_pred - y_true), (1, 2))
-    l2 = torch.sum(torch.pow(y_pred - y_true, 2), (1, 2))
+    l1 = torch.sum(torch.abs(y_pred - y_true), (1, 2, 3))
+    l2 = torch.sum(torch.pow(y_pred - y_true, 2), (1, 2, 3))
 
     final_losses = (l1 + l2) / nr_valid
     loss = torch.sum(final_losses)
@@ -139,32 +142,41 @@ with open('experiments/{}/parameters.csv'.format(timestamp), 'w+') as parameter_
     parameter_file.write("batch_size={}\n".format(batch_size))
     parameter_file.write("number_of_datapoints={}\n".format(number_of_datapoints))
     parameter_file.write("limit_data_percent={}\n".format(limit_data_percent))
+    parameter_file.write("numpy_seed={}\n".format(random_seed))
+    parameter_file.write("num_blocks={}\n".format(num_blocks))
+    parameter_file.write("nr_epochs={}\n".format(nr_epochs))
 
 
 with open('experiments/{}/loss.csv'.format(timestamp), mode='w') as output_file:
     writer = csv.writer(output_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
     writer.writerow(['epoch', 'batch_nr', 'loss', 'val_accuracy'])
 
-    for epoch in range(100):
+    for epoch in range(nr_epochs):
         for batch_idx, (images, poses) in enumerate(train_loader):
             model.train()
             images = images
             poses = poses
             
             output = model(images)
-            # output shape: (batch_size, 16, 3)
-            pred_pose = output[:, :, 0:2]
+            output = output.view(images.size()[0], num_blocks, -1, 3)
+            # output shape: (batch_size, num_blocks, 16, 3)
+            pred_pose = output[:, :, :, 0:2]
             ground_pose = poses[:, :, 0:2]
+            ground_pose = ground_pose.unsqueeze(1)
+            ground_pose = ground_pose.expand(-1, num_blocks, -1, -1)
 
-            pred_vis = output[:, :, 2]
+
+            pred_vis = output[:, :, :, 2]
             ground_vis = poses[:, :, 2]
+            ground_vis = ground_vis.unsqueeze(1)
+            ground_vis = ground_vis.expand(-1, num_blocks, -1)
 
             binary_crossentropy = nn.BCELoss()
 
             vis_loss = binary_crossentropy(pred_vis, ground_vis)
             #vis_loss.backward(retain_graph=True)
 
-            pose_loss = elastic_net_loss(pred_pose, ground_pose)
+            pose_loss = elastic_net_loss_paper(pred_pose, ground_pose)
             loss = vis_loss * 0.01 + pose_loss         
             
             loss.backward()
@@ -181,6 +193,9 @@ with open('experiments/{}/loss.csv'.format(timestamp), mode='w') as output_file:
             val_accuracy.extend(scores)
         writer.writerow([epoch, batch_idx, loss.item(), np.mean(np.array(val_accuracy))])
         output_file.flush()
+        
+        if epoch % 5 == 0:
+            torch.save(model.state_dict(), "experiments/{}/weights/weights_{:04d}".format(timestamp, epoch))
 
-    torch.save(model.state_dict(), "experiments/{}/weights/weights_{}".format(timestamp, epoch))
+    torch.save(model.state_dict(), "experiments/{}/weights/weights_final".format(timestamp))
 

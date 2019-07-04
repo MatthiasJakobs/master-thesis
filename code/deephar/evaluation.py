@@ -24,6 +24,10 @@ def eval_pckh_batch(model, images, poses, headsizes, matrices):
     
     model.eval()
     predictions = model(images)
+    predictions = predictions[-1, :, :, :].squeeze(dim=0)
+
+    if predictions.dim() == 2:
+        predictions = predictions.unsqueeze(0)
 
     for i, prediction in enumerate(predictions):
         pred_pose = prediction[:, 0:2]
