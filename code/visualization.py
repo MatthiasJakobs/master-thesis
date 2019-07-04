@@ -4,23 +4,20 @@ from matplotlib.patches import Rectangle
 def show_pose(clip, idx):
     image = clip["images"][idx]
     pose = clip["poses"][idx]
-    visibility = clip["visibility"][idx]
 
-    show_pose_on_image(image, pose, visibility)
+    show_pose_on_image(image, pose)
 
-def show_pose_on_image(image, pose, visibility):
+def show_pose_on_image(image, pose):
 
     plt.figure()
     plt.imshow(image)
     for i,joint in enumerate(pose):
         x = joint[0]
         y = joint[1]
-        if visibility[i]:
-            c = "g"
-        else:
-            c = "r"
-
-        plt.scatter(x, y, s=10, marker="*", c=c)
+        visible = joint[2]
+        
+        if visible:
+            plt.scatter(x, y, s=10, marker="*", c="g")
 
     plt.pause(0.001)
     plt.show()
