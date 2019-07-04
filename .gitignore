@@ -5,6 +5,7 @@ code/.app_keys.json
 __pycache__/
 *.pyc
 code/.ipynb_checkpoints
+code/test.py
 
 # Temporary project files
 code/experiments/*
