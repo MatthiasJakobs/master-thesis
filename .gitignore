@@ -6,6 +6,9 @@ __pycache__/
 *.pyc
 code/.ipynb_checkpoints
 
+# Temporary project files
+code/experiments/*
+
 # Latex
 *.aux
 *.pdf
