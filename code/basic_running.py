@@ -73,12 +73,12 @@ else:
     batch_size = 2
 
 learning_rate = 0.00001
-nr_epochs = 100
+nr_epochs = 3
 validation_amount = 0.1 # 10 percent
-limit_data_percent = 0.01 # limit dataset to x percent (for testing)
+limit_data_percent = 1 # limit dataset to x percent (for testing)
 random_seed = 30004
 num_blocks = 1
-name = "vis_test"
+name = "all_data_1_block"
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 model = Mpii_1().to(device)
@@ -167,7 +167,7 @@ with open('experiments/{}/loss.csv'.format(experiment_name), mode='w') as output
         for batch_idx, (images, poses) in enumerate(train_loader):
             images = images
             poses = poses
-            
+
             _, output = model(images)
             output = output.view(images.size()[0], num_blocks, -1, 3)
             # output shape: (batch_size, num_blocks, 16, 3)
@@ -205,13 +205,12 @@ with open('experiments/{}/loss.csv'.format(experiment_name), mode='w') as output
         model.eval()
 
         for batch_idx, (val_images, val_poses, val_headsizes, val_trans_matrices) in enumerate(val_loader):
-                     
             heatmaps, predictions = model(val_images)
             predictions = predictions[-1, :, :, :].squeeze(dim=0)
 
             if predictions.dim() == 2:
-                predictions = predictions.unsqueeze(0)         
-            
+                predictions = predictions.unsqueeze(0)
+
             scores_05, scores_02 = eval_pckh_batch(predictions, val_poses, val_headsizes, val_trans_matrices)
             val_accuracy_05.extend(scores_05)
             val_accuracy_02.extend(scores_02)
@@ -223,8 +222,4 @@ with open('experiments/{}/loss.csv'.format(experiment_name), mode='w') as output
         print([epoch, batch_idx, loss.item(), np.mean(np.array(val_accuracy_05)), np.mean(np.array(val_accuracy_02))])
         output_file.flush()
 
-        if epoch % 5 == 0:
-            torch.save(model.state_dict(), "experiments/{}/weights/weights_{:04d}".format(experiment_name, epoch))
-
-    torch.save(model.state_dict(), "experiments/{}/weights/weights_final".format(experiment_name))
-
+        torch.save(model.state_dict(), "experiments/{}/weights/weights_{:04d}".format(experiment_name, epoch))
