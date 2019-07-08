@@ -2,12 +2,12 @@ import torch.nn as nn
 
 from deephar.blocks import *
 
-class Mpii_Small_No_Context(nn.Module):
-    def __init__(self):
-        super(Mpii_Small_No_Context, self).__init__()
+class Mpii_1(nn.Module):
+    def __init__(self, num_context=0):
+        super(Mpii_1, self).__init__()
 
         self.stem = Stem()
-        self.rec1 = ReceptionBlock(num_context=0)
+        self.rec1 = ReceptionBlock(num_context=num_context)
 
     def forward(self, x):
         a = self.stem(x)
@@ -15,19 +15,53 @@ class Mpii_Small_No_Context(nn.Module):
         
         return output
 
-class Mpii_No_Context(nn.Module):
-    def __init__(self):
-        super(Mpii_No_Context, self).__init__()
+class Mpii_2(nn.Module):
+    def __init__(self, num_context=0):
+        super(Mpii_2, self).__init__()
 
         self.stem = Stem()
-        self.rec1 = ReceptionBlock(num_context=0)
-        self.rec2 = ReceptionBlock(num_context=0)
-        self.rec3 = ReceptionBlock(num_context=0)
-        self.rec4 = ReceptionBlock(num_context=0)
-        self.rec5 = ReceptionBlock(num_context=0)
-        self.rec6 = ReceptionBlock(num_context=0)
-        self.rec7 = ReceptionBlock(num_context=0)
-        self.rec8 = ReceptionBlock(num_context=0)
+        self.rec1 = ReceptionBlock(num_context=num_context)
+        self.rec2 = ReceptionBlock(num_context=num_context)
+
+    def forward(self, x):
+        a = self.stem(x)
+        pose1 , output1 = self.rec1(a)
+        pose2 , _ = self.rec2(output1)
+        
+        return torch.cat((pose1, pose2), 0)
+
+class Mpii_4(nn.Module):
+    def __init__(self, num_context=0):
+        super(Mpii_4, self).__init__()
+
+        self.stem = Stem()
+        self.rec1 = ReceptionBlock(num_context=num_context)
+        self.rec2 = ReceptionBlock(num_context=num_context)
+        self.rec3 = ReceptionBlock(num_context=num_context)
+        self.rec4 = ReceptionBlock(num_context=num_context)
+
+    def forward(self, x):
+        a = self.stem(x)
+        pose1 , output1 = self.rec1(a)
+        pose2 , output2 = self.rec2(output1)
+        pose3 , output3 = self.rec3(output2)
+        pose4 , _ = self.rec4(output3)
+        
+        return torch.cat((pose1, pose2, pose3, pose4), 0)
+
+class Mpii_8(nn.Module):
+    def __init__(self, num_context=0):
+        super(Mpii_8, self).__init__()
+
+        self.stem = Stem()
+        self.rec1 = ReceptionBlock(num_context=num_context)
+        self.rec2 = ReceptionBlock(num_context=num_context)
+        self.rec3 = ReceptionBlock(num_context=num_context)
+        self.rec4 = ReceptionBlock(num_context=num_context)
+        self.rec5 = ReceptionBlock(num_context=num_context)
+        self.rec6 = ReceptionBlock(num_context=num_context)
+        self.rec7 = ReceptionBlock(num_context=num_context)
+        self.rec8 = ReceptionBlock(num_context=num_context)
 
 
     def forward(self, x):

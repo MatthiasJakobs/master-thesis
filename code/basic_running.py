@@ -12,7 +12,7 @@ import torch.optim as optim
 import torch.nn as nn
 from torch.utils.data.sampler import SubsetRandomSampler
 
-from deephar.models import Mpii_No_Context
+from deephar.models import *
 from deephar.utils import get_valid_joints
 from deephar.evaluation import eval_pckh_batch
 from datasets import MPIIDataset
@@ -73,12 +73,13 @@ else:
 learning_rate = 0.00001
 nr_epochs = 100
 validation_amount = 0.1 # 10 percent
-limit_data_percent = 0.01 # limit dataset to x percent (for testing)
+limit_data_percent = 0.001 # limit dataset to x percent (for testing)
 random_seed = 30004
-num_blocks = 8
+num_blocks = 4
+name = None
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-model = Mpii_No_Context().to(device)
+model = Mpii_4().to(device)
 
 number_of_datapoints = int(len(ds) * limit_data_percent) 
 indices = list(range(number_of_datapoints))
@@ -129,25 +130,32 @@ def elastic_net_loss_paper(y_pred, y_true):
     loss = torch.sum(final_losses)
     return loss
 
-timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+if name is not None:
+    experiment_name = name
+else:
+    experiment_name = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
 if not exists("experiments"):
     makedirs("experiments")
 
-makedirs("experiments/{}".format(timestamp))
-makedirs("experiments/{}/weights".format(timestamp))
+if not exists("experiments/{}".format(experiment_name)):
+    makedirs("experiments/{}".format(experiment_name))
 
-with open('experiments/{}/parameters.csv'.format(timestamp), 'w+') as parameter_file:
-    parameter_file.write("learning_rate={}\n".format(learning_rate))
-    parameter_file.write("batch_size={}\n".format(batch_size))
-    parameter_file.write("number_of_datapoints={}\n".format(number_of_datapoints))
-    parameter_file.write("limit_data_percent={}\n".format(limit_data_percent))
-    parameter_file.write("numpy_seed={}\n".format(random_seed))
-    parameter_file.write("num_blocks={}\n".format(num_blocks))
-    parameter_file.write("nr_epochs={}\n".format(nr_epochs))
+if not exists("experiments/{}/weights".format(experiment_name)):
+    makedirs("experiments/{}/weights".format(experiment_name))
+
+with open('experiments/{}/parameters.csv'.format(experiment_name), 'w+') as parameter_file:
+    parameter_file.write("paramter_name,value\n")
+    parameter_file.write("learning_rate,{}\n".format(learning_rate))
+    parameter_file.write("batch_size,{}\n".format(batch_size))
+    parameter_file.write("number_of_datapoints,{}\n".format(number_of_datapoints))
+    parameter_file.write("limit_data_percent,{}\n".format(limit_data_percent))
+    parameter_file.write("numpy_seed,{}\n".format(random_seed))
+    parameter_file.write("num_blocks,{}\n".format(num_blocks))
+    parameter_file.write("nr_epochs,{}\n".format(nr_epochs))
 
 
-with open('experiments/{}/loss.csv'.format(timestamp), mode='w') as output_file:
+with open('experiments/{}/loss.csv'.format(experiment_name), mode='w') as output_file:
     writer = csv.writer(output_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
     writer.writerow(['epoch', 'batch_nr', 'loss', 'val_accuracy'])
 
@@ -195,7 +203,7 @@ with open('experiments/{}/loss.csv'.format(timestamp), mode='w') as output_file:
         output_file.flush()
         
         if epoch % 5 == 0:
-            torch.save(model.state_dict(), "experiments/{}/weights/weights_{:04d}".format(timestamp, epoch))
+            torch.save(model.state_dict(), "experiments/{}/weights/weights_{:04d}".format(experiment_name, epoch))
 
-    torch.save(model.state_dict(), "experiments/{}/weights/weights_final".format(timestamp))
+    torch.save(model.state_dict(), "experiments/{}/weights/weights_final".format(experiment_name))
 
