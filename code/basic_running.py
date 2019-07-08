@@ -30,21 +30,21 @@ def val_collate_fn(data):
     for obj in data:
         normalized_image = obj["normalized_image"].reshape(3, 256, 256)
         normalized_pose = obj["normalized_pose"]
-        
+
         headsize = torch.from_numpy(obj["head_size"]).float().to(device)
         trans_matrix = torch.from_numpy(obj["trans_matrix"]).float().to(device)
         image_tensor = torch.from_numpy(normalized_image).float().to(device)
         pose_tensor = torch.from_numpy(normalized_pose).float().to(device)
-        
+
         images.append(image_tensor)
         poses.append(pose_tensor)
         headsizes.append(headsize)
         matrices.append(trans_matrix)
 
     t_images = torch.stack(images, dim=0)
-    t_poses = torch.stack(poses, dim=0)    
-    t_headsizes = torch.stack(headsizes, dim=0)    
-    t_matrices = torch.stack(matrices, dim=0)    
+    t_poses = torch.stack(poses, dim=0)
+    t_headsizes = torch.stack(headsizes, dim=0)
+    t_matrices = torch.stack(matrices, dim=0)
     return t_images, t_poses, t_headsizes, t_matrices
 
 def train_collate_fn(data):
@@ -65,15 +65,15 @@ def train_collate_fn(data):
 
     return t_images, t_poses
 
-if gethostname() == "ares":
+if gethostname() == "ares" or gethostname() == "prometheus":
     batch_size = 40
 else:
     batch_size = 2
 
 learning_rate = 0.00001
-nr_epochs = 100
+nr_epochs = 10
 validation_amount = 0.1 # 10 percent
-limit_data_percent = 0.001 # limit dataset to x percent (for testing)
+limit_data_percent = 1 # limit dataset to x percent (for testing)
 random_seed = 30004
 num_blocks = 1
 name = None
@@ -81,7 +81,7 @@ name = None
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 model = Mpii_1().to(device)
 
-number_of_datapoints = int(len(ds) * limit_data_percent) 
+number_of_datapoints = int(len(ds) * limit_data_percent)
 indices = list(range(number_of_datapoints))
 split = int((1 - validation_amount) * number_of_datapoints)
 
@@ -157,7 +157,7 @@ with open('experiments/{}/parameters.csv'.format(experiment_name), 'w+') as para
 
 with open('experiments/{}/loss.csv'.format(experiment_name), mode='w') as output_file:
     writer = csv.writer(output_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-    writer.writerow(['epoch', 'batch_nr', 'loss', 'val_accuracy'])
+    writer.writerow(['epoch', 'batch_nr', 'loss', 'pckh_0.5', 'pckh_0.2'])
 
     for epoch in range(nr_epochs):
         for batch_idx, (images, poses) in enumerate(train_loader):
@@ -185,23 +185,27 @@ with open('experiments/{}/loss.csv'.format(experiment_name), mode='w') as output
             #vis_loss.backward(retain_graph=True)
 
             pose_loss = elastic_net_loss_paper(pred_pose, ground_pose)
-            loss = vis_loss * 0.01 + pose_loss         
-            
+            loss = vis_loss * 0.01 + pose_loss
+
             loss.backward()
-            
+
             optimizer.step()
             optimizer.zero_grad()
-            
+
             print("epoch {} batch_nr {} loss {}".format(epoch, batch_idx, loss.item()))
 
-        val_accuracy = []
+        val_accuracy_05 = []
+        val_accuracy_02 = []
 
         for batch_idx, (val_images, val_poses, val_headsizes, val_trans_matrices) in enumerate(val_loader):
-            scores = eval_pckh_batch(model, val_images, val_poses, val_headsizes, val_trans_matrices)
-            val_accuracy.extend(scores)
-        writer.writerow([epoch, batch_idx, loss.item(), np.mean(np.array(val_accuracy))])
+            scores_05, scores_02 = eval_pckh_batch(model, val_images, val_poses, val_headsizes, val_trans_matrices)
+            val_accuracy_05.extend(scores_05)
+            val_accuracy_02.extend(scores_02)
+
+        writer.writerow([epoch, batch_idx, loss.item(), np.mean(np.array(val_accuracy_05)), np.mean(np.array(val_accuracy_02))])
+        print([epoch, batch_idx, loss.item(), np.mean(np.array(val_accuracy_05)), np.mean(np.array(val_accuracy_02))])
         output_file.flush()
-        
+
         if epoch % 5 == 0:
             torch.save(model.state_dict(), "experiments/{}/weights/weights_{:04d}".format(experiment_name, epoch))
 
