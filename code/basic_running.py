@@ -73,13 +73,13 @@ else:
 learning_rate = 0.00001
 nr_epochs = 100
 validation_amount = 0.1 # 10 percent
-limit_data_percent = 0.001 # limit dataset to x percent (for testing)
+limit_data_percent = 1 # limit dataset to x percent (for testing)
 random_seed = 30004
-num_blocks = 4
-name = None
+num_blocks = 1
+name = "all_data_1_block"
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-model = Mpii_4().to(device)
+model = Mpii_1().to(device)
 
 number_of_datapoints = int(len(ds) * limit_data_percent) 
 indices = list(range(number_of_datapoints))
@@ -192,7 +192,7 @@ with open('experiments/{}/loss.csv'.format(experiment_name), mode='w') as output
             optimizer.step()
             optimizer.zero_grad()
             
-            print("epoch {} batch_nr {} loss {}".format(epoch, batch_idx, loss.item()))
+            #print("epoch {} batch_nr {} loss {}".format(epoch, batch_idx, loss.item()))
 
         val_accuracy = []
 
@@ -200,6 +200,7 @@ with open('experiments/{}/loss.csv'.format(experiment_name), mode='w') as output
             scores = eval_pckh_batch(model, val_images, val_poses, val_headsizes, val_trans_matrices)
             val_accuracy.extend(scores)
         writer.writerow([epoch, batch_idx, loss.item(), np.mean(np.array(val_accuracy))])
+        print([epoch, batch_idx, loss.item(), np.mean(np.array(val_accuracy))])
         output_file.flush()
         
         if epoch % 5 == 0:
