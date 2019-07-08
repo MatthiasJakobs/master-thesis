@@ -1,6 +1,8 @@
 import torch.utils.data as data
 import numpy as np
 
+import matplotlib.pyplot as plt
+
 import csv
 from datetime import datetime
 
@@ -71,12 +73,12 @@ else:
     batch_size = 2
 
 learning_rate = 0.00001
-nr_epochs = 10
+nr_epochs = 100
 validation_amount = 0.1 # 10 percent
-limit_data_percent = 1 # limit dataset to x percent (for testing)
+limit_data_percent = 0.01 # limit dataset to x percent (for testing)
 random_seed = 30004
 num_blocks = 1
-name = None
+name = "vis_test"
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 model = Mpii_1().to(device)
@@ -113,6 +115,7 @@ val_loader = data.DataLoader(
 )
 
 optimizer = optim.RMSprop(model.parameters(), lr=learning_rate)
+scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=0, verbose=True)
 
 def elastic_net_loss_paper(y_pred, y_true):
     # note: not the one used in code but the one in the paper
@@ -160,8 +163,8 @@ with open('experiments/{}/loss.csv'.format(experiment_name), mode='w') as output
     writer.writerow(['epoch', 'batch_nr', 'loss', 'pckh_0.5', 'pckh_0.2'])
 
     for epoch in range(nr_epochs):
+        model.train()
         for batch_idx, (images, poses) in enumerate(train_loader):
-            model.train()
             images = images
             poses = poses
             
@@ -197,12 +200,26 @@ with open('experiments/{}/loss.csv'.format(experiment_name), mode='w') as output
         val_accuracy_05 = []
         val_accuracy_02 = []
 
+        scheduler.step(loss.item())
+
+        model.eval()
+
         for batch_idx, (val_images, val_poses, val_headsizes, val_trans_matrices) in enumerate(val_loader):
-            scores_05, scores_02 = eval_pckh_batch(model, val_images, val_poses, val_headsizes, val_trans_matrices)
+                     
+            heatmaps, predictions = model(val_images)
+            predictions = predictions[-1, :, :, :].squeeze(dim=0)
+
+            if predictions.dim() == 2:
+                predictions = predictions.unsqueeze(0)         
+            
+            scores_05, scores_02 = eval_pckh_batch(predictions, val_poses, val_headsizes, val_trans_matrices)
             val_accuracy_05.extend(scores_05)
             val_accuracy_02.extend(scores_02)
 
-        writer.writerow([epoch, batch_idx, loss.item(), np.mean(np.array(val_accuracy_05)), np.mean(np.array(val_accuracy_02))])
+        mean_05 = np.mean(np.array(val_accuracy_05))
+        mean_02 = np.mean(np.array(val_accuracy_02))
+
+        writer.writerow([epoch, batch_idx, loss.item(), mean_05, mean_02])
         print([epoch, batch_idx, loss.item(), np.mean(np.array(val_accuracy_05)), np.mean(np.array(val_accuracy_02))])
         output_file.flush()
 

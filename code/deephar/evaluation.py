@@ -17,16 +17,9 @@ def pckh(y_true, y_pred, head_size, distance_threshold=0.5):
 
     return np.sum(matches) / np.sum(valid)
 
-def eval_pckh_batch(model, images, poses, headsizes, matrices):
+def eval_pckh_batch(predictions, poses, headsizes, matrices):
     scores_05 = []
     scores_02 = []
-
-    model.eval()
-    heatmaps, predictions = model(images)
-    predictions = predictions[-1, :, :, :].squeeze(dim=0)
-
-    if predictions.dim() == 2:
-        predictions = predictions.unsqueeze(0)
 
     for i, prediction in enumerate(predictions):
         pred_pose = prediction[:, 0:2]
