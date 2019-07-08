@@ -130,8 +130,8 @@ class ReceptionBlock(nn.Module):
 
     def forward(self, x):
         a = self.block_a(x) # Hourglass
-        b = self.block_b(a) # Pose Regression
-        return b
+        (heatmaps, pose), output = self.block_b(a) # Pose Regression
+        return heatmaps, pose, output
 
 class PoseRegressionNoContext(nn.Module):
     def __init__(self):
@@ -139,15 +139,16 @@ class PoseRegressionNoContext(nn.Module):
 
         self.softargmax = Softargmax(input_filters=16, output_filters=16, kernel_size=(32,32))
         self.probability = JointProbability(filters=16, kernel_size=(32,32))
+        self.softmax = nn.Softmax2d()
 
     def nr_heatmaps(self):
         return 16
 
     def forward(self, x):
+        heatmaps = self.softmax(x).detach().numpy().copy()
         pose = self.softargmax(x)
         visibility = self.probability(x)
-        heatmaps = x
 
         output = torch.cat((pose, visibility), 2)
 
-        return output.unsqueeze(0)
+        return heatmaps, output.unsqueeze(0)

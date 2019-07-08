@@ -23,7 +23,7 @@ def eval_pckh_batch(model, images, poses, headsizes, matrices):
     scores = []
     
     model.eval()
-    predictions = model(images)
+    heatmaps, predictions = model(images)
     predictions = predictions[-1, :, :, :].squeeze(dim=0)
 
     if predictions.dim() == 2:

@@ -75,11 +75,11 @@ nr_epochs = 100
 validation_amount = 0.1 # 10 percent
 limit_data_percent = 0.001 # limit dataset to x percent (for testing)
 random_seed = 30004
-num_blocks = 4
+num_blocks = 1
 name = None
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-model = Mpii_4().to(device)
+model = Mpii_1().to(device)
 
 number_of_datapoints = int(len(ds) * limit_data_percent) 
 indices = list(range(number_of_datapoints))
@@ -165,7 +165,7 @@ with open('experiments/{}/loss.csv'.format(experiment_name), mode='w') as output
             images = images
             poses = poses
             
-            output = model(images)
+            _, output = model(images)
             output = output.view(images.size()[0], num_blocks, -1, 3)
             # output shape: (batch_size, num_blocks, 16, 3)
             pred_pose = output[:, :, :, 0:2]
