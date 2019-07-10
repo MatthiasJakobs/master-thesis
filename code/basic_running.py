@@ -18,6 +18,7 @@ from deephar.models import *
 from deephar.utils import get_valid_joints
 from deephar.evaluation import eval_pckh_batch
 from datasets import MPIIDataset
+from visualization import show_predictions_ontop
 
 from socket import gethostname
 
@@ -70,15 +71,15 @@ def train_collate_fn(data):
 if gethostname() == "ares" or gethostname() == "prometheus":
     batch_size = 40
 else:
-    batch_size = 2
+    batch_size = 20
 
 learning_rate = 0.00001
 nr_epochs = 3
 validation_amount = 0.1 # 10 percent
-limit_data_percent = 1 # limit dataset to x percent (for testing)
+limit_data_percent = 0.1 # limit dataset to x percent (for testing)
 random_seed = 30004
 num_blocks = 1
-name = "all_data_1_block"
+name = "vis_test"
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 model = Mpii_1().to(device)
@@ -204,13 +205,21 @@ with open('experiments/{}/loss.csv'.format(experiment_name), mode='w') as output
 
         model.eval()
 
+        if not exists('experiments/{}/val_images'.format(experiment_name)):
+            makedirs('experiments/{}/val_images'.format(experiment_name))
+
         for batch_idx, (val_images, val_poses, val_headsizes, val_trans_matrices) in enumerate(val_loader):
             heatmaps, predictions = model(val_images)
             predictions = predictions[-1, :, :, :].squeeze(dim=0)
 
             if predictions.dim() == 2:
                 predictions = predictions.unsqueeze(0)
-
+            
+            if not exists('experiments/{}/val_images/{}'.format(experiment_name, epoch)):
+                makedirs('experiments/{}/val_images/{}'.format(experiment_name, epoch))
+            
+            show_predictions_ontop(val_images[0], heatmaps[0], 'experiments/{}/val_images/{}/{}.png'.format(experiment_name, epoch, batch_idx))
+            
             scores_05, scores_02 = eval_pckh_batch(predictions, val_poses, val_headsizes, val_trans_matrices)
             val_accuracy_05.extend(scores_05)
             val_accuracy_02.extend(scores_02)

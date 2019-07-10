@@ -70,6 +70,7 @@ def rotate_and_crop(image, angle, center, window_size):
 
 def normalize_channels(input_image, power_factors=None):
     # power factors = vector of factors for each channel, i.e. (0.01, 0.001, 0.1)
+    return input_image.copy() # until I figure out why this is distorted
     image = input_image.copy()    
     if power_factors is not None:
         assert len(power_factors) == 3

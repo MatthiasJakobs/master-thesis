@@ -3,6 +3,8 @@ from matplotlib.patches import Rectangle
 
 from skimage.transform import resize
 
+import os
+
 def show_pose(clip, idx):
     image = clip["images"][idx]
     pose = clip["poses"][idx]
@@ -65,28 +67,25 @@ def show_pose_mpii(annotation):
     plt.pause(0.001)
     plt.show()
 
-def show_predictions_ontop(image, heatmaps):
+def show_predictions_ontop(image, heatmaps, path):
     #heatmaps = heatmaps[-1, :, :, :]
     #single_image = images[-1, :, :, :].reshape(256, 256, 3)
     #single_image = resize(single_image, (128, 128))
 
-    fig, ax = plt.subplots(nrows=4, ncols=4)
-    ax.set_xticks([])
-    ax.set_yticks([])
+    image = image.reshape(256, 256 , 3)
+    image = resize(image, (128, 128))
+
+    fig, ax = plt.subplots(nrows=4, ncols=4, figsize=(10, 10))
     
     for i, axi in enumerate(ax.flat):
-        if i > 15:
-            continue
-        if i == 0:
-            axi.imshow(image)
-        else:
-            heatmap = heatmaps[i-1]
-            #heatmap = heatmap * 2 - 1
-            #heatmap = resize(heatmap, (128, 128))
-            axi.imshow(heatmap)
-        #rowid = i 
-        #colid = i % 4
+        axi.set_xticks([])
+        axi.set_yticks([])
 
-    #plt.tight_layout(True)
-    plt.show()
+        heatmap = heatmaps[i]
+        axi.imshow(image)
+        axi.imshow(resize(heatmap, (128, 128)), alpha=0.5)
+
+    if os.path.isfile(path):
+        os.remove(path)
+    plt.savefig(path, pad_inches=0.01)
 
