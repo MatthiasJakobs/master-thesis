@@ -211,6 +211,25 @@ class PennActionDataset(data.Dataset):
 
         return np.array(processed_frames), np.array(normalized_frames), np.array(processed_poses), np.array(trans_matrices)
 
+mpii_joint_order = [
+    "right ankle",    
+    "right knee",
+    "right hip",
+    "left hip",
+    "left knee",
+    "left ankle",
+    "pelvis",
+    "thorax",
+    "upper neck",
+    "head top",
+    "right wrist",
+    "right elbow",
+    "right shoulder",
+    "left shoulder",
+    "left elbow",
+    "left wrist"
+]
+
 class MPIIDataset(data.Dataset):
 
     '''

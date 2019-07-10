@@ -3,6 +3,8 @@ from matplotlib.patches import Rectangle
 
 from skimage.transform import resize
 
+from datasets import mpii_joint_order
+
 import os
 
 def show_pose(clip, idx):
@@ -67,13 +69,12 @@ def show_pose_mpii(annotation):
     plt.pause(0.001)
     plt.show()
 
-def show_predictions_ontop(image, heatmaps, path):
+def show_predictions_ontop(image, poses, path):
     #heatmaps = heatmaps[-1, :, :, :]
     #single_image = images[-1, :, :, :].reshape(256, 256, 3)
     #single_image = resize(single_image, (128, 128))
 
     image = image.reshape(256, 256 , 3)
-    image = resize(image, (128, 128))
 
     fig, ax = plt.subplots(nrows=4, ncols=4, figsize=(10, 10))
     
@@ -81,9 +82,12 @@ def show_predictions_ontop(image, heatmaps, path):
         axi.set_xticks([])
         axi.set_yticks([])
 
-        heatmap = heatmaps[i]
+        pose_coordinates = poses[i].detach().numpy()
         axi.imshow(image)
-        axi.imshow(resize(heatmap, (128, 128)), alpha=0.5)
+        axi.scatter(pose_coordinates[0], pose_coordinates[1], c="#FF00FF")
+        print(pose_coordinates[0], pose_coordinates[1])
+        axi.set_title(mpii_joint_order[i] + " vis: {0:.2f}".format(pose_coordinates[2]))
+        #axi.imshow(resize(heatmap, (128, 128)), alpha=0.5)
 
     if os.path.isfile(path):
         os.remove(path)
