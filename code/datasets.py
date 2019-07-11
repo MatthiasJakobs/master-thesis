@@ -403,10 +403,10 @@ class MPIIDataset(data.Dataset):
         original_pose[np.isnan(original_pose)] = -1e9
 
         normalized_pose = original_pose.copy()
-        normalized_pose[:,0:2] /= self.final_size
+        # normalized_pose[:,0:2] /= self.final_size
 
         # According to paper:
-        lower_one = np.apply_along_axis(np.all, 1, normalized_pose[:,0:2] < 1.0)
+        lower_one = np.apply_along_axis(np.all, 1, normalized_pose[:,0:2] < float(self.final_size))
         bigger_zero = np.apply_along_axis(np.all, 1, normalized_pose[:,0:2] > 0.0)
 
         in_interval = np.logical_and(lower_one, bigger_zero)

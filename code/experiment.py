@@ -207,6 +207,7 @@ def run_experiment_mpii(conf):
                 if not exists('experiments/{}/val_images/{}'.format(experiment_name, epoch)):
                     makedirs('experiments/{}/val_images/{}'.format(experiment_name, epoch))
                 
+                print(predictions[0], val_poses[0])
                 show_predictions_ontop(val_images[0], predictions[0], 'experiments/{}/val_images/{}/{}.png'.format(experiment_name, epoch, batch_idx))
                 
                 scores_05, scores_02 = eval_pckh_batch(predictions, val_poses, val_headsizes, val_trans_matrices)
