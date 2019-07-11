@@ -1,8 +1,6 @@
 import torch.utils.data as data
 import numpy as np
 
-import matplotlib.pyplot as plt
-
 import csv
 from datetime import datetime
 

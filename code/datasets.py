@@ -5,8 +5,6 @@ import os
 import re
 import glob
 
-import matplotlib.pyplot as plt
-
 import scipy.io as sio
 import numpy as np
 import pandas as pd
