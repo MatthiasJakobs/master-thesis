@@ -24,7 +24,7 @@ def show_pose_on_image(image, pose):
         x = joint[0]
         y = joint[1]
         visible = joint[2]
-        
+
         if visible:
             plt.scatter(x, y, s=10, marker="*", c="g")
 
@@ -80,12 +80,15 @@ def show_predictions_ontop(image, poses, path):
     image = image.reshape(256, 256 , 3)
 
     fig, ax = plt.subplots(nrows=4, ncols=4, figsize=(10, 10))
-    
+
     for i, axi in enumerate(ax.flat):
         axi.set_xticks([])
         axi.set_yticks([])
 
-        pose_coordinates = poses[i].detach().numpy()
+        if torch.cuda.is_available():
+            pose_coordinates = poses[i].cpu().detach().numpy()
+        else:
+            pose_coordinates = poses[i].detach().numpy()
         axi.imshow(image)
         axi.scatter(pose_coordinates[0], pose_coordinates[1], c="#FF00FF")
         axi.set_title(mpii_joint_order[i] + " vis: {0:.2f}".format(pose_coordinates[2]))
