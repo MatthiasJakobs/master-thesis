@@ -10,6 +10,8 @@ from datasets import mpii_joint_order
 
 import os
 
+import torch
+
 def show_pose(clip, idx):
     image = clip["images"][idx]
     pose = clip["poses"][idx]
