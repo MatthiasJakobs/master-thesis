@@ -91,7 +91,10 @@ def show_predictions_ontop(image, poses, path):
             pose_coordinates = poses[i].cpu().detach().numpy()
         else:
             pose_coordinates = poses[i].detach().numpy()
-        axi.imshow(image)
+        if torch.cuda.is_available():
+            axi.imshow(image.cpu())
+        else:
+            axi.imshow(image)
         axi.scatter(pose_coordinates[0], pose_coordinates[1], c="#FF00FF")
         axi.set_title(mpii_joint_order[i] + " vis: {0:.2f}".format(pose_coordinates[2]))
         #axi.imshow(resize(heatmap, (128, 128)), alpha=0.5)
