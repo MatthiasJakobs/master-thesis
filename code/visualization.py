@@ -74,7 +74,7 @@ def show_pose_mpii(annotation):
     plt.pause(0.001)
     plt.show()
 
-def show_predictions_ontop(image, poses, path):
+def show_predictions_ontop(ground_truth, image, poses, path):
     #heatmaps = heatmaps[-1, :, :, :]
     #single_image = images[-1, :, :, :].reshape(256, 256, 3)
     #single_image = resize(single_image, (128, 128))
@@ -89,12 +89,15 @@ def show_predictions_ontop(image, poses, path):
 
         if torch.cuda.is_available():
             pose_coordinates = poses[i].cpu().detach().numpy()
+            gt_coordintates = ground_truth[i].cpu().detach().numpy()
         else:
             pose_coordinates = poses[i].detach().numpy()
+            gt_coordintates = ground_truth[i].detach().numpy()
         if torch.cuda.is_available():
             axi.imshow(image.cpu())
         else:
             axi.imshow(image)
+        axi.scatter(gt_coordintates[0], gt_coordintates[1], c="b")
         axi.scatter(pose_coordinates[0], pose_coordinates[1], c="#FF00FF")
         axi.set_title(mpii_joint_order[i] + " vis: {0:.2f}".format(pose_coordinates[2]))
         #axi.imshow(resize(heatmap, (128, 128)), alpha=0.5)
@@ -102,5 +105,5 @@ def show_predictions_ontop(image, poses, path):
     if os.path.isfile(path):
         os.remove(path)
     plt.savefig(path, pad_inches=0.01)
-    plt.clf()
+    plt.close()
 

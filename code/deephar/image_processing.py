@@ -5,22 +5,54 @@ from skimage.transform import rotate
 from deephar.utils import transform, transform_2d_point, translate
 
 def center_crop(image, center, size, trans_matrix):
-    half_width = size[0] / 2
-    half_height = size[1] / 2
+    half_width = int(size[0] / 2)
+    half_height = int(size[1] / 2)
+
+    new_image = np.zeros((half_height * 2, half_width * 2, 3)) # due to rounding errors
 
     image_width = image.shape[1]
     image_height = image.shape[0]
 
-    start_x = int(max(0, center[0] - half_width))
-    end_x = int(min(image_width, center[0] + half_width))
+    start_x = int(center[0] - half_width)
+    end_x = int(center[0] + half_width)
     
-    start_y = int(max(0, center[1] - half_height))
-    end_y = int(min(image_height, center[1] + half_height))
+    start_y = int(center[1] - half_height)
+    end_y = int(center[1] + half_height)
 
-    # Concern: Maybe clipping between (0, width) etc. only for when actually slicing and not before matrix translate? could f things up
     trans_matrix = translate(trans_matrix, -start_x, -start_y)
 
-    return trans_matrix, image[start_y : end_y, start_x : end_x, :]
+    if start_x < 0:
+        x_offset = abs(start_x)
+    else:
+        x_offset = 0
+
+    if start_y < 0:
+        y_offset = abs(start_y)
+    else:
+        y_offset = 0
+
+    if (end_x + x_offset) > image_width:
+        x_after_offset = (end_x + x_offset) - image_width
+    else:
+        x_after_offset = 0
+
+    if (end_y + y_offset) > image_height:
+        y_after_offset = (end_y + y_offset) - image_height
+    else:
+        y_after_offset = 0
+
+    padded_image = np.zeros((image_height + y_offset + y_after_offset, image_width + x_offset + x_after_offset, 3))
+    padded_image[y_offset : y_offset + image_height, x_offset : x_offset + image_width, :] = image[:,:,:]
+
+    start_slice_x = 0 if x_offset > 0 else start_x
+    start_slice_y = 0 if y_offset > 0 else start_y
+
+    end_slice_x = half_width * 2 + start_slice_x
+    end_slice_y = half_width * 2 + start_slice_y
+
+    new_image[:,:,:] = padded_image[start_slice_y : end_slice_y, start_slice_x: end_slice_x, :]
+
+    return trans_matrix, new_image
 
 def rotate_and_crop(image, angle, center, window_size):
     image_width = image.shape[1]

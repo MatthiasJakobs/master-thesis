@@ -380,6 +380,8 @@ class MPIIDataset(data.Dataset):
             trans_matrix = flip_h(trans_matrix)
             trans_matrix = translate(trans_matrix, image.shape[1] / 2, image.shape[0] / 2)
 
+        trans_matrix = scale(trans_matrix, 1.0 / self.final_size, 1.0 / self.final_size)
+
         output = {}
         output["center"] = transform_2d_point(trans_matrix, old_objpos)
 
@@ -401,7 +403,6 @@ class MPIIDataset(data.Dataset):
         original_pose[np.isnan(original_pose)] = -1e9
 
         normalized_pose = original_pose.copy()
-        normalized_pose[:,0:2] /= self.final_size
 
         # According to paper:
         lower_one = np.apply_along_axis(np.all, 1, normalized_pose[:,0:2] < 1.0)
