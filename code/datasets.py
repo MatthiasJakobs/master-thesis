@@ -20,7 +20,7 @@ class PennActionDataset(data.Dataset):
     def __init__(self, root_dir, use_random_parameters=True, transform=None):
         self.root_dir = root_dir
         self.items = sorted(os.listdir(self.root_dir + "frames"))
-        
+
         self.mpii_mapping = np.array([
             [0, 8],  # head -> upper neck
             [1, 13], # left shoulder
@@ -36,7 +36,7 @@ class PennActionDataset(data.Dataset):
             [11, 5], # left ankle
             [12, 0]  # right ankle
         ])
-        
+
         self.action_mapping = {
             "baseball_pitch": 0,
             "baseball_swing": 2,
@@ -56,7 +56,7 @@ class PennActionDataset(data.Dataset):
         }
 
         self.final_size=256
-        
+
         if use_random_parameters:
             self.angles=np.array(range(-30, 30+1, 5))
             self.scales=np.array([0.7, 1.0, 1.3, 2.5])
@@ -83,7 +83,7 @@ class PennActionDataset(data.Dataset):
         images = []
         frame_folder = self.root_dir + "frames/" + self.items[idx] + "/"
         all_images = sorted(os.listdir(frame_folder))
-        
+
         poses = []
         for i in range(len(all_images)):
             image = io.imread(frame_folder + all_images[i])
@@ -122,11 +122,11 @@ class PennActionDataset(data.Dataset):
         conf_subsample = self.subsampling[np.random.randint(0, len(self.subsampling))]
         conf_trans_x = self.trans_x[np.random.randint(0, len(self.trans_x))]
         conf_trans_y = self.trans_y[np.random.randint(0, len(self.trans_y))]
-        
+
         if self.channel_power_exponent is not None:
             conf_exponents = np.array([
-                self.channel_power_exponent[np.random.randint(0, len(self.channel_power_exponent))], 
-                self.channel_power_exponent[np.random.randint(0, len(self.channel_power_exponent))], 
+                self.channel_power_exponent[np.random.randint(0, len(self.channel_power_exponent))],
+                self.channel_power_exponent[np.random.randint(0, len(self.channel_power_exponent))],
                 self.channel_power_exponent[np.random.randint(0, len(self.channel_power_exponent))]
             ])
         else:
@@ -134,7 +134,7 @@ class PennActionDataset(data.Dataset):
 
         image_width = images.shape[2]
         image_height = images.shape[1]
-        window_size = conf_scale * max(image_height, image_width) 
+        window_size = conf_scale * max(image_height, image_width)
 
         bbox = np.array([
             max(int(image_width / 2) - (window_size / 2), 0), # x1, upper left
@@ -168,7 +168,7 @@ class PennActionDataset(data.Dataset):
 
             image = resize(image, (256, 256), preserve_range=True)
             trans_matrix = scale(trans_matrix, 256 / size_after_rotate[0], 256 / size_after_rotate[1])
-            
+
             #TODO: subsampling
 
             # randomly flip horizontal
@@ -198,11 +198,11 @@ class PennActionDataset(data.Dataset):
                     final_pose[mpii_index, 0:2] = np.array([1e-9, 1e-9])
 
             final_pose[np.isnan(final_pose)] = 1e-9
-            
+
             valid_joints = get_valid_joints(final_pose, need_sum=False)[:, 0:2]
             visibility = np.apply_along_axis(np.all, 1, valid_joints)
             final_pose[:, 2] = visibility
-            
+
             processed_poses.append(final_pose)
             processed_frames.append(image)
             trans_matrices.append(trans_matrix.copy())
@@ -210,7 +210,7 @@ class PennActionDataset(data.Dataset):
         return np.array(processed_frames), np.array(normalized_frames), np.array(processed_poses), np.array(trans_matrices)
 
 mpii_joint_order = [
-    "right ankle",    
+    "right ankle",
     "right knee",
     "right hip",
     "left hip",
@@ -238,18 +238,18 @@ class MPIIDataset(data.Dataset):
     '''
 
     def __init__(self, root_dir, transform=None, use_random_parameters=True):
-               
+
         self.root_dir = root_dir
 
         assert "annotations.mat" in os.listdir(self.root_dir)
 
         annotations = sio.loadmat(self.root_dir + "annotations")["RELEASE"]
-        
+
         train_binary = annotations["img_train"][0][0][0]
         train_indeces = np.where(np.array(train_binary))[0]
 
         self.final_size=256
-        
+
         if use_random_parameters:
             self.angles=np.array(range(-40, 40+1, 5))
             self.scales=np.array([0.7, 1., 1.3])
@@ -260,7 +260,7 @@ class MPIIDataset(data.Dataset):
             self.scales=np.array([1., 1., 1.])
             self.flip_horizontal = np.array([0, 0])
             self.channel_power_exponent = None
-        
+
         self.labels = []
         missing_annnotation_count = 0
 
@@ -277,15 +277,15 @@ class MPIIDataset(data.Dataset):
 
             for rect_id in range(len(annorect[0])):
                 ann = annorect[0][rect_id]
-                head_coordinates = [ 
-                    float(superflatten(ann["x1"])), 
-                    float(superflatten(ann["y1"])), 
-                    float(superflatten(ann["x2"])), 
+                head_coordinates = [
+                    float(superflatten(ann["x1"])),
+                    float(superflatten(ann["y1"])),
+                    float(superflatten(ann["x2"])),
                     float(superflatten(ann["y2"]))
                 ] # rect x1, y1, x2, y2
                 try:
                     scale = superflatten(ann["scale"])
-                    
+
                     obj_pose = [
                         # rough position of human body (x,y)
                         superflatten(superflatten(ann["objpos"]["x"])),
@@ -293,7 +293,7 @@ class MPIIDataset(data.Dataset):
                     ]
 
                     point = superflatten(ann["annopoints"]["point"])
-                    
+
                     xs = list(map(lambda x: superflatten(x), point["x"].flatten()))
                     ys = list(map(lambda x: superflatten(x), point["y"].flatten()))
 
@@ -340,13 +340,13 @@ class MPIIDataset(data.Dataset):
         conf_flip = self.flip_horizontal[np.random.randint(0, len(self.flip_horizontal))]
         if self.channel_power_exponent is not None:
             conf_exponents = np.array([
-                self.channel_power_exponent[np.random.randint(0, len(self.channel_power_exponent))], 
-                self.channel_power_exponent[np.random.randint(0, len(self.channel_power_exponent))], 
+                self.channel_power_exponent[np.random.randint(0, len(self.channel_power_exponent))],
+                self.channel_power_exponent[np.random.randint(0, len(self.channel_power_exponent))],
                 self.channel_power_exponent[np.random.randint(0, len(self.channel_power_exponent))]
             ])
         else:
             conf_exponents = None
-        
+
         new_scale = label["scale"] * 1.25 # magic value
         new_objpose = np.array([label["obj_pose"][0], label["obj_pose"][1] + 12 * new_scale]) # magic values, no idea where they are comming from
 
@@ -382,7 +382,7 @@ class MPIIDataset(data.Dataset):
 
         output = {}
         output["center"] = transform_2d_point(trans_matrix, old_objpos)
-        
+
         new_x = []
         new_y = []
         for idx, (x, y) in enumerate(old_pose):
@@ -401,10 +401,10 @@ class MPIIDataset(data.Dataset):
         original_pose[np.isnan(original_pose)] = -1e9
 
         normalized_pose = original_pose.copy()
-        # normalized_pose[:,0:2] /= self.final_size
+        normalized_pose[:,0:2] /= self.final_size
 
         # According to paper:
-        lower_one = np.apply_along_axis(np.all, 1, normalized_pose[:,0:2] < float(self.final_size))
+        lower_one = np.apply_along_axis(np.all, 1, normalized_pose[:,0:2] < 1.0)
         bigger_zero = np.apply_along_axis(np.all, 1, normalized_pose[:,0:2] > 0.0)
 
         in_interval = np.logical_and(lower_one, bigger_zero)
@@ -412,10 +412,12 @@ class MPIIDataset(data.Dataset):
         normalized_pose[:,2] = in_interval
 
         # calculating head size for pckh (according to paper)
-        head_size = 0.6 * np.linalg.norm(label["head"][0:2] - label["head"][2:4])
+        head_point_upper = np.array([label["head"][0], label["head"][1]])
+        head_point_lower = np.array([label["head"][2], label["head"][3]])
+        head_size = 0.6 * np.linalg.norm(head_point_upper - head_point_lower)
 
         image_normalized = normalize_channels(image, power_factors=conf_exponents)
-        
+
         output["original_image"] = image
         output["bbox"] = bbox
         output["normalized_image"] = image_normalized
@@ -423,10 +425,10 @@ class MPIIDataset(data.Dataset):
         output["original_pose"] = original_pose
         output["head_size"] = np.array([head_size])
         output["trans_matrix"] = trans_matrix.copy()
-            
+
         return output
 
-    
+
 class JHMDBDataset(data.Dataset):
 
     def __init__(self, root_dir, transform=None):
@@ -440,10 +442,10 @@ class JHMDBDataset(data.Dataset):
         item_path = self.items[idx]
         relative_path_split = item_path[len(self.root_dir):].split("/")
         action = relative_path_split[0]
-        
+
         label = sio.loadmat(item_path + "/joint_positions")
         pose = label["pos_img"].T
-        
+
         all_images = glob.glob(item_path + "/*.png")
         images = []
         for image_path in all_images:
@@ -458,7 +460,7 @@ class JHMDBDataset(data.Dataset):
             for joint in frame_pose:
                 x = joint[0]
                 y = joint[1]
-                
+
                 if x < 0 or x > image_width or y < 0 or y > image_height:
                     frame_visibility.append(0)
                 else:

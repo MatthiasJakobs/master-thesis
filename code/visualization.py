@@ -102,4 +102,5 @@ def show_predictions_ontop(image, poses, path):
     if os.path.isfile(path):
         os.remove(path)
     plt.savefig(path, pad_inches=0.01)
+    plt.clf()
 
