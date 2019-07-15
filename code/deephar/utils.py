@@ -28,9 +28,15 @@ def linspace_2d(rows, cols, dim):
 
     return x
 
-def transform_2d_point(A, x):
+def transform_2d_point(A, x, inverse=False):
     # point has shape (2,), so expansion is needed
     x = np.expand_dims(x, axis=-1)
+    
+    if inverse:
+        if torch.cuda.is_available():
+            A = np.linalg.inv(A.cpu())
+        else:
+            A = np.linalg.inv(A)
     
     y = transform(A, x)
     y = np.squeeze(y)
@@ -40,14 +46,8 @@ def transform_2d_point(A, x):
 def transform_pose(A, pose, inverse=False):
     new_pose = np.empty(pose.shape)
 
-    if inverse:
-        if torch.cuda.is_available():
-            A = np.linalg.inv(A.cpu())
-        else:
-            A = np.linalg.inv(A)
-
     for i, (x,y) in enumerate(pose):
-        transformed_point = transform_2d_point(A, np.array([x, y]))
+        transformed_point = transform_2d_point(A, np.array([x, y]), inverse=inverse)
         new_pose[i] = transformed_point
 
     return new_pose

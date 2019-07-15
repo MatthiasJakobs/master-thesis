@@ -384,7 +384,7 @@ class MPIIDataset(data.Dataset):
 
         output = {}
         output["center"] = transform_2d_point(trans_matrix, old_objpos)
-
+        output["original_size"] = torch.tensor([image_height, image_width], requires_grad=False)
         new_x = []
         new_y = []
         for idx, (x, y) in enumerate(old_pose):

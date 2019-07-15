@@ -12,6 +12,8 @@ import os
 
 import torch
 
+from deephar.utils import transform_2d_point
+
 def show_pose(clip, idx):
     image = clip["images"][idx]
     pose = clip["poses"][idx]
@@ -74,7 +76,7 @@ def show_pose_mpii(annotation):
     plt.pause(0.001)
     plt.show()
 
-def show_predictions_ontop(ground_truth, image, poses, path):
+def show_predictions_ontop(ground_truth, image, poses, path, matrix, original_size):
     #heatmaps = heatmaps[-1, :, :, :]
     #single_image = images[-1, :, :, :].reshape(256, 256, 3)
     #single_image = resize(single_image, (128, 128))
@@ -97,10 +99,28 @@ def show_predictions_ontop(ground_truth, image, poses, path):
             axi.imshow(image.cpu())
         else:
             axi.imshow(image)
+
+        vis = pose_coordinates[2]
+        if ground_truth[i, 2] == 0.0:
+            axi.set_title(mpii_joint_order[i] + " not visible")
+            continue
+        else:
+            axi.set_title(mpii_joint_order[i] + " vis: {0:.2f}".format(vis))
+
+        gt_coordintates = transform_2d_point(matrix, gt_coordintates[0:2], inverse=True)
+        pose_coordinates = transform_2d_point(matrix, pose_coordinates[0:2], inverse=True)
+
+        x_factor = 255.0 / float(original_size[1])
+        y_factor = 255.0 / float(original_size[0])
+
+        gt_coordintates[0] = gt_coordintates[0] * x_factor
+        gt_coordintates[1] = gt_coordintates[1] * y_factor
+
+        pose_coordinates[0] = pose_coordinates[0] * x_factor
+        pose_coordinates[1] = pose_coordinates[1] * y_factor
+
         axi.scatter(gt_coordintates[0], gt_coordintates[1], c="b")
         axi.scatter(pose_coordinates[0], pose_coordinates[1], c="#FF00FF")
-        axi.set_title(mpii_joint_order[i] + " vis: {0:.2f}".format(pose_coordinates[2]))
-        #axi.imshow(resize(heatmap, (128, 128)), alpha=0.5)
 
     if os.path.isfile(path):
         os.remove(path)
