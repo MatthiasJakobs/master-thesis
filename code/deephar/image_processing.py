@@ -1,10 +1,11 @@
 import numpy as np
-
+import math
 from skimage.transform import rotate
 
 from deephar.utils import transform, transform_2d_point, translate
 
 def center_crop(image, center, size, trans_matrix):
+    center = np.array([math.floor(center[0]), math.floor(center[1])])
     half_width = int(size[0] / 2)
     half_height = int(size[1] / 2)
 
@@ -13,11 +14,11 @@ def center_crop(image, center, size, trans_matrix):
     image_width = image.shape[1]
     image_height = image.shape[0]
 
-    start_x = int(center[0] - half_width)
-    end_x = int(center[0] + half_width)
+    start_x = center[0] - half_width
+    end_x = center[0] + half_width
     
-    start_y = int(center[1] - half_height)
-    end_y = int(center[1] + half_height)
+    start_y = center[1] - half_height
+    end_y = center[1] + half_height
 
     trans_matrix = translate(trans_matrix, -start_x, -start_y)
 
