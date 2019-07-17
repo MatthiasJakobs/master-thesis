@@ -203,27 +203,28 @@ def run_experiment_mpii(conf):
             if not exists('experiments/{}/val_images'.format(experiment_name)):
                 makedirs('experiments/{}/val_images'.format(experiment_name))
 
-            for batch_idx, (val_images, val_poses, val_headsizes, val_trans_matrices, val_original_sizes) in enumerate(val_loader):
-                heatmaps, predictions = model(val_images)
-                predictions = predictions[-1, :, :, :].squeeze(dim=0)
+            with torch.no_grad():
+                for batch_idx, (val_images, val_poses, val_headsizes, val_trans_matrices, val_original_sizes) in enumerate(val_loader):
+                    heatmaps, predictions = model(val_images)
+                    predictions = predictions[-1, :, :, :].squeeze(dim=0)
 
-                if predictions.dim() == 2:
-                    predictions = predictions.unsqueeze(0)
+                    if predictions.dim() == 2:
+                        predictions = predictions.unsqueeze(0)
 
-                if not exists('experiments/{}/val_images/{}'.format(experiment_name, epoch)):
-                    makedirs('experiments/{}/val_images/{}'.format(experiment_name, epoch))
+                    if not exists('experiments/{}/val_images/{}'.format(experiment_name, epoch)):
+                        makedirs('experiments/{}/val_images/{}'.format(experiment_name, epoch))
 
-                show_predictions_ontop(val_poses[0], val_images[0], predictions[0], 'experiments/{}/val_images/{}/{}.png'.format(experiment_name, epoch, batch_idx), val_trans_matrices[0], val_original_sizes[0])
+                    show_predictions_ontop(val_poses[0], val_images[0], predictions[0], 'experiments/{}/val_images/{}/{}.png'.format(experiment_name, epoch, batch_idx), val_trans_matrices[0], val_original_sizes[0])
 
-                scores_05, scores_02 = eval_pckh_batch(predictions, val_poses, val_headsizes, val_trans_matrices)
-                val_accuracy_05.extend(scores_05)
-                val_accuracy_02.extend(scores_02)
+                    scores_05, scores_02 = eval_pckh_batch(predictions, val_poses, val_headsizes, val_trans_matrices)
+                    val_accuracy_05.extend(scores_05)
+                    val_accuracy_02.extend(scores_02)
 
-            mean_05 = np.mean(np.array(val_accuracy_05))
-            mean_02 = np.mean(np.array(val_accuracy_02))
+                mean_05 = np.mean(np.array(val_accuracy_05))
+                mean_02 = np.mean(np.array(val_accuracy_02))
 
-            writer.writerow([epoch, batch_idx, loss.item(), mean_05, mean_02])
-            print([epoch, batch_idx, loss.item(), np.mean(np.array(val_accuracy_05)), np.mean(np.array(val_accuracy_02))])
-            output_file.flush()
+                writer.writerow([epoch, batch_idx, loss.item(), mean_05, mean_02])
+                print([epoch, batch_idx, loss.item(), np.mean(np.array(val_accuracy_05)), np.mean(np.array(val_accuracy_02))])
+                output_file.flush()
 
-            torch.save(model.state_dict(), "experiments/{}/weights/weights_{:04d}".format(experiment_name, epoch))
+                torch.save(model.state_dict(), "experiments/{}/weights/weights_{:04d}".format(experiment_name, epoch))
