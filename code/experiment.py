@@ -1,6 +1,8 @@
 import torch.utils.data as data
 import numpy as np
 
+import time
+
 import csv
 from datetime import datetime
 
@@ -159,8 +161,12 @@ def run_experiment_mpii(conf):
         writer.writerow(['epoch', 'batch_nr', 'loss', 'pckh_0.5', 'pckh_0.2'])
 
         for epoch in range(nr_epochs):
+            start_train_epoch_time = time.time()
+            
             model.train()
             for batch_idx, (images, poses) in enumerate(train_loader):
+                start_train_batch_time = time.time()
+
                 images = images
                 poses = poses
 
@@ -190,8 +196,13 @@ def run_experiment_mpii(conf):
 
                 optimizer.step()
                 optimizer.zero_grad()
+                
+                stop_train_batch_time = time.time()
+                print("time train batch {} - {}: ".format(epoch, batch_idx), stop_train_batch_time - start_train_batch_time)
+                #print("epoch {} batch_nr {} loss {} lr {}".format(epoch, batch_idx, loss.item(), get_lr(optimizer)))
 
-                print("epoch {} batch_nr {} loss {} lr {}".format(epoch, batch_idx, loss.item(), get_lr(optimizer)))
+            stop_train_epoch_time = time.time()
+            print("time train epoch {}: ".format(epoch), stop_train_epoch_time - start_train_epoch_time)
 
             val_accuracy_05 = []
             val_accuracy_02 = []
@@ -204,7 +215,11 @@ def run_experiment_mpii(conf):
                 makedirs('experiments/{}/val_images'.format(experiment_name))
 
             with torch.no_grad():
+                start_val_epoch_time = time.time()
+
                 for batch_idx, (val_images, val_poses, val_headsizes, val_trans_matrices, val_original_sizes) in enumerate(val_loader):
+                    start_val_batch_time = time.time()
+
                     heatmaps, predictions = model(val_images)
                     predictions = predictions[-1, :, :, :].squeeze(dim=0)
 
@@ -219,6 +234,11 @@ def run_experiment_mpii(conf):
                     scores_05, scores_02 = eval_pckh_batch(predictions, val_poses, val_headsizes, val_trans_matrices)
                     val_accuracy_05.extend(scores_05)
                     val_accuracy_02.extend(scores_02)
+                                        
+                    stop_val_batch_time = time.time()
+                    print("time val batch {} - {}: ".format(epoch, batch_idx), stop_val_batch_time - start_val_batch_time)
+
+
 
                 mean_05 = np.mean(np.array(val_accuracy_05))
                 mean_02 = np.mean(np.array(val_accuracy_02))
@@ -227,4 +247,12 @@ def run_experiment_mpii(conf):
                 print([epoch, batch_idx, loss.item(), np.mean(np.array(val_accuracy_05)), np.mean(np.array(val_accuracy_02))])
                 output_file.flush()
 
+                stop_val_epoch_time = time.time()
+                print("time val epoch {}".format(epoch), stop_val_epoch_time - start_val_epoch_time)
+
+
+                start_save_model_time = time.time()
                 torch.save(model.state_dict(), "experiments/{}/weights/weights_{:04d}".format(experiment_name, epoch))
+                stop_save_model_time = time.time()
+                print("time save model", stop_save_model_time - start_save_model_time)
+
