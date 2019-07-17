@@ -21,6 +21,10 @@ from visualization import show_predictions_ontop
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
+def get_lr(optimizer):
+    for param_group in optimizer.param_groups:
+        return param_group['lr']
+
 def val_collate_fn(data):
     images = []
     poses = []
@@ -187,7 +191,7 @@ def run_experiment_mpii(conf):
                 optimizer.step()
                 optimizer.zero_grad()
 
-                print("epoch {} batch_nr {} loss {}".format(epoch, batch_idx, loss.item()))
+                print("epoch {} batch_nr {} loss {} lr {}".format(epoch, batch_idx, loss.item(), get_lr(optimizer)))
 
             val_accuracy_05 = []
             val_accuracy_02 = []
@@ -195,9 +199,6 @@ def run_experiment_mpii(conf):
             scheduler.step(loss.item())
 
             model.eval()
-
-            if epoch > 3:
-                print("test")
 
             if not exists('experiments/{}/val_images'.format(experiment_name)):
                 makedirs('experiments/{}/val_images'.format(experiment_name))
