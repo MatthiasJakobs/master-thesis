@@ -334,6 +334,7 @@ class MPIIDataset(data.Dataset):
         label = self.labels[idx]
         full_image_path = self.root_dir + "images/" + label["image_name"]
         image = io.imread(full_image_path)
+        original_image = image.copy()
 
         conf_scale = self.scales[np.random.randint(0, len(self.scales))]
         conf_angle = self.angles[np.random.randint(0, len(self.angles))]
@@ -419,7 +420,7 @@ class MPIIDataset(data.Dataset):
 
         image_normalized = normalize_channels(image, power_factors=conf_exponents)
 
-        output["original_image"] = image
+        output["original_image"] = original_image
         output["bbox"] = bbox
         output["normalized_image"] = image_normalized
         output["normalized_pose"] = normalized_pose

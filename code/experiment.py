@@ -33,6 +33,7 @@ def val_collate_fn(data):
     headsizes = []
     matrices = []
     original_sizes = []
+    original_images = []
 
     for obj in data:
         normalized_image = obj["normalized_image"].reshape(3, 256, 256)
@@ -43,6 +44,9 @@ def val_collate_fn(data):
         image_tensor = torch.from_numpy(normalized_image).float().to(device)
         pose_tensor = torch.from_numpy(normalized_pose).float().to(device)
         original_size = obj["original_size"].int().to(device)
+        original_image = obj["original_image"]
+
+        original_images.append(original_image)
 
         images.append(image_tensor)
         poses.append(pose_tensor)
@@ -55,7 +59,7 @@ def val_collate_fn(data):
     t_headsizes = torch.stack(headsizes, dim=0)
     t_matrices = torch.stack(matrices, dim=0)
     t_sizes = torch.stack(original_sizes, dim=0)
-    return t_images, t_poses, t_headsizes, t_matrices, t_sizes
+    return t_images, t_poses, t_headsizes, t_matrices, t_sizes, original_images
 
 def train_collate_fn(data):
     # data = [output_obj1, ..., output_obj_n]
@@ -217,7 +221,7 @@ def run_experiment_mpii(conf):
             with torch.no_grad():
                 start_val_epoch_time = time.time()
 
-                for batch_idx, (val_images, val_poses, val_headsizes, val_trans_matrices, val_original_sizes) in enumerate(val_loader):
+                for batch_idx, (val_images, val_poses, val_headsizes, val_trans_matrices, val_original_sizes, val_orig_images) in enumerate(val_loader):
                     start_val_batch_time = time.time()
 
                     heatmaps, predictions = model(val_images)
@@ -229,7 +233,7 @@ def run_experiment_mpii(conf):
                     if not exists('experiments/{}/val_images/{}'.format(experiment_name, epoch)):
                         makedirs('experiments/{}/val_images/{}'.format(experiment_name, epoch))
 
-                    show_predictions_ontop(val_poses[0], val_images[0], predictions[0], 'experiments/{}/val_images/{}/{}.png'.format(experiment_name, epoch, batch_idx), val_trans_matrices[0], val_original_sizes[0])
+                    show_predictions_ontop(val_poses[0], val_orig_images[0], predictions[0], 'experiments/{}/val_images/{}/{}.png'.format(experiment_name, epoch, batch_idx), val_trans_matrices[0], val_original_sizes[0])
 
                     scores_05, scores_02 = eval_pckh_batch(predictions, val_poses, val_headsizes, val_trans_matrices)
                     val_accuracy_05.extend(scores_05)

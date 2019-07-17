@@ -77,12 +77,6 @@ def show_pose_mpii(annotation):
     plt.show()
 
 def show_predictions_ontop(ground_truth, image, poses, path, matrix, original_size):
-    #heatmaps = heatmaps[-1, :, :, :]
-    #single_image = images[-1, :, :, :].reshape(256, 256, 3)
-    #single_image = resize(single_image, (128, 128))
-
-    image = image.reshape(256, 256 , 3)
-
     fig, ax = plt.subplots(nrows=4, ncols=4, figsize=(10, 10))
 
     for i, axi in enumerate(ax.flat):
@@ -95,10 +89,8 @@ def show_predictions_ontop(ground_truth, image, poses, path, matrix, original_si
         else:
             pose_coordinates = poses[i].detach().numpy()
             gt_coordintates = ground_truth[i].detach().numpy()
-        if torch.cuda.is_available():
-            axi.imshow(image.cpu())
-        else:
-            axi.imshow(image)
+
+        axi.imshow(image)
 
         vis = pose_coordinates[2]
         if ground_truth[i, 2] == 0.0:
@@ -109,15 +101,6 @@ def show_predictions_ontop(ground_truth, image, poses, path, matrix, original_si
 
         gt_coordintates = transform_2d_point(matrix, gt_coordintates[0:2], inverse=True)
         pose_coordinates = transform_2d_point(matrix, pose_coordinates[0:2], inverse=True)
-
-        x_factor = 255.0 / float(original_size[1])
-        y_factor = 255.0 / float(original_size[0])
-
-        gt_coordintates[0] = gt_coordintates[0] * x_factor
-        gt_coordintates[1] = gt_coordintates[1] * y_factor
-
-        pose_coordinates[0] = pose_coordinates[0] * x_factor
-        pose_coordinates[1] = pose_coordinates[1] * y_factor
 
         axi.scatter(gt_coordintates[0], gt_coordintates[1], c="b")
         axi.scatter(pose_coordinates[0], pose_coordinates[1], c="#FF00FF")
