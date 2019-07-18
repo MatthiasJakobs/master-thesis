@@ -1,7 +1,7 @@
 import torch.utils.data as data
 import numpy as np
 
-import time
+from timing import Timer
 
 import csv
 from datetime import datetime
@@ -159,22 +159,31 @@ def run_experiment_mpii(conf):
         parameter_file.write("num_blocks,{}\n".format(num_blocks))
         parameter_file.write("nr_epochs,{}\n".format(nr_epochs))
 
+    t_train_epoch = Timer("train_epoch", experiment_name)
+    t_train_batch = Timer("train_batch", experiment_name)
+    t_val_batch = Timer("val_batch", experiment_name)
+    t_val_epoch = Timer("val_epoch", experiment_name)
+    t_model = Timer("model", experiment_name)
 
     with open('experiments/{}/loss.csv'.format(experiment_name), mode='w') as output_file:
         writer = csv.writer(output_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         writer.writerow(['epoch', 'batch_nr', 'loss', 'pckh_0.5', 'pckh_0.2'])
 
+
         for epoch in range(nr_epochs):
-            start_train_epoch_time = time.time()
-            
+            t_train_epoch.start()
+
             model.train()
             for batch_idx, (images, poses) in enumerate(train_loader):
-                start_train_batch_time = time.time()
+                t_train_batch.start()
 
                 images = images
                 poses = poses
 
+                t_model.start()
                 _, output = model(images)
+                t_model.stop()
+
                 output = output.view(images.size()[0], num_blocks, -1, 3)
                 # output shape: (batch_size, num_blocks, 16, 3)
                 pred_pose = output[:, :, :, 0:2]
@@ -200,13 +209,12 @@ def run_experiment_mpii(conf):
 
                 optimizer.step()
                 optimizer.zero_grad()
-                
-                stop_train_batch_time = time.time()
-                print("time train batch {} - {}: ".format(epoch, batch_idx), stop_train_batch_time - start_train_batch_time)
-                #print("epoch {} batch_nr {} loss {} lr {}".format(epoch, batch_idx, loss.item(), get_lr(optimizer)))
 
-            stop_train_epoch_time = time.time()
-            print("time train epoch {}: ".format(epoch), stop_train_epoch_time - start_train_epoch_time)
+                t_train_batch.stop()
+                #print("time train batch {} - {}: ".format(epoch, batch_idx), stop_train_batch_time - start_train_batch_time)
+                print("epoch {} batch_nr {} loss {} lr {}".format(epoch, batch_idx, loss.item(), get_lr(optimizer)))
+
+            t_train_epoch.stop()
 
             val_accuracy_05 = []
             val_accuracy_02 = []
@@ -219,10 +227,10 @@ def run_experiment_mpii(conf):
                 makedirs('experiments/{}/val_images'.format(experiment_name))
 
             with torch.no_grad():
-                start_val_epoch_time = time.time()
+                t_val_epoch.start()
 
                 for batch_idx, (val_images, val_poses, val_headsizes, val_trans_matrices, val_original_sizes, val_orig_images) in enumerate(val_loader):
-                    start_val_batch_time = time.time()
+                    t_val_batch.start()
 
                     heatmaps, predictions = model(val_images)
                     predictions = predictions[-1, :, :, :].squeeze(dim=0)
@@ -238,9 +246,8 @@ def run_experiment_mpii(conf):
                     scores_05, scores_02 = eval_pckh_batch(predictions, val_poses, val_headsizes, val_trans_matrices)
                     val_accuracy_05.extend(scores_05)
                     val_accuracy_02.extend(scores_02)
-                                        
-                    stop_val_batch_time = time.time()
-                    print("time val batch {} - {}: ".format(epoch, batch_idx), stop_val_batch_time - start_val_batch_time)
+
+                    t_val_batch.stop()
 
 
 
@@ -251,12 +258,12 @@ def run_experiment_mpii(conf):
                 print([epoch, batch_idx, loss.item(), np.mean(np.array(val_accuracy_05)), np.mean(np.array(val_accuracy_02))])
                 output_file.flush()
 
-                stop_val_epoch_time = time.time()
-                print("time val epoch {}".format(epoch), stop_val_epoch_time - start_val_epoch_time)
+                t_val_epoch.stop()
 
-
-                start_save_model_time = time.time()
                 torch.save(model.state_dict(), "experiments/{}/weights/weights_{:04d}".format(experiment_name, epoch))
-                stop_save_model_time = time.time()
-                print("time save model", stop_save_model_time - start_save_model_time)
 
+    t_train_epoch.save()
+    t_train_batch.save()
+    t_val_batch.save()
+    t_val_epoch.save()
+    t_model.save()
