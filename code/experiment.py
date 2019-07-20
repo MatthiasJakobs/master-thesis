@@ -6,7 +6,7 @@ from timing import Timer
 import csv
 from datetime import datetime
 
-from os import makedirs
+from os import makedirs, remove
 from os.path import exists
 
 import torch
@@ -23,9 +23,13 @@ from visualization import show_predictions_ontop
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-def get_lr(optimizer):
-    for param_group in optimizer.param_groups:
-        return param_group['lr']
+def create_if_not_exists(path):
+    if not exists(path):
+        makedirs(path)
+
+def remove_if_exists(path):
+    if exists(path):
+        remove(path)
 
 def val_collate_fn(data):
     images = []
@@ -140,14 +144,11 @@ def run_experiment_mpii(conf):
     else:
         experiment_name = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
-    if not exists("experiments"):
-        makedirs("experiments")
+    create_if_not_exists("experiments")
+    create_if_not_exists("experiments/{}".format(experiment_name))
+    create_if_not_exists("experiments/{}/weights".format(experiment_name))
 
-    if not exists("experiments/{}".format(experiment_name)):
-        makedirs("experiments/{}".format(experiment_name))
-
-    if not exists("experiments/{}/weights".format(experiment_name)):
-        makedirs("experiments/{}/weights".format(experiment_name))
+    remove_if_exists("experiments/{}/validation.csv".format(experiment_name))
 
     with open('experiments/{}/parameters.csv'.format(experiment_name), 'w+') as parameter_file:
         parameter_file.write("paramter_name,value\n")
@@ -165,11 +166,17 @@ def run_experiment_mpii(conf):
     t_val_epoch = Timer("val_epoch", experiment_name)
     t_model = Timer("model", experiment_name)
 
+    with open("experiments/{}/validation.csv".format(experiment_name), mode="w") as val_file:
+        val_writer = csv.writer(val_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        val_writer.writerow(['iteration', 'pckh_0.5', 'pckh_0.2'])
+
+
     with open('experiments/{}/loss.csv'.format(experiment_name), mode='w') as output_file:
         writer = csv.writer(output_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-        writer.writerow(['epoch', 'batch_nr', 'loss', 'pckh_0.5', 'pckh_0.2'])
+        writer.writerow(['epoch', 'batch_nr', 'iteration', 'loss'])
 
 
+        iteration = 0
         for epoch in range(nr_epochs):
             t_train_epoch.start()
 
@@ -200,7 +207,6 @@ def run_experiment_mpii(conf):
                 binary_crossentropy = nn.BCELoss()
 
                 vis_loss = binary_crossentropy(pred_vis, ground_vis)
-                #vis_loss.backward(retain_graph=True)
 
                 pose_loss = elastic_net_loss_paper(pred_pose, ground_pose)
                 loss = vis_loss * 0.01 + pose_loss
@@ -211,8 +217,11 @@ def run_experiment_mpii(conf):
                 optimizer.zero_grad()
 
                 t_train_batch.stop()
-                #print("time train batch {} - {}: ".format(epoch, batch_idx), stop_train_batch_time - start_train_batch_time)
-                print("epoch {} batch_nr {} loss {} lr {}".format(epoch, batch_idx, loss.item(), get_lr(optimizer)))
+                print("epoch {} batch_nr {} loss {}".format(epoch, batch_idx, loss.item()))
+                writer.writerow([epoch, batch_idx, iteration, loss.item()])
+                output_file.flush()
+
+                iteration = iteration + 1
 
             t_train_epoch.stop()
 
@@ -254,9 +263,11 @@ def run_experiment_mpii(conf):
                 mean_05 = np.mean(np.array(val_accuracy_05))
                 mean_02 = np.mean(np.array(val_accuracy_02))
 
-                writer.writerow([epoch, batch_idx, loss.item(), mean_05, mean_02])
-                print([epoch, batch_idx, loss.item(), np.mean(np.array(val_accuracy_05)), np.mean(np.array(val_accuracy_02))])
-                output_file.flush()
+                print([iteration, loss.item(), mean_05, mean_02])
+
+                with open("experiments/{}/validation.csv".format(experiment_name), mode="a") as val_file:
+                    val_writer = csv.writer(val_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+                    val_writer.writerow([iteration, mean_05, mean_02])
 
                 t_val_epoch.stop()
 
