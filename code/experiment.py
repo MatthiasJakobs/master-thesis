@@ -137,7 +137,7 @@ def run_experiment_mpii(conf):
     )
 
     optimizer = optim.RMSprop(model.parameters(), lr=learning_rate)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=0, verbose=True)
+    #scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=0, verbose=True)
 
     if name is not None:
         experiment_name = name
@@ -228,7 +228,7 @@ def run_experiment_mpii(conf):
             val_accuracy_05 = []
             val_accuracy_02 = []
 
-            scheduler.step(loss.item())
+            #scheduler.step(loss.item())
 
             model.eval()
 
