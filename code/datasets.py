@@ -429,8 +429,9 @@ class MPIIDataset(data.Dataset):
         t_trans_matrix = torch.from_numpy(trans_matrix.copy()).float()
 
         image_number = int(full_image_path[-13:-4])
-        t_filepath = torch.Tensor([image_number]).float()
-        print(int(full_image_path[-13:-4]), image_number, t_filepath, full_image_path)
+        
+        image_number_np = np.array([image_number])
+        t_filepath = torch.from_numpy(image_number_np).int()
 
         output["bbox"] = t_bbox
         output["image_path"] = t_filepath
