@@ -420,13 +420,21 @@ class MPIIDataset(data.Dataset):
 
         image_normalized = normalize_channels(image, power_factors=conf_exponents)
 
-        output["original_image"] = original_image
-        output["bbox"] = bbox
-        output["normalized_image"] = image_normalized
-        output["normalized_pose"] = normalized_pose
-        output["original_pose"] = original_pose
-        output["head_size"] = np.array([head_size])
-        output["trans_matrix"] = trans_matrix.copy()
+        t_original_image = torch.from_numpy(original_image).float()
+        t_bbox = torch.from_numpy(bbox).float()
+        t_normalized_image = torch.from_numpy(image_normalized.reshape(3, 256, 256)).float()
+        t_normalized_pose = torch.from_numpy(normalized_pose).float()
+        t_original_pose = torch.from_numpy(original_pose).float()
+        t_headsize = torch.from_numpy(np.array([head_size])).float()
+        t_trans_matrix = torch.from_numpy(trans_matrix.copy()).float()
+
+        output["original_image"] = t_original_image
+        output["bbox"] = t_bbox
+        output["normalized_image"] = t_normalized_image
+        output["normalized_pose"] = t_normalized_pose
+        output["original_pose"] = t_original_pose
+        output["head_size"] = t_headsize
+        output["trans_matrix"] = t_trans_matrix
 
         return output
 

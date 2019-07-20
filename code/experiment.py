@@ -31,58 +31,6 @@ def remove_if_exists(path):
     if exists(path):
         remove(path)
 
-def val_collate_fn(data):
-    images = []
-    poses = []
-    headsizes = []
-    matrices = []
-    original_sizes = []
-    original_images = []
-
-    for obj in data:
-        normalized_image = obj["normalized_image"].reshape(3, 256, 256)
-        normalized_pose = obj["normalized_pose"]
-
-        headsize = torch.from_numpy(obj["head_size"]).float().to(device)
-        trans_matrix = torch.from_numpy(obj["trans_matrix"]).float().to(device)
-        image_tensor = torch.from_numpy(normalized_image).float().to(device)
-        pose_tensor = torch.from_numpy(normalized_pose).float().to(device)
-        original_size = obj["original_size"].int().to(device)
-        original_image = obj["original_image"]
-
-        original_images.append(original_image)
-
-        images.append(image_tensor)
-        poses.append(pose_tensor)
-        headsizes.append(headsize)
-        matrices.append(trans_matrix)
-        original_sizes.append(original_size)
-
-    t_images = torch.stack(images, dim=0)
-    t_poses = torch.stack(poses, dim=0)
-    t_headsizes = torch.stack(headsizes, dim=0)
-    t_matrices = torch.stack(matrices, dim=0)
-    t_sizes = torch.stack(original_sizes, dim=0)
-    return t_images, t_poses, t_headsizes, t_matrices, t_sizes, original_images
-
-def train_collate_fn(data):
-    # data = [output_obj1, ..., output_obj_n]
-    images = []
-    poses = []
-    for obj in data:
-        normalized_image = obj["normalized_image"].reshape(3, 256, 256)
-        normalized_pose = obj["normalized_pose"]
-
-        image_tensor = torch.from_numpy(normalized_image).float().to(device)
-        pose_tensor = torch.from_numpy(normalized_pose).float().to(device)
-        images.append(image_tensor)
-        poses.append(pose_tensor)
-
-    t_images = torch.stack(images, dim=0)
-    t_poses = torch.stack(poses, dim=0)
-
-    return t_images, t_poses
-
 def run_experiment_mpii(conf):
     learning_rate = conf["learning_rate"]
     nr_epochs = conf["nr_epochs"]
@@ -122,18 +70,14 @@ def run_experiment_mpii(conf):
 
     train_loader = data.DataLoader(
         ds,
-        num_workers=0,
         batch_size=batch_size,
-        sampler=train_sampler,
-        collate_fn=train_collate_fn
+        sampler=train_sampler
     )
 
     val_loader = data.DataLoader(
         ds,
-        num_workers=0,
         batch_size=val_batch_size,
-        sampler=val_sampler,
-        collate_fn=val_collate_fn
+        sampler=val_sampler
     )
 
     optimizer = optim.RMSprop(model.parameters(), lr=learning_rate)
@@ -181,10 +125,10 @@ def run_experiment_mpii(conf):
             t_train_epoch.start()
 
             model.train()
-            for batch_idx, (images, poses) in enumerate(train_loader):
+            for batch_idx, train_objects in enumerate(train_loader):
                 t_train_batch.start()
 
-                images = images
+                images = train_objects
                 poses = poses
 
                 t_model.start()
