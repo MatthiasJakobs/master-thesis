@@ -428,8 +428,12 @@ class MPIIDataset(data.Dataset):
         t_headsize = torch.from_numpy(np.array([head_size])).float()
         t_trans_matrix = torch.from_numpy(trans_matrix.copy()).float()
 
-        output["original_image"] = t_original_image
+        image_number = int(full_image_path[-13:-4])
+        t_filepath = torch.Tensor([image_number]).float()
+        print(int(full_image_path[-13:-4]), image_number, t_filepath, full_image_path)
+
         output["bbox"] = t_bbox
+        output["image_path"] = t_filepath
         output["normalized_image"] = t_normalized_image
         output["normalized_pose"] = t_normalized_pose
         output["original_pose"] = t_original_pose

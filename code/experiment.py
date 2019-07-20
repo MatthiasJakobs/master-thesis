@@ -9,6 +9,8 @@ from datetime import datetime
 from os import makedirs, remove
 from os.path import exists
 
+from skimage import io
+
 import torch
 import torch.optim as optim
 import torch.nn as nn
@@ -128,8 +130,8 @@ def run_experiment_mpii(conf):
             for batch_idx, train_objects in enumerate(train_loader):
                 t_train_batch.start()
 
-                images = train_objects
-                poses = poses
+                images = train_objects["normalized_image"].to(device)
+                poses = train_objects["normalized_pose"].to(device)
 
                 t_model.start()
                 _, output = model(images)
@@ -182,8 +184,10 @@ def run_experiment_mpii(conf):
             with torch.no_grad():
                 t_val_epoch.start()
 
-                for batch_idx, (val_images, val_poses, val_headsizes, val_trans_matrices, val_original_sizes, val_orig_images) in enumerate(val_loader):
+                for batch_idx, val_data in enumerate(val_loader):
                     t_val_batch.start()
+
+                    val_images = val_data["normalized_image"].to(device)
 
                     heatmaps, predictions = model(val_images)
                     predictions = predictions[-1, :, :, :].squeeze(dim=0)
@@ -194,9 +198,12 @@ def run_experiment_mpii(conf):
                     if not exists('experiments/{}/val_images/{}'.format(experiment_name, epoch)):
                         makedirs('experiments/{}/val_images/{}'.format(experiment_name, epoch))
 
-                    show_predictions_ontop(val_poses[0], val_orig_images[0], predictions[0], 'experiments/{}/val_images/{}/{}.png'.format(experiment_name, epoch, batch_idx), val_trans_matrices[0], val_original_sizes[0])
+                    image_number = "{}".format(int(val_data["image_path"][0].item()))
+                    image_name = "{}.jpg".format(image_number.zfill(9))
+                    image = io.imread("/data/mjakobs/data/mpii/images/{}".format(image_name))
+                    show_predictions_ontop(val_data["normalized_pose"][0], image, predictions[0], 'experiments/{}/val_images/{}/{}.png'.format(experiment_name, epoch, batch_idx), val_data["trans_matrix"][0], val_data["original_size"][0])
 
-                    scores_05, scores_02 = eval_pckh_batch(predictions, val_poses, val_headsizes, val_trans_matrices)
+                    scores_05, scores_02 = eval_pckh_batch(predictions, val_data["normalized_pose"], val_data["head_size"], val_data["trans_matrix"])
                     val_accuracy_05.extend(scores_05)
                     val_accuracy_02.extend(scores_02)
 
