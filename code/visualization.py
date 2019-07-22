@@ -1,5 +1,5 @@
 import matplotlib
-#matplotlib.use('Agg')
+matplotlib.use('Agg')
 
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
@@ -80,7 +80,7 @@ def show_predictions_ontop(ground_truth, image, poses, path, matrix, original_si
 
     plt.xticks([])
     plt.yticks([])
-    
+
     ground_pose = ground_truth[:, 0:2]
     predicted_pose = poses[:, 0:2]
 
@@ -126,7 +126,7 @@ def show_predictions_ontop(ground_truth, image, poses, path, matrix, original_si
             plt.scatter(orig_gt_coordinates[src][0], orig_gt_coordinates[src][1], c=gt_color)
             plt.scatter(orig_pred_coordinates[src][0], orig_pred_coordinates[src][1], c=pred_color)
 
-        
+
 
 
     if os.path.isfile(path):
