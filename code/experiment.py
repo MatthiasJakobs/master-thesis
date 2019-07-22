@@ -43,8 +43,9 @@ def run_experiment_mpii(conf):
     name = conf["name"]
     batch_size = conf["batch_size"]
     val_batch_size = conf["val_batch_size"]
+    use_saved_tensors = conf["use_saved_tensors"]
 
-    ds = MPIIDataset("/data/mjakobs/data/mpii/", use_random_parameters=False, use_saved_tensors=True)
+    ds = MPIIDataset("/data/mjakobs/data/mpii/", use_random_parameters=False, use_saved_tensors=use_saved_tensors)
 
     if num_blocks == 1:
         model = Mpii_1().to(device)
