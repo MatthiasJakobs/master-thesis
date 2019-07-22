@@ -3,19 +3,38 @@
 \section{Pose Estimation}
 first: single images only, no video
 \subsection{Pictoral Structure Framework}
-%TODO: Write a little bit about original paper
-structure defined by parts (limbs) connected together. connections using "springs". deformable structure.
-Minimize energy function. See \cite{zhu_articulated_2016}
+In 1973, \cite{fischler_representation_1973} presented a general framework for object recognition problems, including pose estimation.
+The so called \textit{Pictoral Structure Framework} is comprised of parts, connected by \textit{spring-like connections}.
+A part is defined by a collection of parameters $l_i$, also referred to as the \textit{configuration} of part $i$, which could include center coordinates and rotation.
+The connection between two parts is modelled using a mechanism inspired by physical springs.
+Similar to a string, such a connection can be relaxed or be under tension.
+This expresses how realistic a certain connection is, based on the amount of tension required to connect two parts.
 
+The graph that is created that way then models the desired object, for example the pose or facial features of a human, and is also referred to as a \textit{deformable structure}.
+In the context of pose estimation, limbs are modelled as parts, connected together at the joints.
+
+The output of the alorithm is expressed as $L = (l_0, l_1, \dots, l_n)$.
+To compute the optimal configuration, the authors proposed the following minimization problem:
+
+\begin{equation}
+    \label{eq:energy-minimization}
+    L^* = \argmin_L \left(\sum_{i=0}^n m_i(l_i) + \sum_{(v_i, v_j) \in E} d_{ij}(l_i, l_j)\right)
+\end{equation}
+
+$m_i$ is a function evaluating the placement of part $i$ at configuration $l_i$.
+This is also often referred to as the unary term.
+$d_{ij}$ measures the mismatch when parts $i$ and $j$, which are connected, are placed according to $l_i$ and $l_j$ respectively.
+
+Minimizing the energy function is computationally expensive since the space of possible positions for each part spans the entire image.
 % ------ GENERAL OBJECT RECOGNITION FRAMEWORK ----------
-%TODO: simplified version of statistical model
-%   TODO: not specifically pose but general object recognition
-Taking the energy minimization problem presented in \cite{fischler_representation_1973}, the authors transform it into a statistical framework.
-One advantage is that the parameters can then be estimated utilizing training examples, similar to the principles of learning presented in \ref{sec:neural_networks}.
+According to \cite{felzenszwalb_pictorial_2005}, there are methods using heuristics to make the computation more efficient but they do not find optimal solutions.
+They proposed to transform the problem into a statstical framework and solve it by estimating a posterior distribution.
+
+One advantage of this statistical model is that the parameters can then be estimated utilizing training examples, similar to the principles of learning presented in \ref{sec:neural_networks}.
 Also, it is trivial to get multiple solutions to the minimization problem by sampling the posterior distribution as opposed to a single solution with the energy minimization approach.
 
 The authors model the problem as follows.
-Let $p(L \mid I, \theta)$ be the desired posterior distribution, where $L$ is the set of object configurations (like object positions, rotations etc.), $\theta$ is a set of model parameters and $I$ is the image.
+Let $p(L \mid I, \theta)$ be the desired posterior distribution, where $\theta$ is a set of model parameters and $I$ is the image.
 When applying Bayes' formula, one can express the posterior as 
 
 \begin{equation}
@@ -28,7 +47,7 @@ The authors tackle this problem by sampling multiple times from the posterior an
 
 To approximate the prior distribution $p(L \mid \theta)$ the authors utilize the joint distribution of a tree structured Markov random field.
 The vertices are modeled by $l_i$ and the edges show connections between the different parts. 
-They set the denominator to $1$ because they argue that it can be constant if only relative position between parts is of importance.
+They set the denominator to $1$ because they argue that it can be constant if only relative position between parts are of importance.
 
 \begin{equation}
     \begin{split}
@@ -38,11 +57,35 @@ They set the denominator to $1$ because they argue that it can be constant if on
     \end{split}
 \end{equation}
 
+This then leads to the following approximation of the posterior distribution:
+
+\begin{equation}
+    \label{eq:pictoral-posterior-general}
+    \begin{split}
+        p(L \mid I, \theta) 
+        &\propto p(I \mid L, \theta) p(L \mid \theta) \\
+        &\propto \prod_{i=1}^n p(I \mid l_i, \theta_i) \prod_{(i, j) \in E} p(l_i, l_j \mid \theta)
+    \end{split} 
+\end{equation}
+
 %TODO: exlain why equivalent to minimizing energy function
+To show the equivalence to the original energy minimization problem, the authors take the formula presented in \fref{eq:pictoral-posterior-general} and apply the logarithmic function. Then, they negate the resutl.
+This then leads to the following formulation.
+
+\begin{equation}
+    \label{eq:neg-log-posterior}
+    \begin{split}
+        &-log \left( \prod_{i=1}^n p(I \mid l_i, \theta_i) \prod_{(i, j) \in E} p(l_i, l_j \mid \theta) \right) \\
+        &= -log \left( \prod_{i=1}^n p(I \mid l_i, \theta_i) \right) - log \left( \prod_{(i, j) \in E} p(l_i, l_j \mid \theta)\right) \\
+        &= \sum_{i=1}^n -log ~ p(I \mid l_i, \theta_i) + \sum_{(i, j) \in E} - log ~ p(l_i, l_j \mid \theta)
+    \end{split}
+\end{equation}
+
+When comparing \fref{eq:neg-log-posterior} to \fref{eq:energy-minimization} it is easy to see that $m_i(l_i) = - log ~ p(I \mid l_i, \theta_i)$ and $d_{ij}(l_i, l_j) = p(l_i, l_j \mid \theta)$.
 
 After presenting the statistical framework for general object recognition tasks, the authors explain their approach to pose estimation using this framework.
 First, they specify that the input image needs to be a binary image where the person is separated from the background.
-Then, the objective is to maximize the number of foreground pixels covered by the detected limbs in their calculated configuration.
+Then, the objective is to maximize the number of foreground pixels covered by the detected parts in their calculated configuration.
 A visualization of this process can be seen in \fref{fig:felzenszwalb-overview}.
 
 \begin{figure}[htb!]
@@ -54,16 +97,17 @@ A visualization of this process can be seen in \fref{fig:felzenszwalb-overview}.
 
 The authors model the human pose as a collection of $10$ different parts. 
 Two parts per arm and leg as well as one torso and one head part \fref{fig:felzenszwalb-overview}.
-Each limb configuration $l_i = (x_i, y_i, s_i , \varphi_i)$ contains the $x$ and $y$ coordinate of the center of the rectangle.
+Each part configuration $l_i = (x_i, y_i, s_i , \varphi_i)$ contains the $x$ and $y$ coordinate of the center of the rectangle representing the part.
 In addition, $s_i \in [0,1]$ defines the length of the rectangle and $\varphi_i$ its rotation.
 The width is fixed.
 
-To model $p(I \mid l_i, \theta_i)$ they use the following formula which utilizes $\theta_i = (q_1, q_2)$.
+To model $p(I \mid l_i, \theta_i)$ they use the formula in \fref{eq:felz-unary} which utilizes $\theta_i = (q_1, q_2)$.
 $q_1$ is the probability of pixel inside $l_i$ being a foreground pixel whereas $q_2$ is the probability of pixels closely around $l_i$ being foreground pixels.
 The area around $l_1$ is referred to as $area_2$ whereas the area of $l_i$ is referred to as $area_1$.
 $count_i$ referres to the number of foreground pixels in $area_i$ and $t$ is the total number of pixels in the image.
 
 \begin{equation}
+    \label{eq:felz-unary}
     \begin{split}
         p(I \mid l_i, (q_1, q_2)) = &q_1^{count_1} * (1 - q_1)^{(area_1 - count_1)} \\ 
         &* q_2^{count_2} * (1 - q_2)^{(area_2 - count_2)} \\ 
@@ -72,8 +116,9 @@ $count_i$ referres to the number of foreground pixels in $area_i$ and $t$ is the
 \end{equation}
 
 Also, they smooth the distribution to prevent peaks by using the principle of annealing with a constant factor $T$.
-This is important because a distribution with strong peaks is more likely to return similar results when sampling.
-As discussed earlier, this sampling is needed because of the approximation the authors used and its problem with overlapping limbs.  A distribution with too strong peaks would not allow for sufficiently different pose samples.
+This is important because a distribution with strong peaks is more likely to return similar results when sampled from.
+As discussed earlier, sampling is needed because of the approximation of the unary term the authors used and its problem with overlapping limbs.
+A distribution with too strong peaks would not allow for sufficiently different pose samples.
 
 $\theta_i$ is then estimated using mean values from annotated training data points while $T$ is set to $10$.
 
@@ -129,15 +174,15 @@ The last distribution is a von Mises distribution, given by
     M(\theta, \mu, k) \propto \exp (k \cdot \cos (\theta - \mu))
 \end{equation}
 
-Using this distribution, the difference between the two angles is measured with regards to the optimal orientation $\varphi_{ij}$.
 A von Mises distribution can be thought of as a normal distribution around a circle, which is why the authors use it for periodic input like gradients.
+Using this distribution, the difference between the two angles is measured with regards to the optimal orientation $\varphi_{ij}$.
 The parameter $k$ determines how strong the peak at $\varphi_{ij}$ should be or, in other words, how constrained the joints should be. 
 
-The prior parameters $c_{ij}$ are thus given by $c_{ij} = (x_{ij}, x_{ji}, y_{ij}, y_{ji}, \sigma_x, \sigma_y, \sigma_s, \varphi_{ij}, k)$ and are estimated using maximum likelihood estimation.
+The prior parameters $c_{ij}$ are then given by $c_{ij} = (x_{ij}, x_{ji}, y_{ij}, y_{ji}, \sigma_x, \sigma_y, \sigma_s, \varphi_{ij}, k)$ and are estimated using maximum likelihood estimation.
 
 % ----- Short evaluation
 The authors merely provide example images instead of a quantitative analysis.
-This is most likely because of the lack of benchmark data sets at the time of writing their thesis.
+This is most likely because of the lack of benchmark data sets available at the time.
 They labeled $10$ images by hand and used these to estimate the parameters.
 Then, for each of their unlabeld test images, they sampled $200$ poses and calculated the Chamfer distance, which measures the binary correlation.
 The best pose with regards to the Chamfer distance is then returned.
@@ -151,7 +196,6 @@ Some example images can be seen in \fref{fig:pictoral-examples}
 \end{figure}
 
 \begin{itemize}
-    \item Pictoral Structures for Object Recognition \cite{felzenszwalb_pictorial_2005}
     \item Articulated pose estimation with flexible mixture-of-parts \cite{yang_articulated_2011}
     \item An approach to pose-based action recognition \cite{wang_approach_2013}
 \end{itemize}
