@@ -5,7 +5,7 @@ first: single images only, no video
 \subsection{Pictoral Structure Framework}
 In 1973, \cite{fischler_representation_1973} presented a general framework for object recognition problems, including pose estimation.
 The so called \textit{Pictoral Structure Framework} is comprised of parts, connected by \textit{spring-like connections}.
-A part is defined by a collection of parameters $l_i$, also referred to as the \textit{configuration} of part $i$, which could include center coordinates and rotation.
+A part is defined by a collection of parameters $l_i$ which could include center coordinates and rotation.
 The connection between two parts is modelled using a mechanism inspired by physical springs.
 Similar to a string, such a connection can be relaxed or be under tension.
 This expresses how realistic a certain connection is, based on the amount of tension required to connect two parts.
@@ -13,7 +13,7 @@ This expresses how realistic a certain connection is, based on the amount of ten
 The graph that is created that way then models the desired object, for example the pose or facial features of a human, and is also referred to as a \textit{deformable structure}.
 In the context of pose estimation, limbs are modelled as parts, connected together at the joints.
 
-The output of the alorithm is expressed as $L = (l_0, l_1, \dots, l_n)$.
+The output of the alorithm is expressed as $L = (l_0, l_1, \dots, l_n)$, called the \textit{configuration} of all parts $l_i$.
 To compute the optimal configuration, the authors proposed the following minimization problem:
 
 \begin{equation}
