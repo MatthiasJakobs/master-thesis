@@ -237,7 +237,7 @@ class MPIIDataset(data.Dataset):
         - When I do it like below, almost exactly size(me) = size(train_luvizon) + size(val_luvizon)
     '''
 
-    def __init__(self, root_dir, transform=None, use_random_parameters=True):
+    def __init__(self, root_dir, transform=None, use_random_parameters=True, use_saved_tensors=False):
 
         self.root_dir = root_dir
 
@@ -249,6 +249,10 @@ class MPIIDataset(data.Dataset):
         train_indeces = np.where(np.array(train_binary))[0]
 
         self.final_size=256
+
+        self.use_saved_tensors = use_saved_tensors
+        if not os.path.exists(root_dir + "tensors"):
+            os.makedirs(root_dir + "tensors")
 
         if use_random_parameters:
             self.angles=np.array(range(-40, 40+1, 5))
@@ -332,6 +336,28 @@ class MPIIDataset(data.Dataset):
 
     def __getitem__(self, idx):
         label = self.labels[idx]
+        output = {}
+
+        if self.use_saved_tensors:
+            name_path = self.root_dir + "tensors/{}".format(label["image_name"])
+            t_filepath = torch.load(name_path + ".image_path.pt")
+            t_normalized_image = torch.load(name_path + ".normalized_image.pt")
+            t_normalized_pose = torch.load(name_path + ".normalized_pose.pt")
+            t_original_pose = torch.load(name_path + ".original_pose.pt")
+            t_headsize = torch.load(name_path + ".headsize.pt")
+            t_trans_matrix = torch.load(name_path + ".trans_matrix.pt")
+            t_original_size = torch.load(name_path + ".original_size.pt")
+
+            output["image_path"] = t_filepath
+            output["normalized_image"] = t_normalized_image
+            output["normalized_pose"] = t_normalized_pose
+            output["original_pose"] = t_original_pose
+            output["head_size"] = t_headsize
+            output["trans_matrix"] = t_trans_matrix
+            output["original_size"] = t_original_size
+
+            return output
+
         full_image_path = self.root_dir + "images/" + label["image_name"]
         image = io.imread(full_image_path)
         original_image = image.copy()
@@ -383,9 +409,9 @@ class MPIIDataset(data.Dataset):
 
         trans_matrix = scale(trans_matrix, 1.0 / self.final_size, 1.0 / self.final_size)
 
-        output = {}
         output["center"] = transform_2d_point(trans_matrix, old_objpos)
-        output["original_size"] = torch.tensor([image_height, image_width], requires_grad=False)
+        t_original_size = torch.tensor([image_height, image_width], requires_grad=False)
+
         new_x = []
         new_y = []
         for idx, (x, y) in enumerate(old_pose):
@@ -440,6 +466,24 @@ class MPIIDataset(data.Dataset):
         output["original_pose"] = t_original_pose
         output["head_size"] = t_headsize
         output["trans_matrix"] = t_trans_matrix
+        output["original_size"] = t_original_size
+
+        if not self.use_saved_tensors:
+            name_path = self.root_dir + "tensors/{}".format(label["image_name"])
+            if not os.path.exists(name_path + ".image_path.pt"):
+                torch.save(t_filepath, name_path + ".image_path.pt")
+            if not os.path.exists(name_path + ".normalized_image.pt"):
+                torch.save(t_normalized_image, name_path + ".normalized_image.pt")
+            if not os.path.exists(name_path + ".normalized_pose.pt"):
+                torch.save(t_normalized_pose, name_path + ".normalized_pose.pt")
+            if not os.path.exists(name_path + ".original_pose.pt"):
+                torch.save(t_original_pose, name_path + ".original_pose.pt")
+            if not os.path.exists(name_path + ".headsize.pt"):
+                torch.save(t_headsize, name_path + ".headsize.pt")
+            if not os.path.exists(name_path + ".trans_matrix.pt"):
+                torch.save(t_trans_matrix, name_path + ".trans_matrix.pt")
+            if not os.path.exists(name_path + ".original_size.pt"):
+                torch.save(t_original_size, name_path + ".original_size.pt")
 
         return output
 
