@@ -64,7 +64,7 @@ This then leads to the following approximation of the posterior distribution:
     \begin{split}
         p(L \mid I, \theta) 
         &\propto p(I \mid L, \theta) p(L \mid \theta) \\
-        &\propto \prod_{i=1}^n p(I \mid l_i, \theta_i) \prod_{(i, j) \in E} p(l_i, l_j \mid \theta)
+        &\propto \prod_{i=1}^n p(I \mid l_i, \theta_i) \prod_{(i, j) \in E} p(l_i, l_j \mid \theta).
     \end{split} 
 \end{equation}
 
@@ -76,7 +76,7 @@ This then leads to the following formulation:
     \begin{split}
         &-log \left( \prod_{i=1}^n p(I \mid l_i, \theta_i) \prod_{(i, j) \in E} p(l_i, l_j \mid \theta) \right) \\
         &= -log \left( \prod_{i=1}^n p(I \mid l_i, \theta_i) \right) - log \left( \prod_{(i, j) \in E} p(l_i, l_j \mid \theta)\right) \\
-        &= \sum_{i=1}^n -log ~ p(I \mid l_i, \theta_i) + \sum_{(i, j) \in E} - log ~ p(l_i, l_j \mid \theta)
+        &= \sum_{i=1}^n -log ~ p(I \mid l_i, \theta_i) + \sum_{(i, j) \in E} - log ~ p(l_i, l_j \mid \theta).
     \end{split}
 \end{equation}
 
