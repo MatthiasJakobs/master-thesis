@@ -133,8 +133,21 @@ $\theta_i$ is then estimated using mean values from annotated training data poin
     \label{fig:limb-connection}
 \end{figure}
 
-For the prior, consider the visualization in \fref{fig:limb-connection}.
-Given the local center points $(x_i, y_i)$ for each limb $l_i$, the authors calculate $(\hat{x}_i, \hat{y}_i)$ using free parameters $(x_{ij}, y_{ij})$ like this:
+Next, the authors model the prior $p(L \mid \theta)$.
+Each spatial relation $p(l_i, l_j \mid \theta)$ between two parts is modelled in the following way:
+First, each part is placed inside its own coordinate system with the origin being the center point of the part (see Figure \ref{fig:limb-connection}a).
+The connection point (joint) between parts $i$ and $j$ is defined as $(x_{ij}, y_{ij})$ in the coordinate system of part $i$ and as $(x_{ji}, y_{ji})$ in the coordinate system of part $j$.
+When transformed to the image coordinate system, these points should be as close together as possible (see Figure \ref{fig:limb-connection}b).
+The authors express this using Gaussian distributions:
+
+\begin{equation}
+    \begin{split}
+        N((\hat{x}_i - \hat{x}_j), 0, \sigma^2_x) \\
+        N((\hat{y}_i - \hat{y}_j), 0, \sigma^2_y),       
+    \end{split}
+\end{equation}
+
+where $\hat{x}_i$ and $\hat{y}_i$ are transformations of the joint position into the image coordinate system:
 
 \begin{equation}
     \begin{bmatrix}
@@ -153,8 +166,27 @@ Given the local center points $(x_i, y_i)$ for each limb $l_i$, the authors calc
     \end{bmatrix}.
 \end{equation}
 
+$\hat{x}_j$ and $\hat{y}_j$ are computed analogously.
 $R_{\varphi_i}$ is a matrix which rotates around the origin for $\varphi_i$ radiants.
-This projection then gets used in the prior distribution formula:
+Additionaly, the authors define that the difference between $s_i$ and $s_j$ should be close to zero as well.
+Again, this is modelled using a Gaussian distribution:
+
+\begin{equation}
+    N((s_i - s_j), 0, \sigma^2_s).
+\end{equation}
+
+Lastly, the authors specify that the difference between the two relative angles $\varphi_i$ and $\varphi_j$ be close to a parameter $\varphi_{ij}$.
+They use a von Mises distribution, given by
+
+\begin{equation}
+    M(\theta, \mu, k) \propto \exp (k \cdot \cos (\theta - \mu)).
+\end{equation}
+
+A von Mises distribution can be thought of as a normal distribution around a circle, which is why the authors use it for periodic input like gradients.
+Using $\mu = \varphi_{ij}$ they specify the constrained described earlier.
+The parameter $k$ determines how strong the peak at $\varphi_{ij}$ should be or, in other words, how constrained the joints should be.
+
+In summary, each spatial relation is expressed in the following way:
 
 \begin{equation}
     \begin{split}
