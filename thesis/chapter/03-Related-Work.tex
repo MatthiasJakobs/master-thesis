@@ -201,6 +201,85 @@ Some example images can be seen in \fref{fig:pictoral-examples}
 \end{itemize}
 
 \subsection{Deep Learning Methods}
+% Deep Pose
+
+- regresses joint coordinates (normalized)
+- (illustrate architecture and explain where they got it from \cite{krizhevsky_imagenet_2012})
+- local response normalization  
+    - relu is unrestricted. some normalization is preferred because it makes the net generalize better \cite{krizhevsky_imagenet_2012}. applied after relu.
+    - normalization between channels
+    - no explanation (in \cite{krizhevsky_imagenet_2012}) given of why it works
+- uses cascades. something we will see again in deep methods.
+    - each stage is supposed to refine the prediction of the previous stage.
+    - cut bounding box around previous prediction. Each stage gets a different "view". also: normalize to bounding box diameter
+
+\subsubsection{DeepPose}
+% Introduction
+One of the first approaches for pose estimation using deep convolutional neural networks was proposed by \cite{toshev_deeppose:_2014}.
+They achieved state-of-the-art results on two benchmark datasets using a neural network architecture based on the ImageNet network \cite{krizhevsky_imagenet_2012}.
+In contrast to the pictoral structure framework discussed earlier, the approach was to regress the image coordinates directly without specific constrains on how the joints are allowed to be connected.
+
+% Architecture
+The authors define their network in terms of multiple connected \textit{stages}.
+Each \textit{stage} is comprised of the neural network architecture proposed by \cite{krizhevsky_imagenet_2012}.
+The used architecture is provied in Table \ref{tab:deeppose-architecture}.
+The only change the authors made was to use the output of the last fully connected layer to regress the joint coordinates as opposed to the softmax activation present in \cite{krizhevsky_imagenet_2012}.
+This means that, assuming $k$ joints, the output of a stage is of size $2 * k$.
+Stage $s_0$ is trained using the full images of size $220 x 220$ as its input.
+Once the first stage is trained until convergence, the authors use the output coordinates to crop sub images around the initially predicted joint coordinates.
+By feeding these subimages into another stage $s_1$ they argue that the predictions get more precise because local context becomes more important.
+This cascading approach is then repeated with the next stages.
+In the end, they use $3$ stages $S = (s_0, s_1, s_2)$ after evaluating different numbers of stages on a held-out training set.
+
+\begin{table}[]
+    \begin{tabular}{|l|l|l|l|l|}
+    \hline
+    \textbf{nr.} & \textbf{layer type} & \textbf{filter size} & \textbf{nr. of filters / neurons} & \textbf{stride} \\ \hline
+    1 & convolutional & 11 x 11 x 3 & 96 & 4 \\
+    2 & local response normalization &  &  &  \\
+    3 & pooling & 3 x 3 &  & 2 \\ \hline
+    4 & convolutional & 5 x 5 x 48 & 256 & 1 \\
+    5 & local response normalization &  &  &  \\ 
+    6 & pooling & 3 x 3 &  & 2 \\ \hline
+    7 & convolutional & 3 x 3 x 256 & 384 & 1 \\
+    8 & convolutional & 3 x 3 x 192 & 384 & 1 \\
+    9 & convolutional & 3 x 3 x 192 & 256 & 1 \\ \hline
+    10 & fully connected &  & 4096 &  \\
+    11 & fully connected &  & 4096 &  \\ \hline
+    12 & fully connected &  & 2k &  \\ \hline
+    \end{tabular}
+    \caption{One \textit{stage} of the DeepPose network. Architecture based on \cite{krizhevsky_imagenet_2012}.}
+    \label{tab:deeppose-architecture}
+\end{table}
+
+% Evaluation
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.5\textwidth]{deeppose-qualitative.png}
+    \caption{Qualitative evaluation of the cascading architecture. Ground truth joints are shown in green while predicted poses are shown in red. Notice how the pose gets more accurate with consecutive stages. Also, notice that the biggest improvement can be seen after stage $1$. The authors argue that this is due to the fact that, with an increase in stages, the subimage gets smaller and smaller and thus harder to estimate the pose. Image taken from \cite{toshev_deeppose:_2014}.}
+    \label{fig:deeppose-qualitative}
+\end{figure}
+
+% TODO: Move dataset / metric explanation if happening before
+After training their network, the authors evaluate the final model on two datasets, FLIC \cite{sapp_modec:_2013} and LSP \cite{johnson_clustered_2010}.
+Frames Labled In Cinema (FLIC) is a dataset which contains $5000$ images of Hollywoord movie scenes where $10$ upper body joint positions are labeled for the subject of the scene.
+Leeds Sports Pose (LSP) is a dataset of $2000$ annotated images of subjects in a sport context.
+LSP contains $14$ different joint positions of the entire body.
+
+The authors use two different metrics to evaluate their model.
+Percentage of Correct Parts (PCP) \cite{eichner_articulated_2010} meassures the detection rate of limbs instead of joint coordinates.
+To still use this widely accepted metric, the authors take the ground truth coordinates of the joints on the end of each limb to calculate the limb length.
+Then, when evaluating a predicted pose, a joint is defined as being detected correctly if the distance between the joint coordinate in the prediction and the ground truth is less than or equal to half of the limbs length.
+
+PCP has the disadvantage that short limbs get penalized more than big limbs.
+To overcome these shortcommings, the authors define a new evaluation metric called Percent of Detected Joints (PDJ).
+With this metric, a joint is considered detected correctly if the distance between the predicted joint position and the ground truth $d_p$ is smaller than a fraction of the torsos diameter $d_t$.
+This fraction is set to be $0.5$, meaning a joint is considered detected if $0 <= d_p <= 0.5 \cdot d_t$.
+
+The authors provide three examples which illustrate the importance of the cascading architecture.
+These examples can be seen in \fref{fig:deeppose-qualitative}.
+They argue that stage $s_1$ has the biggest effect on the accuracy of the joints since further stages use smaller and smaller subimages for regression and thus use a smaller context.
+
 \begin{itemize}
     \item DeepPose \cite{toshev_deeppose:_2014}
     \item Stacked Hourglass \cite{newell_stacked_2016}
