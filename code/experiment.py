@@ -84,7 +84,7 @@ def run_experiment_mpii(conf):
     )
 
     optimizer = optim.RMSprop(model.parameters(), lr=learning_rate)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', verbose=True)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max', verbose=True, patience=1)
 
     if name is not None:
         experiment_name = name
@@ -125,7 +125,7 @@ def run_experiment_mpii(conf):
 
         iteration = 0
         for epoch in range(nr_epochs):
-            t_train_epoch.start()
+            #t_train_epoch.start()
 
             model.train()
             for batch_idx, train_objects in enumerate(train_loader):
@@ -164,69 +164,73 @@ def run_experiment_mpii(conf):
                 optimizer.zero_grad()
 
                 t_train_batch.stop()
-                print("epoch {} batch_nr {} loss {}".format(epoch, batch_idx, loss.item()))
-                writer.writerow([epoch, batch_idx, iteration, loss.item()])
-                output_file.flush()
 
                 iteration = iteration + 1
 
-                scheduler.step(loss.item())
+                #print("epoch {} batch_nr {} loss {}".format(epoch, batch_idx, loss.item()))
+                writer.writerow([epoch, batch_idx, iteration, loss.item()])
+                output_file.flush()
 
-            t_train_epoch.stop()
+                if iteration % 5000 == 0:
+                    # evaluate
 
-            val_accuracy_05 = []
-            val_accuracy_02 = []
-
-
-            model.eval()
-
-            if not exists('experiments/{}/val_images'.format(experiment_name)):
-                makedirs('experiments/{}/val_images'.format(experiment_name))
-
-            with torch.no_grad():
-                t_val_epoch.start()
-
-                for batch_idx, val_data in enumerate(val_loader):
-                    t_val_batch.start()
-
-                    val_images = val_data["normalized_image"].to(device)
-
-                    heatmaps, predictions = model(val_images)
-                    predictions = predictions[-1, :, :, :].squeeze(dim=0)
-
-                    if predictions.dim() == 2:
-                        predictions = predictions.unsqueeze(0)
-
-                    if not exists('experiments/{}/val_images/{}'.format(experiment_name, epoch)):
-                        makedirs('experiments/{}/val_images/{}'.format(experiment_name, epoch))
-
-                    image_number = "{}".format(int(val_data["image_path"][0].item()))
-                    image_name = "{}.jpg".format(image_number.zfill(9))
-                    image = io.imread("/data/mjakobs/data/mpii/images/{}".format(image_name))
-                    show_predictions_ontop(val_data["normalized_pose"][0], image, predictions[0], 'experiments/{}/val_images/{}/{}.png'.format(experiment_name, epoch, batch_idx), val_data["trans_matrix"][0], val_data["original_size"][0])
-
-                    scores_05, scores_02 = eval_pckh_batch(predictions, val_data["normalized_pose"], val_data["head_size"], val_data["trans_matrix"])
-                    val_accuracy_05.extend(scores_05)
-                    val_accuracy_02.extend(scores_02)
-
-                    t_val_batch.stop()
+                    val_accuracy_05 = []
+                    val_accuracy_02 = []
 
 
+                    model.eval()
 
-                mean_05 = np.mean(np.array(val_accuracy_05))
-                mean_02 = np.mean(np.array(val_accuracy_02))
+                    if not exists('experiments/{}/val_images'.format(experiment_name)):
+                        makedirs('experiments/{}/val_images'.format(experiment_name))
 
-                #print([iteration, loss.item(), mean_05, mean_02])
+                    with torch.no_grad():
+                        t_val_epoch.start()
 
-                with open("experiments/{}/validation.csv".format(experiment_name), mode="a") as val_file:
-                    val_writer = csv.writer(val_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-                    val_writer.writerow([iteration, mean_05, mean_02])
+                        for batch_idx, val_data in enumerate(val_loader):
+                            t_val_batch.start()
 
-                t_val_epoch.stop()
+                            val_images = val_data["normalized_image"].to(device)
 
-                torch.save(model.state_dict(), "experiments/{}/weights/weights_{:04d}".format(experiment_name, epoch))
+                            heatmaps, predictions = model(val_images)
+                            predictions = predictions[-1, :, :, :].squeeze(dim=0)
 
-    t_train_epoch.save()
+                            if predictions.dim() == 2:
+                                predictions = predictions.unsqueeze(0)
+
+                            if not exists('experiments/{}/val_images/{}'.format(experiment_name, epoch)):
+                                makedirs('experiments/{}/val_images/{}'.format(experiment_name, epoch))
+
+                            image_number = "{}".format(int(val_data["image_path"][0].item()))
+                            image_name = "{}.jpg".format(image_number.zfill(9))
+                            image = io.imread("/data/mjakobs/data/mpii/images/{}".format(image_name))
+                            show_predictions_ontop(val_data["normalized_pose"][0], image, predictions[0], 'experiments/{}/val_images/{}/{}.png'.format(experiment_name, epoch, batch_idx), val_data["trans_matrix"][0], val_data["original_size"][0])
+
+                            scores_05, scores_02 = eval_pckh_batch(predictions, val_data["normalized_pose"], val_data["head_size"], val_data["trans_matrix"])
+                            val_accuracy_05.extend(scores_05)
+                            val_accuracy_02.extend(scores_02)
+
+                            t_val_batch.stop()
+
+
+
+                        mean_05 = np.mean(np.array(val_accuracy_05))
+                        mean_02 = np.mean(np.array(val_accuracy_02))
+
+                        #print([iteration, loss.item(), mean_05, mean_02])
+
+                        with open("experiments/{}/validation.csv".format(experiment_name), mode="a") as val_file:
+                            val_writer = csv.writer(val_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+                            val_writer.writerow([iteration, mean_05, mean_02])
+
+                        t_val_epoch.stop()
+
+                        scheduler.step(mean_05)
+
+                        torch.save(model.state_dict(), "experiments/{}/weights/weights_{:08d}".format(experiment_name, iteration))
+                        #t_train_epoch.stop()
+
+
+    #t_train_epoch.save()
     t_train_batch.save()
     t_val_batch.save()
     t_val_epoch.save()
