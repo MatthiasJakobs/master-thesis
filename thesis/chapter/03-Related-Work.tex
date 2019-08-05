@@ -311,16 +311,94 @@ This leads to the following likelihood
 
 where $N$ is the number of parts to detect in the given image.
 
-% Quick Evaluation
+% Evaluation
 
 % TODO: A little bit about the tree prior (didnt deviate too much, but lets find a little detail thats different)
 
 
 \subsubsection{Articulated pose estimation with flexible mixture-of-parts}
 
-\begin{itemize}
-    \item An approach to pose-based action recognition \cite{wang_approach_2013}
-\end{itemize}
+Another approach building on the Pictoral Structure Framework was proposed by \cite{yang_articulated_2011}.
+
+The proposed model differs from the Framework by using parts which are not rotated or forshortened.
+To gain more flexibility, each part $i$ has a type $t_i$, which can encode arbitrary information, since the model the authors propose is general.
+One possibility, which is also what the authors used in their experiments, is to let the types correspond to different orientations.
+For example, two types for the part \textit{head} could be \textit{upright} or \textit{tilted to the left}.
+In addition, in this model, it is possible to constraint two adjacent parts' types as will be seen later.
+
+% General overview over differences
+First, the authors change the definition of a part $i$ and its parametrization $l_i$ from the one presented in \cite{felzenszwalb_pictorial_2005}.
+A part is defined as a joint instead of a limb because the data sets used annotated joint positions as opposed to parts positions.
+Thus, the parametrization changes to $l_i = (x_i, y_i)$ since no rotation and forshortening occurs.
+
+% Learning
+%% Generate annotation
+The data sets the authors used do not provide annotations for type labels, which is why these were computed beforehand using the following steps.
+First, the authors define a graph where the vertices correspond to joints.
+The edges of the graph are defined in a way that model a human skeleton.
+See \fref{fig:yang-tree} for an example graph.
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.35\textwidth]{yang-tree.png}
+    \caption{Visualisation of the graph resulting from connecting the joint positions, which form the vertices, together into a human skeleton. Image taken from \cite{yang_articulated_2011}.}
+    \label{fig:yang-tree}
+\end{figure}
+
+Second, the orientation of a part $i$ is considered relative to its parent part $j$.
+For instance, consider the relative position of the part corresponding to \textit{neck} to its parent part \textit{head}.
+Necks tend to be below heads (for upright people).
+The authors use all relative positions found by iterating the dataset and cluster the relative positions into $T=4$ clusters.
+The cluster that the part $i$ is put in then defines the type label $t_i$.
+See \fref{fig:yang-clustering} for an example.
+This then results in a fully annotated data set with location information $l_i$ as well as type $t_i$ for each part $i$.
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.65\textwidth]{yang-clustering.png}
+    \caption{The relative positions of \textit{neck} with regard to     its parent \textit{head} (\textbf{left}) and \textit{left knee} with regard to \textit{hip} (\textbf{right}). The origin marks the location of the parent. Notice that the neck is generally placed below the head (since most images contain upright people) while the left knee is mostly placed left of the hip. Each color indicates a cluster and a thus a corresponding type label. Image taken from \cite{yang_articulated_2011}.}
+    \label{fig:yang-clustering}
+\end{figure}
+
+Instead of using one \textit{template} for each limb, the authors propose to use many small templates per limb.
+Each template can be of a specific type $t_i$, which can encode semantic features, e.g., open versus closed hand, or orientational information.
+
+%% Score function
+The authors provide the following score function to evaluate a predicted pose:
+
+\begin{equation}
+    \label{eq:yang-score}
+    \begin{split}
+        S(I, l, t) 
+        &= \sum_{i \in V} b_i^{t_i} + w_i^{t_i} \cdot \phi(I, l_i) \\
+        &+ \sum_{(i,j) \in E} b_{ij}^{t_i, t_j} + w_{ij}^{t_i, t_j} \cdot \psi(l_i - l_j)
+    \end{split}
+\end{equation}
+
+In \eref{eq:yang-score}, $I$ refers to the image that is evaluated.
+$l = (l_1, \cdots, l_k)$ is the configuration containing all part positions while $t = (t_1, \dots, t_k)$ corresponds to the types of parts.
+$\phi(I, l_i)$ is a HOG feature vector \cite{dalal_histograms_2005} computed around the part position $l_i$.
+$\psi(l_i - l_j) = [(x_i - x_j), (x_i - x_j)^2, (y_i - y_j), (y_i - y_j)^2]^T$ encodes the relative location of part $l_i$ to $l_j$.
+
+$w_i^{t_i}$, $w_{ij}^{t_i, t_j}$ as well as $b_i^{t_i}$ and $b_{ij}^{t_i, t_j}$ are parameters estimated from annotated training data, which encode learned relationships between parts as well as type assignments for each part.
+During training, a supervised approach is used where the score for an annotated training image is maximized while utilizing regularisation on the models parameters $\beta = (\bm{w}, \bm{w})$.
+
+% Evaluation
+To evaluate their model, the authors use Percentage of Correct Parts (PCP) \cite{ferrari_progressive_2008} to be able to compare it to earlier work.
+In addition, they define two new metrics, \textit{PCK} (Probability of Correct Keypoints) as well as \textit{APK} (Average Precision of Keypoints).
+
+%% TODO: Finish evaluation
+In PCP, a limb is defined as being detected correctly if 
+
+Authors propose PCK
+Authors propose APK
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.5\textwidth]{yang-results-chart.png}
+    \caption{The authors find that the higher the number of mixtures ($T$) the higher the accuracy. This is also true, to an extend, with number of parts to detect ($K$). The authors suggest a $26$ part, $6$ mixture model for a good trade-off between accuracy and performance. Image taken from \cite{yang_articulated_2011}.}
+    \label{fig:yang-results-chart}
+\end{figure}
 
 \subsection{Deep Learning Methods}
 % Deep Pose
@@ -388,15 +466,14 @@ Frames Labled In Cinema (FLIC) is a dataset which contains $5000$ images of Holl
 Leeds Sports Pose (LSP) is a dataset of $2000$ annotated images of subjects in a sport context.
 LSP contains $14$ different joint positions of the entire body.
 
-The authors use two different metrics to evaluate their model.
-Percentage of Correct Parts (PCP) \cite{eichner_articulated_2010} meassures the detection rate of limbs instead of joint coordinates.
-To still use this widely accepted metric, the authors take the ground truth coordinates of the joints on the end of each limb to calculate the limb length.
-Then, when evaluating a predicted pose, a joint is defined as being detected correctly if the distance between the joint coordinate in the prediction and the ground truth is less than or equal to half of the limbs length.
+The authors use two different metrics to evaluate their model, PCP and PDJ.
+The authors take the ground truth coordinates of the joints on the end of each limb to calculate the limb length for PCP.
 
 PCP has the disadvantage that short limbs get penalized more than big limbs.
-To overcome these shortcommings, the authors define a new evaluation metric called Percent of Detected Joints (PDJ).
+To overcome this shortcomming, the authors define a new evaluation metric called Percent of Detected Joints (PDJ).
 With this metric, a joint is considered detected correctly if the distance between the predicted joint position and the ground truth $d_p$ is smaller than a fraction of the torsos diameter $d_t$.
 This fraction is set to be $0.5$, meaning a joint is considered detected if $0 <= d_p <= 0.5 \cdot d_t$.
+This metric is similar to PCK in that it compares the distance between two joints to a subject-specific value like torso diameter or subject bounding box, effectively normalizing the result.
 
 The authors provide three examples which illustrate the importance of the cascading architecture.
 These examples can be seen in \fref{fig:deeppose-qualitative}.
@@ -410,6 +487,12 @@ They argue that stage $s_1$ has the biggest effect on the accuracy of the joints
 \end{itemize}
 
 \section{Video-based Human Action Recognition}
+
+Different approaches.
+Some: frame-by-frame and just concatenate.
+Other: Use temporal information.
+Here: Only those who use temporal information.
+
 \subsection{Shallow Methods}
 \begin{itemize}
     \item Learning Realisitic Human Actions from Movies \cite{laptev_learning_2008}
