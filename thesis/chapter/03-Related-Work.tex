@@ -199,17 +199,6 @@ In summary, each spatial relation is expressed in the following way:
     \end{split}    
 \end{equation}
 
-Except for the last part of the equation, all distributions are Gaussian with a mean of $0$.
-The last distribution is a von Mises distribution, given by
-
-\begin{equation}
-    M(\theta, \mu, k) \propto \exp (k \cdot \cos (\theta - \mu)).
-\end{equation}
-
-A von Mises distribution can be thought of as a normal distribution around a circle, which is why the authors use it for periodic input like gradients.
-Using this distribution, the difference between the two angles is measured with regards to the optimal orientation $\varphi_{ij}$.
-The parameter $k$ determines how strong the peak at $\varphi_{ij}$ should be or, in other words, how constrained the joints should be. 
-
 The prior parameters $c_{ij}$ are then given by $c_{ij} = (x_{ij}, x_{ji}, y_{ij}, y_{ji}, \sigma_x, \sigma_y, \sigma_s, \varphi_{ij}, k)$ and are estimated using maximum likelihood estimation.
 
 % ----- Short evaluation
@@ -227,12 +216,92 @@ Some example images can be seen in \fref{fig:pictoral-examples}
     \label{fig:pictoral-examples}
 \end{figure}
 
-\subsubsection{Pictoral structures revisisted}
+\subsubsection{Approaches for parts detection}
+
+% TODO: say that many different over the years (maybe cite some?) but here just one in-depth
+
+In \cite{andriluka_pictorial_2009}, the authors propose a different appearance model $p(I \mid L, \theta)$, which is based on individual parts detectors.
+\cite{felzenszwalb_pictorial_2005} used background separation to extract the silhouette of the subject from the background.
+Then, the objective was to configure the parts in such way that the covered foreground area was maximized (see \eref{eq:felz-unary}).
+This resulted in a large search space since all different rotations and scalings for each part need to be placed inside the foreground area in order to evaluate the overall fit.
+The authors in \cite{andriluka_pictorial_2009} limit the search space by using a detected \textit{parts evidence map} $d_i$ for each part $i$.
+An example evidence map can be seen in \fref{fig:parts-evidence}.
+These evidence maps are the result of individual parts detectors trained on annotated images such as presented in \fref{fig:parts-annot}.
+To compute the evidence map, parts detectors are trained using annotated training data.
+
+\begin{figure}
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[height=150px]{poseparts.png}
+        \caption{Parts-annotated example image.}
+        \vspace{25px}
+        \label{fig:parts-annot}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[height=150px]{partevidence.png}
+        \caption{Part evidence map for part \textit{head}. Notice the peak (in red) where the head is in the left image.}
+        \label{fig:parts-evidence}
+    \end{subfigure}
+    \caption{Images taken from corresponding talk to \cite{andriluka_pictorial_2009}.}
+\end{figure}
+
+% Descriptors
+The authors compute dense \textit{shape context descriptors} \cite{belongie_shape_2002} for each training image.
+This local descriptor takes gradients of edge pixels into account and discretizes them into bins in a log-polar histogram.
+The authors chose $12$ bins for the location where the gradients are put inside $8$ bins, resulting in a $96$ dimensional descriptor for each sampled point.
+Descriptors with a center point inside a part bounding box given by the annotation are then concatenated and used as positive training examples to train the parts detectors.
+
+% Detectors
+For detectors, the authors use the concept of \textit{boosting} where the decisions of many weak classifiers are combined into a strong classifier \cite{freund_short_1999}.
+Specifically, the authors use the \textit{AdaBoost} algorithm proposed by \cite{freund_decision-theoretic_1997}.
+Each weak detector takes a bin from the feature vector and compares it to a threshold.
+The sign of the result is then used as the output of the weak detector following
+
+\begin{equation}
+    h_t(\bm{x}) = sign(\xi_t (\bm{x}_{n(t)} - \varphi_t )),
+\end{equation}
+
+where $\bm{x}$ is the feature vector, $\xi_t \in \{-1, 1\}$ and $n(t)$ is the index of the bin, which is used to compare to $\varphi_t$.
+The authors do not, however, specify how to set $\xi_t$ or which threshold $\varphi_t$ was used.
+
+Combining $t$ weak detectors by summing over the weighted outputs, the complete part detector for part $i$ is given by 
+
+\begin{equation}
+    H_i(\bm{x}) = sign\left(\sum_t a_{i,t} h_t(\bm{x})\right)
+\end{equation}
+
+According to the authors, $a_{i,t}$ are weights learned by each weak detector.
+To fit the parts detectors into the Pictoral Structure Framework, the authors compute a pseudo-probability based on the part detectors:
+
+\begin{equation}
+    p(d_i \mid l_i) = max \left(\frac{\sum_t a_{i,t} h_t(\bm{x}(l_i))}{\sum_t a_{i,j}}, \epsilon_0 \right).
+\end{equation}
+
+$\bm{x}(l_i)$ is the feature vector for part $l_i$ whereas $\epsilon_0$ is set to $10^{-4}$.
+The authors claim that this pseudo-probability achieves good results in practice.
+
+% Appearance model Pictoral Structure Framework
+Lastly, the authors make two assumptions in order to embed the parts detectors into the Pictoral Structute Framework.
+First, different part evidence maps $d_i$ are independent from each other given $L$.
+Second, $d_i$ only depends on $l_i$ on not on other parts configurations.
+This leads to the following likelihood
+
+\begin{equation}
+    p(I \mid L, \theta) = p(D \mid L) = \prod_{i=0}^N p(d_i \mid l_i),
+\end{equation}
+
+where $N$ is the number of parts to detect in the given image.
+
+% Quick Evaluation
+
+% TODO: A little bit about the tree prior (didnt deviate too much, but lets find a little detail thats different)
+
 
 \subsubsection{Articulated pose estimation with flexible mixture-of-parts}
 
 \begin{itemize}
-    \item Articulated pose estimation with flexible mixture-of-parts \cite{yang_articulated_2011}
     \item An approach to pose-based action recognition \cite{wang_approach_2013}
 \end{itemize}
 
