@@ -248,19 +248,13 @@ To compute the evidence map, parts detectors are trained using annotated trainin
 
 \begin{figure}
     \centering
-    \begin{subfigure}[b]{0.45\textwidth}
-        \centering
+    \subfloat[Parts-annotated example image.\label{fig:parts-annot}]{%
         \includegraphics[height=150px]{poseparts.png}
-        \caption{Parts-annotated example image.}
-        \vspace{25px}
-        \label{fig:parts-annot}
-    \end{subfigure}
-    \begin{subfigure}[b]{0.45\textwidth}
-        \centering
-        \includegraphics[height=150px]{partevidence.png}
-        \caption{Part evidence map for part \textit{head}. Notice the peak (in red) where the head is in the left image.}
-        \label{fig:parts-evidence}
-    \end{subfigure}
+    }
+    \hspace{20px}
+    \subfloat[Part evidence map for part \textit{head}. Notice the peak (in red) where the head is in the left image.\label{fig:parts-evidence}]{%
+    \includegraphics[height=150px]{partevidence.png}
+}
     \caption{Images taken from corresponding talk to \cite{andriluka_pictorial_2009}.}
 \end{figure}
 
