@@ -84,7 +84,7 @@ def run_experiment_mpii(conf):
     )
 
     optimizer = optim.RMSprop(model.parameters(), lr=learning_rate)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max', verbose=True, patience=1)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max', verbose=True, patience=1, eps=0)
 
     if name is not None:
         experiment_name = name
