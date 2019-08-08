@@ -1,0 +1,5 @@
+- don't use because at the beginning of a sentence so much
+- i.e. does mean "that means", while e.g. means "for example"
+- Dots at the end of figure text
+- i.e.,
+- 
