@@ -234,7 +234,7 @@ Some example images can be seen in \fref{fig:pictoral-examples}
 \end{figure}
 
 \subsubsection{Approaches for parts detection}
-
+\label{sec:pose-andriluka}
 % TODO: say that many different over the years (maybe cite some?) but here just one in-depth
 
 In \cite{andriluka_pictorial_2009}, the authors propose a different appearance model $p(I \mid L, \theta)$, which is based on individual parts detectors.
@@ -395,17 +395,6 @@ Authors propose APK
 \end{figure}
 
 \subsection{Deep Learning Methods}
-% Deep Pose
-
-- regresses joint coordinates (normalized)
-- (illustrate architecture and explain where they got it from \cite{krizhevsky_imagenet_2012})
-- local response normalization  
-    - relu is unrestricted. some normalization is preferred because it makes the net generalize better \cite{krizhevsky_imagenet_2012}. applied after relu.
-    - normalization between channels
-    - no explanation (in \cite{krizhevsky_imagenet_2012}) given of why it works
-- uses cascades. something we will see again in deep methods.
-    - each stage is supposed to refine the prediction of the previous stage.
-    - cut bounding box around previous prediction. Each stage gets a different "view". also: normalize to bounding box diameter
 
 \subsubsection{DeepPose}
 % Introduction
@@ -473,11 +462,107 @@ The authors provide three examples which illustrate the importance of the cascad
 These examples can be seen in \fref{fig:deeppose-qualitative}.
 They argue that stage $s_1$ has the biggest effect on the accuracy of the joints since further stages use smaller and smaller subimages for regression and thus use a smaller context.
 
+\subsubsection{Stacked Hourglass}
+
+% Introduction
+Building on \cite{toshev_deeppose:_2014}, \cite{newell_stacked_2016} proposed the \textit{Stacked hourglass network}.
+In comparison to \cite{toshev_deeppose:_2014}, they do not regress the joint coordinates directly using fully-connected layers but use a fully convolutional architecture to compute \textit{heatmaps}.
+These heatmaps are very similar to the part evidence maps discussed in Chapter \ref{sec:pose-andriluka}.
+However, the heatmaps indicate the probability of a certain joint to be present instead of a part.
+
+Similar to \cite{toshev_deeppose:_2014}, the authors use a stacked architecture, where predictions get refined iteratively.
+They do, however, do not crop the input down with each iterative step but keep the whole image in every step.
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.8\textwidth]{stackedhourglass.png}
+    \caption{Schematic visualization of the stacked hourglass network. Notice the hourglass-shaped symmetric submodels connected together. Image taken from \cite{newell_stacked_2016}. }
+    \label{fig:stacked-hg-architecture}
+\end{figure}
+
+% Architecture
+The building blocks of the stacked hourglass archtitecture are so-called \textit{hourglass modules}.
+See \fref{fig:single-hourglass} for a visualization of a single hourglass module.
+The idea is to process the input of the module at different scales and then combine features from different scales using \textit{skip-connections}.
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.6\textwidth]{single-hourglass.png}
+    \caption{Visualization of a single hourglass module. Each block is a residual module, consisting of multiple convolutional layers with skip-connections. Notice how the skip-connections combine features at different scale levels. Image taken from \cite{newell_stacked_2016}. }
+    \label{fig:single-hourglass}
+\end{figure}
+
+A skip-connection is a path in the network, which branches of at a certain point and gets combined with the original path again further down the network.
+For example, consider a neural network with three convolutional layers.
+A skip-connection could branch of before the first convolutional layer, apply some processing in forms of additional convolutional layers, and get added back into the original path after the second convolutional layer, thus effectively \textit{skipping} the processing of the first and second convolutional layers.
+Thus, earlier features (in terms of network depth) can be reintroduced at a later stage.
+One common use-case for skip-connections, which the authors used, is to reintroduce lower level features and add them to higher level features.
+This way, tasks like pose estimation can incorporate global, high level features like body shape with low level, local features like faces.
+
+Skip-connections get used in \textit{residual blocks} \cite{he_deep_2016}, which are used for more efficient learning in deep networks.
+Consider two connected convolutional layer with input $x$.
+Let $f(x)$ be the output of the second convolutional layer.
+Residual models model $f(x) + x$ because they use the skip-connection to add the input back to the output.
+The authors of \cite{he_deep_2016} argue that this allows for deeper neural network architectures because it is easier to fit identity mappings.
+They evaluated deep neural networks and found that the error does not only not decrease for very deep networks but starts increasing.
+The authors argue that this would not happen if the layers would learn identity functions because then the error would just stagnate.
+In addition, because residual blocks allow for very deep architectures, they achieved substantially better results in comparison to identical architectures without residual blocks.
+
+An example of a residual blocks used in the stacked hourglass network can be seen in \fref{fig:hg-residual}.
+In fact, all blocks shown in \fref{fig:single-hourglass} are residual blocks.
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.4\textwidth]{residualmodule.png}
+    \caption{A residual module \cite{he_deep_2016}, as used in the stacked hourglass network. The module is made up of a batch normalization layer (left) and three convolutional layers, each utilizing the ReLU activation function. The dotted line visualizes the skip-connection. Image taken from \cite{newell_stacked_2016}. }
+    \label{fig:hg-residual}
+\end{figure}
+
+Each hourglass module is a network with a symmetrical architecture.
+For each downsampling step with a pooling layer there exists a corresponding upsampling step using \textit{nearest-neighbour upsampling}.
+Consequently, the input and output dimensions of the hourglass module are identical, allowing multiple modules to be applied one after the other.
+
+The input to the module is scaled down using pooling layers, until it reaches a resolution of $4x4$ pixels.
+Before each pooling layer, a skip-connection is utilized to branch off the current feature maps.
+They get feed through another residual block and combined back later.
+
+At each resolution level, features are extracted using a residual module.
+Once image is scaled down to $4x4$ pixels, upsampling is utilized until the image is back to its original size.
+Again, residual blocks are used to extract features at the different levels of resolution.
+Also, after the feature extraction, the processed skip-connections from earlier get added onto the extracted features, effectively combining features from two different image scales, because they get combined before upsampling happens.
+
+The authors use another skip-connection between the input and output of the module.
+This means that the input to each module, which is the output of the previous module, is added onto its output.
+The authors argue that this allows the network to refine its prediction with each hourglass module since the high level features, which are the outputs of each module, get processed by consecutive hourglass modules again, creating higher order spatial relationships.
+They qualitatively observe that errors made by early modules can be corrected by later modules.
+Also, they evaluated the difference between $2, 4$ and $8$ stacked hourglasses, which will be referred to as $s_2, s_4$ and $s_8$.
+For a better comparability, they altered the hourglass archictecture for the $s_2$ and $s_4$ to keep the number of trainable parameters the same between architectures.
+For each residual block in each hourglass in $s_2$ the authors substituted $4$ residual blocks, effectively quadrupeling the number of residual blocks.
+Analogously, they doubled the amount of residual blocks for $s_4$.
+When training $s_2, s_4$ and $s_8$, they found validation accuracies of $87.4\%$, $87.8\%$ and $88.1\%$ respectively, suggesting that the stacked architecture does contribute to higher overall accuracies.
+In the final architecture, the authors use $8$ hourglass modules.
+
+While training, the output of each hourglass module is not only feed into the next module, but also processed into a \textit{heatmap} using a $1x1$ convolutional layer.
+Using this heatmap, a loss is computed after each hourglass module, which is then propagated back.
+The authors refer to this process as \textit{intermediate supervision} and argue that it increases the accuracy of the final prediction because the network needs to develop a high-level of understanding very early.
+In their quantitative analysis, they showed an increase in validation accuracy of around $3$ percent when utilizing intermediate supervision. 
+
+% Evalutation
+%% Meassurements and Datasets
+For evaluating the stacked archictecture, the authors used the \textit{FLIC} and \textit{MPII Human Pose}\cite{andriluka_2d_2014} data sets.
+
+MPII Human Pose is a benchmark, which consists of $40,000$ annotated images of people.
+These images are also often referred to as \textit{in-the-wild} images since they were downloaded from YouTube videos and are thus representative of every day activaties and situations.
+In addition, since most YouTube videos are uploaded by private individuals, the image quality varies, making the benchmark more realisitic.
+
+The authors use \textit{PCKh} as their metric, which is identical to \textit{PCK} but instead of using the person bounding box the head bounding box is used for normalization.
+For \textit{FLIC}, they defined a joint to be detected if the distance between the ground truth location and the predicted location is within $20\%$ of the head size.
+With \textit{MPII Human Pose}, the threshold was reduced to $50\%$ in accordance to the previous works they compared against.
+
+
 \begin{itemize}
-    \item DeepPose \cite{toshev_deeppose:_2014}
-    \item Stacked Hourglass \cite{newell_stacked_2016}
     \item Convolutional Pose Machine \cite{wei_convolutional_2016}
-    \item Thin-Slicing Network \cite{song_thin-slicing_2017}
+    %\item Thin-Slicing Network \cite{song_thin-slicing_2017}
 \end{itemize}
 
 \section{Video-based Human Action Recognition}
