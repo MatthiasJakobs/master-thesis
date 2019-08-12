@@ -487,7 +487,7 @@ class MPIIDataset(data.Dataset):
             if not os.path.exists(name_path + ".original_size.pt"):
                 torch.save(t_original_size, name_path + ".original_size.pt")
             if not os.path.exists(name_path + ".bbox.pt"):
-                torch.save(t_original_size, name_path + ".bbox.pt")
+                torch.save(t_bbox, name_path + ".bbox.pt")
 
         return output
 
