@@ -347,6 +347,7 @@ class MPIIDataset(data.Dataset):
             t_headsize = torch.load(name_path + ".headsize.pt")
             t_trans_matrix = torch.load(name_path + ".trans_matrix.pt")
             t_original_size = torch.load(name_path + ".original_size.pt")
+            t_bbox = torch.load(name_path + ".bbox.pt")
 
             output["image_path"] = t_filepath
             output["normalized_image"] = t_normalized_image
@@ -355,6 +356,7 @@ class MPIIDataset(data.Dataset):
             output["head_size"] = t_headsize
             output["trans_matrix"] = t_trans_matrix
             output["original_size"] = t_original_size
+            output["bbox"] = t_bbox
 
             return output
 
@@ -484,6 +486,8 @@ class MPIIDataset(data.Dataset):
                 torch.save(t_trans_matrix, name_path + ".trans_matrix.pt")
             if not os.path.exists(name_path + ".original_size.pt"):
                 torch.save(t_original_size, name_path + ".original_size.pt")
+            if not os.path.exists(name_path + ".bbox.pt"):
+                torch.save(t_original_size, name_path + ".bbox.pt")
 
         return output
 
