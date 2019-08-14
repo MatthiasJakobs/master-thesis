@@ -503,7 +503,7 @@ In the end, they use $3$ stages $S = (s_0, s_1, s_2)$ after evaluating different
     \label{fig:deeppose-qualitative}
 \end{figure}
 
-% TODO: Move dataset / metric explanation if happening before
+\label{sec:flic-lsp}
 After training their network, the authors evaluate the final model on two datasets, FLIC \cite{sapp_modec:_2013} and LSP \cite{johnson_clustered_2010}.
 Frames Labled In Cinema (FLIC) is a dataset which contains $5000$ images of Hollywoord movie scenes where $10$ upper-body joint positions are labeled for the subject of the scene.
 In that regard, FLIC is similar to the Buffy dataset.
@@ -583,7 +583,7 @@ The idea is to process the input of the module at different scales and then comb
 A skip-connection is a path in the network, which branches of at a certain point and gets combined with the original path again further down the network.
 For example, consider a neural network with three convolutional layers.
 A skip-connection could branch of before the first convolutional layer, apply some processing in forms of additional convolutional layers, and get added back into the original path after the second convolutional layer, thus effectively \textit{skipping} the processing of the first and second convolutional layers.
-Thus, earlier features (in terms of network depth) can be reintroduced at a later stage.
+Thus, earlier features (in terms of network depth) can be reintroduced at a later stage and long-range dependencies between variables can be modelled.
 One common use-case for skip-connections, which the authors used, is to reintroduce lower level features and add them to higher level features.
 This way, tasks like pose estimation can incorporate global, high level features like body shape with low level, local features like faces.
 
@@ -637,15 +637,31 @@ In their quantitative analysis, they showed an increase in validation accuracy o
 
 % Evalutation
 %% Meassurements and Datasets
-For evaluating the stacked archictecture, the authors used the \textit{FLIC} and \textit{MPII Human Pose}\cite{andriluka_2d_2014} data sets.
-
+For evaluating the stacked archictecture, the authors used the \textit{FLIC} \sref{sec:flic-lsp} and \textit{MPII Human Pose} \cite{andriluka_2d_2014} datasets.
 MPII Human Pose is a benchmark, which consists of $40,000$ annotated images of people.
 These images are also often referred to as \textit{in-the-wild} images since they were downloaded from YouTube videos and are thus representative of every day activaties and situations.
 In addition, since most YouTube videos are uploaded by private individuals, the image quality varies, making the benchmark more realisitic.
+For a complete overview of the MPII dataset, please refer to Section \ref{sec:exp-mpii}.
+
+The authors use two metrics.
+\textit{PCKh} as their metric for the MPII dataset, which is very similar to both PCK \sref{sec:andriluka-eval} and PDJ \sref{sec:flic-lsp}.
+However, instead of using the person bounding box or torso bounding box for normalization, PCKh uses the head.
+\cite{andriluka_2d_2014} argue that PCKh is more useful for evaluating highly articulated poses compared to PCK since the full body bounding box can be fairly large for some poses.
+Consider a person, jumping in the air, spreading their arms and legs away from their body.
+This maximizes the person bounding box and thus makes it easier for the PCK metric to consider predictions to be correct when they are fairly far away from the ground truth.
+The head size, aswell as torso size, however, is quite independent from the type of pose and thus more suitable for evaluation.
+
+For \textit{FLIC}, they defined $\alpha = 0.2$, which means that $20\%$ of the length of the head is used as the threshold.
+They compare their results to \cite{toshev_deeppose:_2014} and outperform their results on elbows and wrists by $6.7$ percentage points ($99.0\%$ compared to $92.6\%$) and $15$ percentage points ($97\%$ compared to $82\%$), respectively.
+In addition, they outperformed \cite{wei_convolutional_2016}, the state-of-the-art appraoch at that time \sref{sec:convolutional-pose-machine}.
 
 The authors use \textit{PCKh} as their metric, which is identical to \textit{PCK} but instead of using the person bounding box the head bounding box is used for normalization.
 For \textit{FLIC}, they defined a joint to be detected if the distance between the ground truth location and the predicted location is within $20\%$ of the head size.
 With \textit{MPII Human Pose}, the threshold was reduced to $50\%$ in accordance to the previous works they compared against.
+Also, PCKh was used instead of PCK, as described before, since PCKh was proposed in \cite{andriluka_2d_2014}, and thus most models using the MPII dataset use PCKh for evaluation.
+Similar to before, they outperformed the state-of-the-art approaches, including \cite{wei_convolutional_2016}.
+In particular, they achieved $90.9\%$ overall accuracy as compared to $88.5\%$ achieved by \cite{wei_convolutional_2016}.
+Also, they achieved significantly better results on each individual part, including a $3.5$ percentage point increase on the average over the most challenging joints (wrists, elbows, kness and ankles) in comparison to \cite{wei_convolutional_2016}. 
 
 
 \begin{itemize}
