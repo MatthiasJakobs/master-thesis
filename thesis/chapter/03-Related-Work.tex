@@ -220,7 +220,7 @@ The prior parameters $c_{ij}$ are then given by $c_{ij} = (x_{ij}, x_{ji}, y_{ij
 
 % ----- Short evaluation
 The authors merely provide example images instead of a quantitative analysis.
-This is most likely because of the lack of benchmark data sets available at the time.
+This is most likely because of the lack of benchmark datasets available at the time.
 They labeled $10$ images by hand and used these to estimate the parameters.
 Then, for each of their unlabeld test images, they sampled $200$ poses and calculated the Chamfer distance, which measures the binary correlation.
 The best pose with regards to the Chamfer distance is then returned.
@@ -306,9 +306,10 @@ This leads to the following likelihood
 where $N$ is the number of parts to detect in the given image.
 
 % Evaluation
+\label{sec:andriluka-eval}
 The authors use two datasets to evaluate their model.
 The \textit{Buffy} dataset provides annotated upper-body poses from $3$ episodes of the TV series \textit{Buffy The Vampire Slayer} \cite{ferrari_progressive_2008}.
-Also, for evaluating full-body poses, they used the \textit{Iterative Image Parsing} dataset providid by \cite{ramanan_learning_2007}
+Also, for evaluating full-body poses, they used the \textit{Iterative Image Parsing} dataset provided by \cite{ramanan_learning_2007}
 
 As an evaluation metrc, the authors use \textit{Percentage of Correct Parts (PCP)}, proposed by \cite{ferrari_progressive_2008}.
 For each annotated body part, PCP is calculated by first computing the length of the ground truth body part $l_{gt}$.
@@ -347,12 +348,12 @@ In addition, in this model, it is possible to constraint two adjacent parts' typ
 
 % General overview over differences
 First, the authors change the definition of a part $i$ and its parametrization $l_i$ from the one presented in \cite{felzenszwalb_pictorial_2005}.
-A part is defined as a joint instead of a limb because the data sets used annotated joint positions as opposed to parts positions.
+A part is defined as a joint instead of a limb because the datasets used annotated joint positions as opposed to parts positions.
 Thus, the parametrization changes to $l_i = (x_i, y_i)$ since no rotation and forshortening occurs.
 
 % Learning
 %% Generate annotation
-The data sets the authors used do not provide annotations for type labels, which is why these were computed beforehand using the following steps.
+The datasets the authors used do not provide annotations for type labels, which is why these were computed beforehand using the following steps.
 First, the authors define a graph where the vertices correspond to joints.
 The edges of the graph are defined in a way that model a human skeleton.
 See \fref{fig:yang-tree} for an example graph.
@@ -370,7 +371,7 @@ Necks tend to be below heads (for upright people).
 The authors use all relative positions found by iterating the dataset and cluster the relative positions into $T=4$ clusters.
 The cluster that the part $i$ is put in then defines the type label $t_i$.
 See \fref{fig:yang-clustering} for an example.
-This then results in a fully annotated data set with location information $l_i$ as well as type $t_i$ for each part $i$.
+This then results in a fully annotated dataset with location information $l_i$ as well as type $t_i$ for each part $i$.
 
 \begin{figure}[htb!]
     \centering
@@ -403,8 +404,6 @@ $w_i^{t_i}$, $w_{ij}^{t_i, t_j}$ as well as $b_i^{t_i}$ and $b_{ij}^{t_i, t_j}$ 
 During training, a supervised approach is used where the score for an annotated training image is maximized while utilizing regularisation on the models parameters $\beta = (\bm{w}, \bm{w})$.
 
 % Evaluation
-To evaluate their model, the authors use Percentage of Correct Parts (PCP) \cite{ferrari_progressive_2008} to be able to compare it to earlier work.
-In addition, they define two new metrics, \textit{PCK} (Probability of Correct Keypoints) as well as \textit{APK} (Average Precision of Keypoints).
 
 To evaluate their model, the authors use \textit{Percentage of Correct Parts (PCP)}, presented in Section \ref{sec:andriluka-eval}, to be able to compare it to earlier work.
 In addition, they define a new metric, \textit{Probability of Correct Keypoints (PCK))}.
@@ -456,6 +455,8 @@ They argue that $26$ parts and $6$ mixtures is a good trade-off when considering
 \subsection{Deep Learning Methods}
 
 \subsubsection{DeepPose}
+\label{sec:deeppose}
+
 % Introduction
 One of the first approaches for pose estimation using deep convolutional neural networks was proposed by \cite{toshev_deeppose:_2014}.
 They achieved state-of-the-art results on two benchmark datasets using a neural network architecture based on the ImageNet network \cite{krizhevsky_imagenet_2012}.
@@ -550,6 +551,147 @@ They argue that stage $s_1$ has the biggest effect on the accuracy of the joints
 To support their hypothesis, they evaluating three networks in terms of PDJ on the FLIC dataset, with one, two and three stages respectively.
 Their findings show the same behaviour observed in \fref{fig:deeppose-qualitative}.
 
+\subsubsection{Convolutional Pose Machine}
+\label{sec:convolutional-pose-machine}
+% Introduction
+\cite{wei_convolutional_2016}
+
+% "Classical" Pose Machine Concepts
+The authors base their work on \textit{traditional} Pose machines proposed by \cite{ramakrishna_pose_2014}.
+Pose machines are a general framework for estimating pose, focusing on refining initial pose predictions based on context from previous decisions.
+The modular nature allows to easily use different predictors and encoders, which will be explained in the next section.
+
+The Pose machine is made up of cascaded \textit{stages}.
+The first stage uses a predictor $g_1$, which predicts, for each pixel in the input image, how likely it belongs to part $p$.
+The result are $P$ belief maps, one for each part to detect.
+In all subsequent stages, the output belief maps of the previous stage are encoded back into image features using a function $\varphi$.
+Then, the encoded features are combined with the local image features of the current stage and then passed into the stage's predictor.
+This way, the predictor not only has the image features as a basis for decision but also the previously detected joint location for context.
+See \fref{fig:pose-machines-architecture} for a visualization of the pipeline.
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.9\textwidth]{pose-machine-architecture.png}
+    \caption{Todo. Image taken from \cite{wei_convolutional_2016}.}
+    \label{fig:pose-machines-architecture}
+\end{figure}
+
+
+In \cite{ramakrishna_pose_2014}, the authors use boosted random forests for their stage predictors $g_i$.
+To extract features, they utilize \textit{Histogram of Oriented Gradients (HOG)} descriptors.
+Their encoder $\varphi$ is made up of two parts.
+The first part is referred to by the authors as \textit{context patch features}.
+For a given pixel coordinate $(x, y)$ for each belief map, the authors concatenate the scores in a $5 x 5$ grid around $(x,y)$.
+Afterwards, the concatenated scores from each belief map are again concatenated into a final feature vector $\varphi_1$.
+The second part, which the authors refer to as \textit{context offset features}, is a concatenation of polar coordinates of the pixel location of the $3$ highest peaks in each belief map.
+Again, they concatenate all feature vectors over all belief maps, resulting in $\varphi_2$.
+Finally, their context feature vector is given by $\varphi = [\varphi_1, \varphi_2]$.
+See \fref{fig:pose-machines-context} for a visualization of $\varphi_1$ and $\varphi_2$.
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.6\textwidth]{pose-machine-context-vector.png}
+    \caption{Example of context feature extraction, as proposed by \cite{ramakrishna_pose_2014}, for three belief maps $\prescript{l}{}{b_t^1}$, $\prescript{l}{}{b_t^2}$ and $\prescript{l}{}{b_t^3}$ (columns).\textbf{Top row:} Extraction from scores in a $5 x 5$ grid around the pixel $z$. . \textbf{Bottom row:} Each arrow points towards one of the top $3$ peaks in the image. The polar coordinates with regards to $z$ are then concatenated into the feature vector. Image taken from \cite{ramakrishna_pose_2014}.}
+    \label{fig:pose-machines-context}
+\end{figure}
+
+
+% Differences -> Fully Convolutional
+In \cite{wei_convolutional_2016}, the authors used convolutional neural networks for their predictors $g_i$.
+In fact, the complete architecture is a fully convolutional neural network.
+Each stage consists of a feature extraction network, of which the architecture is presented in Table \ref{tab:pose-machine-feature-extraction-architecture} (layer $1$ to $7$).
+The layers denoted with $a_1$ to $a_3$ refer to the layers present in the first stage, after the feature extraction network.
+Analogously, $b_1$ to $b_5$ refers to the layer after the feature extraction network in all subsequent stages $i > 1$. 
+
+For context encoder $\varphi$, the authors compute the current receptive field of the network and use a window of that size to extract features from the belief maps. 
+
+\begin{table}[]
+    \centering
+
+    \begin{tabular}{|l|l|l|}
+    \hline
+    \textbf{nr.} & \textbf{layer type} & \textbf{filter size} \\ \hline
+    1 & convolutional & 9 x 9 \\
+    2 & pooling & 2 x 2\\
+    3 & convolutional & 9 x 9 \\
+    4 & pooling & 2 x 2\\
+    5 & convolutional & 9 x 9 \\
+    6 & pooling & 2 x 2 \\
+    7 & convolutional & 5 x 5 \\ \hline 
+    $a_1$ & convolutional & 9 x 9 \\  
+    $a_2$ & convolutional & 1 x 1 \\  
+    $a_3$ & convolutional & 1 x 1 \\ \hline 
+    $b_1$ & convolutional & 11 x 11 \\  
+    $b_2$ & convolutional & 11 x 11 \\  
+    $b_3$ & convolutional & 11 x 11 \\ 
+    $b_4$ & convolutional & 1 x 1 \\  
+    $b_5$ & convolutional & 1 x 1 \\ \hline     
+    \end{tabular}
+    \caption{Todo}
+    \label{tab:pose-machine-feature-extraction-architecture}
+\end{table}
+
+Many stages can be stacked on top of one another.
+More stages increase the final prediction accuracy up to a certain point of diminishing returns \cite{wei_convolutional_2016}. 
+
+
+% Why contexts are helpful
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.8\textwidth]{context-belief-maps.png}
+    \caption{Noch einzufügen. Image taken from \cite{wei_convolutional_2016}.}
+    \label{fig:context-belief-maps}
+\end{figure}
+
+% Evaluation
+\label{sec:pose-machine-evaluation}
+
+The authors evaluate their model using three widely used benchmark datasets.
+These are LSP and FLIC \sref{sec:flic-lsp} as well as \textit{MPII Human Pose}.  
+MPII Human Pose is a benchmark, which consists of $40,000$ annotated images of people.
+These images are also often referred to as \textit{in-the-wild} images since they were downloaded from YouTube videos and are thus representative of every day activaties and situations.
+In addition, since most YouTube videos are uploaded by private individuals, the image quality varies, making the benchmark more realisitic.
+For a complete overview of the MPII dataset, please refer to Section \ref{sec:exp-mpii}.
+
+For evaluating their model, the authors use both PCK \sref{sec:andriluka-eval} and PCKh metrics.
+\textit{PCKh} is used as the metric for the MPII dataset, which is very similar to both PCK and PDJ \sref{sec:flic-lsp}.
+However, instead of using the person bounding box or torso bounding box for normalization, PCKh uses the head bounding box.
+\cite{andriluka_2d_2014} argue that PCKh is more useful for evaluating highly articulated poses compared to PCK since the full body bounding box can be fairly large for some poses.
+Consider a person, jumping in the air, spreading their arms and legs away from their body.
+This maximizes the person bounding box and thus makes it easier for the PCK metric to consider predictions to be correct when they are fairly far away from the ground truth.
+The head size, aswell as torso size, however, is quite independent from the type of pose and thus more suitable for evaluation.
+In addition, they use PCK in order to compare their results on FLIC and LSP to the literature.
+
+When evaluating their model using the LSP dataset, they found that, using a six stage model, they outperform the state-of-the-art approaches by approximately $15$ percentage points.
+The improvement is especially noticeable when evaluating the challenging joints like ankles.
+The result got even better ($~20$ percentage points increase) when utilizing additional training data from the MPII dataset.
+The authors argue that this is due to the fact that the LSP datasets contains noisy annotations when compared to the annotations provided by MPII.
+
+Afterwards, the authors compare their results on the FLIC dataset to many state-of-the-art models, including \cite{toshev_deeppose:_2014} \sref{sec:deeppose}.
+They compare their result on two challenging type of joints, namely wrists and elbows.
+Again, they outperform all state-of-the-art approaches.
+When comparing their results specifically with \cite{toshev_deeppose:_2014} the authors outperform their result by approximately $15$ percentage points for wrists and approximately $9$ percentage points for elbows.
+Also, in contrast to their LSP evaluation, they did not incorporate training data from MPII.
+
+
+% Evaluate against traditional Pose Machine
+When comparing their results with the traditional Pose machine, they find that the convolutional approach improves upon the results on the LSP dataset by an overall PCK accuracy improvement of $42.4$ percentage points.
+
+% Intermediate supervision and connection to vanishing gradient
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.99\textwidth]{posemachine-vanishing-gradient.png}
+    \caption{Gradient magnitude and variance across some layers of the Convolutional Pose Machine. When not using intermediate supervision (\textbf{red}), the gradient variance approaches zero towards the beginning of the network, effectively stopping the learning process.  When using intermediate supervision, however, notice that the variance of the gradients generally does not approach zero. Image taken from \cite{wei_convolutional_2016}.}
+    \label{fig:pose-machine-vanishing-gradient}
+\end{figure}
+
+The authors also evaluated the result of intermediate supervision on the vanishing gradient problem \sref{sec:vanishing-gradient}. 
+They trained two networks, one with intermediate supervision and one without, for the same amount of time.
+Their results are visualized in \fref{fig:pose-machine-vanishing-gradient}.
+The authors argue that the reason why intermediate supervision does help against the vanishing gradient problem is because it replenishes the gradient after each stage and thus keeps the gradient from decreasing when propagating back towards the network.
+
 \subsubsection{Stacked Hourglass}
 
 % Introduction
@@ -638,25 +780,12 @@ In their quantitative analysis, they showed an increase in validation accuracy o
 % Evalutation
 %% Meassurements and Datasets
 For evaluating the stacked archictecture, the authors used the \textit{FLIC} \sref{sec:flic-lsp} and \textit{MPII Human Pose} \cite{andriluka_2d_2014} datasets.
-MPII Human Pose is a benchmark, which consists of $40,000$ annotated images of people.
-These images are also often referred to as \textit{in-the-wild} images since they were downloaded from YouTube videos and are thus representative of every day activaties and situations.
-In addition, since most YouTube videos are uploaded by private individuals, the image quality varies, making the benchmark more realisitic.
-For a complete overview of the MPII dataset, please refer to Section \ref{sec:exp-mpii}.
 
-The authors use two metrics.
-\textit{PCKh} as their metric for the MPII dataset, which is very similar to both PCK \sref{sec:andriluka-eval} and PDJ \sref{sec:flic-lsp}.
-However, instead of using the person bounding box or torso bounding box for normalization, PCKh uses the head.
-\cite{andriluka_2d_2014} argue that PCKh is more useful for evaluating highly articulated poses compared to PCK since the full body bounding box can be fairly large for some poses.
-Consider a person, jumping in the air, spreading their arms and legs away from their body.
-This maximizes the person bounding box and thus makes it easier for the PCK metric to consider predictions to be correct when they are fairly far away from the ground truth.
-The head size, aswell as torso size, however, is quite independent from the type of pose and thus more suitable for evaluation.
-
+In terms of metrics, the authors take the same approach as \cite{wei_convolutional_2016}, where they use PCKh for MPII Human Pose and PCK for FLIC.
 For \textit{FLIC}, they defined $\alpha = 0.2$, which means that $20\%$ of the length of the head is used as the threshold.
 They compare their results to \cite{toshev_deeppose:_2014} and outperform their results on elbows and wrists by $6.7$ percentage points ($99.0\%$ compared to $92.6\%$) and $15$ percentage points ($97\%$ compared to $82\%$), respectively.
 In addition, they outperformed \cite{wei_convolutional_2016}, the state-of-the-art appraoch at that time \sref{sec:convolutional-pose-machine}.
 
-The authors use \textit{PCKh} as their metric, which is identical to \textit{PCK} but instead of using the person bounding box the head bounding box is used for normalization.
-For \textit{FLIC}, they defined a joint to be detected if the distance between the ground truth location and the predicted location is within $20\%$ of the head size.
 With \textit{MPII Human Pose}, the threshold was reduced to $50\%$ in accordance to the previous works they compared against.
 Also, PCKh was used instead of PCK, as described before, since PCKh was proposed in \cite{andriluka_2d_2014}, and thus most models using the MPII dataset use PCKh for evaluation.
 Similar to before, they outperformed the state-of-the-art approaches, including \cite{wei_convolutional_2016}.
@@ -665,8 +794,7 @@ Also, they achieved significantly better results on each individual part, includ
 
 
 \begin{itemize}
-    \item Convolutional Pose Machine \cite{wei_convolutional_2016}
-    %\item Thin-Slicing Network \cite{song_thin-slicing_2017}
+    \item Cascade Feature Aggregation for Human Pose Estimation \cite{su_cascade_2019}
 \end{itemize}
 
 \section{Video-based Human Action Recognition}

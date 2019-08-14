@@ -566,6 +566,7 @@ After computing the error signal, the weight can be updated, similarly to \eref{
     \end{split}
 \end{equation}
 
+\label{sec:vanishing-gradient}
 One problem that held the development of deep networks with many hidden layers back is the \textbf{vanishing gradient} problem \cite{hochreiter_untersuchungen_1991}.
 As seen previously, part of the gradient that gets propagated back through the network to update the parameters is the derivative of the activation function.
 When choosing Sigmoid as the activation function, the following holds for its derivative:
