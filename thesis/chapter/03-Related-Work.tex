@@ -474,6 +474,7 @@ This cascading approach is then repeated with the next stages.
 In the end, they use $3$ stages $S = (s_0, s_1, s_2)$ after evaluating different numbers of stages on a held-out training set.
 
 \begin{table}[]
+    \centering
     \begin{tabular}{|l|l|l|l|l|}
     \hline
     \textbf{nr.} & \textbf{layer type} & \textbf{filter size} & \textbf{nr. of filters / neurons} & \textbf{stride} \\ \hline
@@ -504,22 +505,50 @@ In the end, they use $3$ stages $S = (s_0, s_1, s_2)$ after evaluating different
 
 % TODO: Move dataset / metric explanation if happening before
 After training their network, the authors evaluate the final model on two datasets, FLIC \cite{sapp_modec:_2013} and LSP \cite{johnson_clustered_2010}.
-Frames Labled In Cinema (FLIC) is a dataset which contains $5000$ images of Hollywoord movie scenes where $10$ upper body joint positions are labeled for the subject of the scene.
-Leeds Sports Pose (LSP) is a dataset of $2000$ annotated images of subjects in a sport context.
+Frames Labled In Cinema (FLIC) is a dataset which contains $5000$ images of Hollywoord movie scenes where $10$ upper-body joint positions are labeled for the subject of the scene.
+In that regard, FLIC is similar to the Buffy dataset.
+Leeds Sports Pose (LSP) is a dataset of $2000$ annotated images of subjects in a sport context, which means that the subjects are highly articulated and thus challenging to detect.
 LSP contains $14$ different joint positions of the entire body.
 
-The authors use two different metrics to evaluate their model, PCP and PDJ.
-The authors take the ground truth coordinates of the joints on the end of each limb to calculate the limb length for PCP.
+The authors use two different metrics to evaluate their model.
+First, they use PCP (see Section \ref{sec:andriluka-eval}) for comparison with the literature.
 
-PCP has the disadvantage that short limbs get penalized more than big limbs.
-To overcome this shortcomming, the authors define a new evaluation metric called Percent of Detected Joints (PDJ).
-With this metric, a joint is considered detected correctly if the distance between the predicted joint position and the ground truth $d_p$ is smaller than a fraction of the torsos diameter $d_t$.
+Also, they define a new metric, \textit{Percentage of Detected Joints (PDJ)}.
+They argue, similar to \cite{yang_articulated_2013}, that PCP unfairly penalizes shorter limbs.
+With PDJ, a joint is considered detected correctly if the distance between the predicted joint position and the ground truth $d_p$ is smaller than a fraction of the torsos diameter $d_t$.
 This fraction is set to be $0.5$, meaning a joint is considered detected if $0 <= d_p <= 0.5 \cdot d_t$.
-This metric is similar to PCK in that it compares the distance between two joints to a subject-specific value like torso diameter or subject bounding box, effectively normalizing the result.
+This metric is similar to PCK in that it compares the distance between two joints to a subject-specific value like torso diameter or subject bounding box.
+
+When comparing the results on the LSP and FLIC datasets, the neural network outperforms the state-of-the-art approaches when considering the PCP metric.
+However, like mentioned before, PCP accuracies are hard to compare since there are multiple definitions available.
+Thus, the authors reevaluate previous approaches using PDJ and compare their model against these new meassurements.
+Again, they outperform the previous state-of-the-art models on both LSP and FLIC.
+
+The authors additionally evaluated their model on the Buffy and Iterative Image Parse datasets, presented in Section \ref{sec:andriluka-eval}.
+This allows a comparison to \cite{yang_articulated_2013}.
+Specifically, they trained their model on LSP and evaluated it on Iterative Image Parse for evaluating full-body poses.
+Analogously, they train their model on FLIC and evaluate it on the Buffy dataset when considering upper-body poses.
+
+After evaluating on the Iterative Image dataset, they do not share the overall PCP values.
+Instead, they compare their results on upper and lower arms as well as upper and lower legs.
+These are considered to be the hardest to detect.
+On this subset, the model outperforms \cite{yang_articulated_2013} on average by $13$ percentage points ($69\%$ average acccuracy as opposed to $56\%$).
+
+For the Buffy dataset, they do not publish explicit values, but rather the plot in \fref{fig:deeppose-eval}.
+From the graphic, it becomes clear that the author's model outperforms \cite{yang_articulated_2013} again, this time in terms of PDJ. 
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.8\textwidth]{deeppose-eval-pdj.png}
+    \caption{Percentage of Detected Joints for multiple models (elbows and wrists), including \cite{toshev_deeppose:_2014} and \cite{yang_articulated_2013}, on the Buffy dataset. Image taken from \cite{toshev_deeppose:_2014}.}
+    \label{fig:deeppose-eval}
+\end{figure}
 
 The authors provide three examples which illustrate the importance of the cascading architecture.
 These examples can be seen in \fref{fig:deeppose-qualitative}.
 They argue that stage $s_1$ has the biggest effect on the accuracy of the joints since further stages use smaller and smaller subimages for regression and thus use a smaller context.
+To support their hypothesis, they evaluating three networks in terms of PDJ on the FLIC dataset, with one, two and three stages respectively.
+Their findings show the same behaviour observed in \fref{fig:deeppose-qualitative}.
 
 \subsubsection{Stacked Hourglass}
 
