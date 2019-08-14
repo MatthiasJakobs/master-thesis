@@ -406,11 +406,45 @@ During training, a supervised approach is used where the score for an annotated 
 To evaluate their model, the authors use Percentage of Correct Parts (PCP) \cite{ferrari_progressive_2008} to be able to compare it to earlier work.
 In addition, they define two new metrics, \textit{PCK} (Probability of Correct Keypoints) as well as \textit{APK} (Average Precision of Keypoints).
 
-%% TODO: Finish evaluation
-In PCP, a limb is defined as being detected correctly if 
+To evaluate their model, the authors use \textit{Percentage of Correct Parts (PCP)}, presented in Section \ref{sec:andriluka-eval}, to be able to compare it to earlier work.
+In addition, they define a new metric, \textit{Probability of Correct Keypoints (PCK))}.
+In terms of datasets, they use Buffy and Iterative Image Parsing. 
 
-Authors propose PCK
-Authors propose APK
+PCK was designed to improve upon two disadvantages of PCP.
+First, the toolkit provided with the Buffy dataset \cite{ferrari_progressive_2008} used a definition of PCP different from the one proposed in the paper, which makes the comparison of PCP values in literature hard because it is unclear which definition was used.
+The paper definition was provided in Section \ref{sec:andriluka-eval}.
+The Buffy toolkit defines a part as detected if the distance of the average point of both endpoints is within the threshold to the average of the ground truth endpoints.
+Second, foreshortening changes the length of the part, which means that the threshold is dependent upon the amount of foreshortening.
+This means that foreshortened parts require more accurate predictions to be considered detected.
+PCK requires each test image to have a person bounding box annotation.
+Using the bounding box dimensions $(width, height)$, a keypoint is considered detected if the distance between the ground truth and prediction is less than $\alpha \cdot max(width, height)$.
+This gives a clear reference point for comparison and makes the metric less susceptible to errors due to foreshortened parts.
+The paramter $\alpha$ determmines how strict the meassurement should be.
+For the Buffy dataset, the authors set $\alpha = 0.2$, while they chose $\alpha = 0.1$ for the Iterative dataset.
+They argue that they relaxed the metric for Buffy since the dataset only contains upper-body poses.
+
+As mentioned earlier, the definition of PCP is not clear since the toolkit implementation and paper definition differ.
+Thus, the authors computed two different PCP values for each dataset.
+First, they use definition presented in the paper, where the distance of both keypoints need to be smaller than the threshold in order for a part to be defined as detected.
+This is referred to as the strict definition.
+Second, they use the definition provided by the Buffy toolkit, which is more loose since the averages of the keypoints are more likely to be close to each other than both endpoints of the parts.
+
+Even when considering the strictest definition, the model outperforms the previous approaches, including \cite{andriluka_pictorial_2009} (see Sec. \ref{sec:andriluka-eval}), on the Iterative dataset.
+The authors achieve an overall PCP score of $61.5\%$, which is significantly larger than the $55.2\%$ achieved by \cite{andriluka_pictorial_2009}.
+Most notably, the detection rate of the legs is about $10$ percentage points higher when compared to \cite{andriluka_pictorial_2009}.
+Since they also propose a new metric, they provide the PCK metric results as well.
+Overall, the accuracy achieved is $72.9\%$, which is higher than the overall PCP value.
+The authors argue that this might be due to the fact that foreshortened limbs are not penalized unfairly by PCK. 
+
+When evaluating the upper-body Buffy dataset, the authors model outperforms the previous methods, when considering the loose definition, on overall accuracy.
+However, when considering the strict definition, they outperform \cite{andriluka_pictorial_2009} with $83.5\%$ (compared to $73.5\%$, see Section \ref{sec:andriluka-eval}), but are themselves outperformed by other competitors.
+When using PCK, the model achieves an overall accuracy of $72.9\%$, which is also higher than the corresponding PCP score.
+
+The authors also evaluate the effect of the number of mixtures defined as well as the number of parts to detect.
+The results can be seen in \fref{fig:yang-results-chart}.
+While there is a significant increase in accuracy (in terms of PCK) when increasing the number of parts from $14$ to $26$, the effect decreases when further increasing the number of parts.
+When evaluating the number of different types, accuracy increases again when increasing the number of mixtures.
+They argue that $26$ parts and $6$ mixtures is a good trade-off when considering both accuracy and runtime.  
 
 \begin{figure}[htb!]
     \centering
