@@ -306,6 +306,31 @@ This leads to the following likelihood
 where $N$ is the number of parts to detect in the given image.
 
 % Evaluation
+The authors use two datasets to evaluate their model.
+The \textit{Buffy} dataset provides annotated upper-body poses from $3$ episodes of the TV series \textit{Buffy The Vampire Slayer} \cite{ferrari_progressive_2008}.
+Also, for evaluating full-body poses, they used the \textit{Iterative Image Parsing} dataset providid by \cite{ramanan_learning_2007}
+
+As an evaluation metrc, the authors use \textit{Percentage of Correct Parts (PCP)}, proposed by \cite{ferrari_progressive_2008}.
+For each annotated body part, PCP is calculated by first computing the length of the ground truth body part $l_{gt}$.
+Then, a threshold value $t_{gt} = 0.5 \cdot l_{gt}$ is defined as half the length of the segment.
+If both endpoints of a prediction fall within $t_{gt}$ radius of their ground truth annotation the part is considered detected.
+
+First, they compare their upper-body model to \cite{ferrari_progressive_2008}.
+In contrast to \cite{ferrari_progressive_2008}, however, the authors also compute PCP for each part, whereas \cite{ferrari_progressive_2008} only provide the overall accuracy of $57.9\%$.
+Using the pose dataset of \cite{ramanan_learning_2007} for training the pose priors and part detectors, the authors achieve an overall accuracy of $71.3\%$.
+They notice that, while torso, head and upper arm accuracy is fairly high (from $78\%$ for upper arm to $95.9\%$ for head), forearm accuracy ($40\%$) was significantly lower.
+They argue that is is due to the challenging nature of the dataset.
+Also, forearm parts are smaller, making it more difficult for parts to be considered correct.
+The authors also tried exclusively using frames from the Buffy dataset, which were not used for testing, to learn the pose priors.
+This lead to a slight increase in accuracy ($73.5\%$) in comparison to generic priors, mainly by increasing the forearm accuracy scores.
+This illustrates that generic pose priors can achieve comparable results to domain-specific priors.
+
+For evaluating full body pose, the authors compared their results to the results presented by \cite{ramanan_learning_2007}, the authors of the dataset.
+Overall, they achieve an overall accuracy of $55.2\%$, which is significantly higher than the $27.2\%$ achieved by \cite{ramanan_learning_2007}.
+The authors argue that this large improvement is due to their strong part detector.
+This is illustrated by the accuracy achieved on the head part.
+The accuracy of the authors is higher than \cite{ramanan_learning_2007}, even when not using the pose prior information and just using the part detector.
+
 
 % TODO: A little bit about the tree prior (didnt deviate too much, but lets find a little detail thats different)
 
