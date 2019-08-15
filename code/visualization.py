@@ -11,6 +11,7 @@ from datasets import mpii_joint_order
 import os
 
 import torch
+import numpy as np
 
 from deephar.utils import transform_2d_point, transform_pose
 
@@ -76,7 +77,7 @@ def show_pose_mpii(annotation):
     plt.pause(0.001)
     plt.show()
 
-def show_predictions_ontop(ground_truth, image, poses, path, matrix, original_size):
+def show_predictions_ontop(ground_truth, image, poses, path, matrix, bbox=None):
 
     plt.xticks([])
     plt.yticks([])
@@ -91,6 +92,7 @@ def show_predictions_ontop(ground_truth, image, poses, path, matrix, original_si
 
     gt_color = "r"
     pred_color = "b"
+    bbox_color = "#ff00ff"
 
     mapping = [
         [0, 1],
@@ -126,8 +128,10 @@ def show_predictions_ontop(ground_truth, image, poses, path, matrix, original_si
             plt.scatter(orig_gt_coordinates[src][0], orig_gt_coordinates[src][1], c=gt_color)
             plt.scatter(orig_pred_coordinates[src][0], orig_pred_coordinates[src][1], c=pred_color)
 
-
-
+    if bbox is not None:
+        bbox_rect_original = Rectangle((bbox[0], bbox[1]), abs(bbox[0] - bbox[2]), abs(bbox[1] - bbox[3]), linewidth=1, facecolor='none', edgecolor=bbox_color)
+        ax = plt.gca()
+        ax.add_patch(bbox_rect_original)
 
     if os.path.isfile(path):
         os.remove(path)
