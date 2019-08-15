@@ -2,26 +2,15 @@
 
 \section{Pose Estimation}
 % first: single images only, no video
-% hier muss noch was hin
-
-% Present one "old-school" idea of pictoral structure framework. after that: modern methods with neural networks.
-% focus on pictoral since popular (predominant in literature). there are other methods, too.
-
-% structure:
-%     - pictoral
-%         - extensions possible. in general: improvements in unary and binary term. The two following just a small excerpt and examples
-%         - andriluka: example of better parts detector
-%         - yang: example of more complex joint relationsships
-%     - deeppose as one of first deep learning approaches
 
 While there are many different approaches for pose estimation, one of the most widely used in the literature until recently was the \textit{Pictoral Structure Framework}.
 In the following section, the foundation of this framework will be explained, along with some additions to it.
-Afterwards, deep learning based methods became dominant in the field of pose estimation which is why they will be explained in the following section.
-
+Afterwards, deep learning based methods became dominant in the field of pose estimation which is why they will be explained in the subsequent section.
 
 \subsection{Pictoral Structure Framework}
 In 1973, \cite{fischler_representation_1973} presented a general framework for object recognition problems, including pose estimation.
 The so called \textit{Pictoral Structure Framework} is comprised of parts, connected by \textit{spring-like connections}.
+In the context of pose estimation, they used the term \textit{part} to be synonymous with \textit{limb}.
 A part is defined by a collection of parameters $l_i$ which could include center coordinates and rotation.
 The connection between two parts is modelled using a mechanism inspired by physical springs.
 Similar to a string, such a connection can be relaxed or be under tension.
@@ -39,7 +28,7 @@ To compute the optimal configuration, the authors proposed the following minimiz
 \end{equation}
 
 $m_i$ is a function evaluating the placement of part $i$ at configuration $l_i$.
-This is also often referred to as the unary term.
+This is also often referred to as the \textit{unary} term.
 $d_{ij}$ measures the mismatch when parts $i$ and $j$, which are connected, are placed according to $l_i$ and $l_j$ respectively.
 
 Minimizing the energy function is computationally expensive since the space of possible positions for each part spans the entire image.
@@ -47,7 +36,7 @@ Minimizing the energy function is computationally expensive since the space of p
 According to \cite{felzenszwalb_pictorial_2005}, there are methods using heuristics to make the computation more efficient but they do not find optimal solutions.
 They proposed to transform the problem into a statstical framework and solve it by estimating a posterior distribution.
 
-One advantage of this statistical model is that the parameters can then be estimated utilizing training examples, similar to the principles of learning presented in \ref{sec:neural_networks}.
+One advantage of this statistical model is that the parameters can then be estimated using training examples, similar to the principles of learning presented in \ref{sec:neural_networks}.
 Also, it is trivial to get multiple solutions to the minimization problem by sampling the posterior distribution as opposed to a single solution with the energy minimization approach.
 
 The authors model the problem as follows.
@@ -60,9 +49,11 @@ When applying Bayes' formula, one can express the posterior as:
 
 The likelihood $p(I \mid L, \theta)$ is approximated as $\prod_{i=1}^n p(I \mid l_i, \theta_i)$.
 This approximation, however, is bad if recognized parts overlap, which is often the case when detecting human limbs.
+This problem is often referred to as \textit{double counting} and is one of the most prominent error of Pictoral Structure based models.
 The authors tackle this problem by sampling multiple times from the posterior and evaluating them using a separate measurement.
 
 To approximate the prior distribution $p(L \mid \theta)$ the authors utilize the joint distribution of a tree structured Markov random field.
+This tree is also referred to as the \textit{kinematic pose prior} since it encodes prior information of how limbs should be connected together.
 The vertices are modeled by $l_i$ and the edges show connections between the different parts. 
 They set the denominator to $1$ because they argue that it can be constant if only relative position between parts are of importance:
 
@@ -235,7 +226,8 @@ Some example images can be seen in \fref{fig:pictoral-examples}
 
 \subsubsection{Approaches for parts detection}
 \label{sec:pose-andriluka}
-% TODO: say that many different over the years (maybe cite some?) but here just one in-depth
+Over the years, many approaches build on top of \cite{felzenszwalb_pictorial_2005} by improvig parts of the framework.
+One approach, where the parts detector was improved upon, is presented in the following section.
 
 In \cite{andriluka_pictorial_2009}, the authors propose a different appearance model $p(I \mid L, \theta)$, which is based on individual parts detectors.
 \cite{felzenszwalb_pictorial_2005} used background separation to extract the silhouette of the subject from the background.
@@ -244,7 +236,6 @@ This resulted in a large search space since all different rotations and scalings
 The authors in \cite{andriluka_pictorial_2009} limit the search space by using a detected \textit{parts evidence map} $d_i$ for each part $i$.
 An example evidence map can be seen in \fref{fig:parts-evidence}.
 These evidence maps are the result of individual parts detectors trained on annotated images such as presented in \fref{fig:parts-annot}.
-To compute the evidence map, parts detectors are trained using annotated training data.
 
 \begin{figure}
     \centering
@@ -332,15 +323,11 @@ The authors argue that this large improvement is due to their strong part detect
 This is illustrated by the accuracy achieved on the head part.
 The accuracy of the authors is higher than \cite{ramanan_learning_2007}, even when not using the pose prior information and just using the part detector.
 
-
-% TODO: A little bit about the tree prior (didnt deviate too much, but lets find a little detail thats different)
-
-
 \subsubsection{Articulated pose estimation with flexible mixture-of-parts}
 
 Another approach building on the Pictoral Structure Framework was proposed by \cite{yang_articulated_2011}.
 
-The proposed model differs from the Framework by using parts which are not rotated or forshortened.
+The proposed model differs from the origninal framework by using parts which are not rotated or forshortened.
 To gain more flexibility, each part $i$ has a type $t_i$, which can encode arbitrary information, since the model the authors propose is general.
 One possibility, which is also what the authors used in their experiments, is to let the types correspond to different orientations.
 For example, two types for the part \textit{head} could be \textit{upright} or \textit{tilted to the left}.
@@ -367,7 +354,7 @@ See \fref{fig:yang-tree} for an example graph.
 
 Second, the orientation of a part $i$ is considered relative to its parent part $j$.
 For instance, consider the relative position of the part corresponding to \textit{neck} to its parent part \textit{head}.
-Necks tend to be below heads (for upright people).
+Necks tend to be below heads (when considering upright people).
 The authors use all relative positions found by iterating the dataset and cluster the relative positions into $T=4$ clusters.
 The cluster that the part $i$ is put in then defines the type label $t_i$.
 See \fref{fig:yang-clustering} for an example.
@@ -460,22 +447,25 @@ They argue that $26$ parts and $6$ mixtures is a good trade-off when considering
 % Introduction
 One of the first approaches for pose estimation using deep convolutional neural networks was proposed by \cite{toshev_deeppose:_2014}.
 They achieved state-of-the-art results on two benchmark datasets using a neural network architecture based on the ImageNet network \cite{krizhevsky_imagenet_2012}.
-In contrast to the pictoral structure framework discussed earlier, the approach was to regress the image coordinates directly without specific constrains on how the joints are allowed to be connected.
+In contrast to the Pictoral Structure framework discussed earlier, the approach was to regress the image coordinates directly without specific prior constrains on how the joints are allowed to be connected.
 
 % Architecture
 The authors define their network in terms of multiple connected \textit{stages}.
-Each \textit{stage} is comprised of the neural network architecture proposed by \cite{krizhevsky_imagenet_2012}.
-The used architecture is provied in Table \ref{tab:deeppose-architecture}.
-The only change the authors made was to use the output of the last fully connected layer to regress the joint coordinates as opposed to the softmax activation present in \cite{krizhevsky_imagenet_2012}.
-This means that, assuming $k$ joints, the output of a stage is of size $2 * k$.
+Each \textit{stage} is comprised of the neural network architecture provied in Table \ref{tab:deeppose-architecture}.
+The only change the authors made from the architecture originally proposed in \cite{krizhevsky_imagenet_2012} was to use the output of the last fully connected layer to regress the joint coordinates as opposed using the softmax activation function.
+This means that, assuming $k$ joints should be detected, the output of each stage is of size $2 * k$, because each joint position is given by image coordinates $(x, y)$.
 Stage $s_0$ is trained using the full images of size $220 x 220$ as its input.
-Once the first stage is trained until convergence, the authors use the output coordinates to crop sub images around the initially predicted joint coordinates.
-By feeding these subimages into another stage $s_1$ they argue that the predictions get more precise because local context becomes more important.
+
+Once the first stage is trained until convergence, the authors use the output coordinates to crop sub images around the prediction.
+By feeding these subimages into the next stage $s_1$ they argue that the predictions of $s_1$ get more precise because local context around the prediction becomes more important.
+The sub image size is dependend upon the diameter of the torso bounding box given by the annotations.
+
 This cascading approach is then repeated with the next stages.
 In the end, they use $3$ stages $S = (s_0, s_1, s_2)$ after evaluating different numbers of stages on a held-out training set.
 
 \begin{table}[]
     \centering
+    \scalebox{0.8}{%
     \begin{tabular}{|l|l|l|l|l|}
     \hline
     \textbf{nr.} & \textbf{layer type} & \textbf{filter size} & \textbf{nr. of filters / neurons} & \textbf{stride} \\ \hline
@@ -491,7 +481,7 @@ In the end, they use $3$ stages $S = (s_0, s_1, s_2)$ after evaluating different
     10 & fully connected &  & 4096 &  \\
     11 & fully connected &  & 4096 &  \\ \hline
     12 & fully connected &  & 2k &  \\ \hline
-    \end{tabular}
+    \end{tabular}}
     \caption{One \textit{stage} of the DeepPose network. Architecture based on \cite{krizhevsky_imagenet_2012}.}
     \label{tab:deeppose-architecture}
 \end{table}
@@ -554,19 +544,21 @@ Their findings show the same behaviour observed in \fref{fig:deeppose-qualitativ
 \subsubsection{Convolutional Pose Machine}
 \label{sec:convolutional-pose-machine}
 % Introduction
-\cite{wei_convolutional_2016}
+Another approach for pose estimation was proposed by \cite{wei_convolutional_2016}.
+The authors base their work on \textit{traditional} Pose machines proposed by \cite{ramakrishna_pose_2014}.
+In comparison to \cite{toshev_deeppose:_2014}, they do not regress the joint coordinates directly using fully-connected layers but use a fully convolutional architecture to compute \textit{belief maps}.
+These maps are very similar to the part evidence maps discussed in Section \ref{sec:pose-andriluka}, since they indicate the belief of a joint being present at a certain pixel position.
 
 % "Classical" Pose Machine Concepts
-The authors base their work on \textit{traditional} Pose machines proposed by \cite{ramakrishna_pose_2014}.
 Pose machines are a general framework for estimating pose, focusing on refining initial pose predictions based on context from previous decisions.
 The modular nature allows to easily use different predictors and encoders, which will be explained in the next section.
 
 The Pose machine is made up of cascaded \textit{stages}.
 The first stage uses a predictor $g_1$, which predicts, for each pixel in the input image, how likely it belongs to part $p$.
 The result are $P$ belief maps, one for each part to detect.
-In all subsequent stages, the output belief maps of the previous stage are encoded back into image features using a function $\varphi$.
-Then, the encoded features are combined with the local image features of the current stage and then passed into the stage's predictor.
-This way, the predictor not only has the image features as a basis for decision but also the previously detected joint location for context.
+In all subsequent stages, the output belief maps of the previous stage are encoded back into image features using an encoder function $\varphi$.
+Then, these encoded features are combined with the local image features of the current stage and passed into the stage's predictor.
+This way, the predictor not only has the image features as a basis for decision but also the previously estimated joint location for context.
 See \fref{fig:pose-machines-architecture} for a visualization of the pipeline.
 
 \begin{figure}[htb!]
@@ -576,14 +568,15 @@ See \fref{fig:pose-machines-architecture} for a visualization of the pipeline.
     \label{fig:pose-machines-architecture}
 \end{figure}
 
-
+% Concrete Implementation Original
 In \cite{ramakrishna_pose_2014}, the authors use boosted random forests for their stage predictors $g_i$.
 To extract features, they utilize \textit{Histogram of Oriented Gradients (HOG)} descriptors.
 Their encoder $\varphi$ is made up of two parts.
 The first part is referred to by the authors as \textit{context patch features}.
-For a given pixel coordinate $(x, y)$ for each belief map, the authors concatenate the scores in a $5 x 5$ grid around $(x,y)$.
-Afterwards, the concatenated scores from each belief map are again concatenated into a final feature vector $\varphi_1$.
-The second part, which the authors refer to as \textit{context offset features}, is a concatenation of polar coordinates of the pixel location of the $3$ highest peaks in each belief map.
+For a given pixel coordinate $z = (x, y)$ for each belief map, the authors concatenate the belief scores in a $5 x 5$ grid around $z$.
+Afterwards, the concatenated scores from each belief map are again concatenated across belief maps into a final feature vector $\varphi_1$.
+The second part, which the authors refer to as \textit{context offset features}, again iterates over all pixel locations $z$.
+Given the pixel location of the $3$ highest peaks in the belief map, the feature vector is given by concatenating the relative position to these peaks, given $z$, in polar coordinates.
 Again, they concatenate all feature vectors over all belief maps, resulting in $\varphi_2$.
 Finally, their context feature vector is given by $\varphi = [\varphi_1, \varphi_2]$.
 See \fref{fig:pose-machines-context} for a visualization of $\varphi_1$ and $\varphi_2$.
@@ -591,23 +584,40 @@ See \fref{fig:pose-machines-context} for a visualization of $\varphi_1$ and $\va
 \begin{figure}[htb!]
     \centering
     \includegraphics[width=0.6\textwidth]{pose-machine-context-vector.png}
-    \caption{Example of context feature extraction, as proposed by \cite{ramakrishna_pose_2014}, for three belief maps $\prescript{l}{}{b_t^1}$, $\prescript{l}{}{b_t^2}$ and $\prescript{l}{}{b_t^3}$ (columns).\textbf{Top row:} Extraction from scores in a $5 x 5$ grid around the pixel $z$. . \textbf{Bottom row:} Each arrow points towards one of the top $3$ peaks in the image. The polar coordinates with regards to $z$ are then concatenated into the feature vector. Image taken from \cite{ramakrishna_pose_2014}.}
+    \caption{Example of context feature extraction, as proposed by \cite{ramakrishna_pose_2014}, for three belief maps $\prescript{l}{}{b_t^1}$, $\prescript{l}{}{b_t^2}$ and $\prescript{l}{}{b_t^3}$ (columns). \textbf{Top row:} Extraction from scores in a $5 x 5$ grid around the pixel $z$. \textbf{Bottom row:} Each arrow points towards one of the top $3$ peaks in the belief map. The polar coordinates with regards to $z$ are then concatenated into the feature vector. Image taken from \cite{ramakrishna_pose_2014}.}
     \label{fig:pose-machines-context}
 \end{figure}
 
 
-% Differences -> Fully Convolutional
+% Implementation Convolutional and Differences
 In \cite{wei_convolutional_2016}, the authors used convolutional neural networks for their predictors $g_i$.
-In fact, the complete architecture is a fully convolutional neural network.
-Each stage consists of a feature extraction network, of which the architecture is presented in Table \ref{tab:pose-machine-feature-extraction-architecture} (layer $1$ to $7$).
-The layers denoted with $a_1$ to $a_3$ refer to the layers present in the first stage, after the feature extraction network.
-Analogously, $b_1$ to $b_5$ refers to the layer after the feature extraction network in all subsequent stages $i > 1$. 
+In fact, the complete architecture is a fully convolutional neural network, allowing end-to-end training of both the decoder and predictor.
+Each stage consists of a feature extraction network, of which the architecture is presented in Table \ref{tab:pose-machine-feature-extraction-architecture} (layers $1$ to $7$).
+This leads to the following formulation for the output belief maps $\bm{b}_1$:
 
-For context encoder $\varphi$, the authors compute the current receptive field of the network and use a window of that size to extract features from the belief maps. 
+\begin{equation}
+    \bm{b}_1 = g_1 (x)
+\end{equation}
+
+For context encoder $\varphi$, the authors first compute the receptive field size of the previous stage.
+Then, when computing the context of position $z = (x, y)$, they center a  window of that size around $z$ in the belief maps.
+This leads to 
+
+\begin{equation}
+    \bm{b}_t = g_t(x_z, \varphi_t(z, \bm{b}_{t-1}))
+\end{equation}
+
+as the output belief maps of stage $t$ with $t > 1$.
+
+The layers in Table \ref{tab:pose-machine-feature-extraction-architecture} denoted with $a_1$ to $a_3$ refer to the layers after the feature extraction network in the first stage $s_1$.
+Analogously, $b_1$ to $b_5$ refer to the layers after the feature extraction network in all subsequent stages $s_i, i > 1$.
+The architecture of the first stage, compared to all subsequent stages, differs because the authors want the first stage to have a lower receptive field in order for a more precise extraction of local features.
+In fact, the design was chosen so that, after the second stage, the receptive field of the network is roughly the size of the input image.
+The authors claim that, through experimentation, this provided the best overall accuracy.
 
 \begin{table}[]
     \centering
-
+    \scalebox{0.7}{%
     \begin{tabular}{|l|l|l|}
     \hline
     \textbf{nr.} & \textbf{layer type} & \textbf{filter size} \\ \hline
@@ -626,21 +636,30 @@ For context encoder $\varphi$, the authors compute the current receptive field o
     $b_3$ & convolutional & 11 x 11 \\ 
     $b_4$ & convolutional & 1 x 1 \\  
     $b_5$ & convolutional & 1 x 1 \\ \hline     
-    \end{tabular}
-    \caption{Todo}
+    \end{tabular}}
+    \caption{Network architecture of the Convolutional Pose Machine. Layers $1$ to $7$ refer to the feature extraction subnet, which is identical (in terms of architecture) in each stage. However, stages $t > 1$ share the weights of the feature extraction layer to to share the computed image features across stages. $a_1$ to $a_3$ are layers attached to the feature extraction subnet in the first stage, while $b_1$ to $b_5$ are layeres attached to the feature extraction subnet in all subsequent stages.}
     \label{tab:pose-machine-feature-extraction-architecture}
 \end{table}
 
-Many stages can be stacked on top of one another.
-More stages increase the final prediction accuracy up to a certain point of diminishing returns \cite{wei_convolutional_2016}. 
-
+% Number of stages
+The authors evaluated the amount of stages to use.
+They found that, after $5$ stages, the performance of the network stops increasing, which is why they chose to use $5$ stages for all subsequent experiments.
 
 % Why contexts are helpful
+To illustrate why context belief maps can help the network to correct itself, the authors provide the visualization in \fref{fig:context-belief-maps}.
+They argue that, even when the belief maps after the first stage are noisy, they can provide useful context information since not every joint is equally hard to detect.
+As an example, they argue that \textit{head} and \textit{neck} joints are easier to detect than other joints.
+Instead of \textit{right elbow} and \textit{left elbow}, where there are two very similar joints in each image, \textit{head} and \textit{neck} are only present once.
+Thus, their position in the first stage belief maps can aid in finding more difficult joints like \textit{right shoulder}.
+Similarly, the lack of context information can also help in lessening the score in the belief maps.
+For example, consider the local information around \textit{right shoulder}.
+Normally, necks and shoulders are near to each other.
+When there is no indication of \textit{neck} in the belief map around \textit{right shoulder} this may lead to a lower belief score of \textit{right shoulder} being present at that pixel. 
 
 \begin{figure}[htb!]
     \centering
     \includegraphics[width=0.8\textwidth]{context-belief-maps.png}
-    \caption{Noch einzufügen. Image taken from \cite{wei_convolutional_2016}.}
+    \caption{Visualization of how context information helps in detecting joint positions. The task at hand is to to find \textit{right elbow}. The current belief map for \textit{right elbow} in stage $1$ is given in the left most image. In green, the authors visualized the receptive field around the ground truth coordinates for \textit{right elbow}, while red illustrates the receptive field around the wrongfully detected joint. Notice that other, easier to detect joints such as \textit{neck} and \textit{head} fall inside the receptive field of the ground truth, suggesting that their positional information can help in locating \textit{right elbow} in further stages due to the context information they provide. The right most two images show the result after the next two stages, where the network corrected itself successfully. Image taken from \cite{wei_convolutional_2016}.}
     \label{fig:context-belief-maps}
 \end{figure}
 
@@ -674,7 +693,6 @@ Again, they outperform all state-of-the-art approaches.
 When comparing their results specifically with \cite{toshev_deeppose:_2014} the authors outperform their result by approximately $15$ percentage points for wrists and approximately $9$ percentage points for elbows.
 Also, in contrast to their LSP evaluation, they did not incorporate training data from MPII.
 
-
 % Evaluate against traditional Pose Machine
 When comparing their results with the traditional Pose machine, they find that the convolutional approach improves upon the results on the LSP dataset by an overall PCK accuracy improvement of $42.4$ percentage points.
 
@@ -696,12 +714,13 @@ The authors argue that the reason why intermediate supervision does help against
 
 % Introduction
 Building on \cite{toshev_deeppose:_2014}, \cite{newell_stacked_2016} proposed the \textit{Stacked hourglass network}.
-In comparison to \cite{toshev_deeppose:_2014}, they do not regress the joint coordinates directly using fully-connected layers but use a fully convolutional architecture to compute \textit{heatmaps}.
-These heatmaps are very similar to the part evidence maps discussed in Chapter \ref{sec:pose-andriluka}.
-However, the heatmaps indicate the probability of a certain joint to be present instead of a part.
+Similar to \cite{wei_convolutional_2016}, the authors compute \textit{belief maps} encoding joint probabilities instead of regressing the coordinates directly.
+However, the authors refer to them as \textit{heatmaps}.
 
-Similar to \cite{toshev_deeppose:_2014}, the authors use a stacked architecture, where predictions get refined iteratively.
-They do, however, do not crop the input down with each iterative step but keep the whole image in every step.
+Similar to the previously discussed approaches for convolutional architectures, the authors use a stacked architecture, where predictions get refined iteratively.
+They do, however, not crop the input down with each iterative step like \cite{toshev_deeppose:_2014} but keep the whole image in every step (similar to \cite{wei_convolutional_2016}).
+The authors argue that refinement of joint positions inside a local subimage is not optimal since many errors occur when misattributing joint positions.
+Thus, limiting the network to local images might hinder its ability to make big changes in joint positions.
 
 \begin{figure}[htb!]
     \centering
@@ -735,7 +754,7 @@ Let $f(x)$ be the output of the second convolutional layer.
 Residual models model $f(x) + x$ because they use the skip-connection to add the input back to the output.
 The authors of \cite{he_deep_2016} argue that this allows for deeper neural network architectures because it is easier to fit identity mappings.
 They evaluated deep neural networks and found that the error does not only not decrease for very deep networks but starts increasing.
-The authors argue that this would not happen if the layers would learn identity functions because then the error would just stagnate.
+The authors argue that this would not happen if the layers would learn identity functions because then the error would stagnate instead of increase.
 In addition, because residual blocks allow for very deep architectures, they achieved substantially better results in comparison to identical architectures without residual blocks.
 
 An example of a residual blocks used in the stacked hourglass network can be seen in \fref{fig:hg-residual}.
@@ -750,13 +769,13 @@ In fact, all blocks shown in \fref{fig:single-hourglass} are residual blocks.
 
 Each hourglass module is a network with a symmetrical architecture.
 For each downsampling step with a pooling layer there exists a corresponding upsampling step using \textit{nearest-neighbour upsampling}.
+% TODO: One sentence explain
 Consequently, the input and output dimensions of the hourglass module are identical, allowing multiple modules to be applied one after the other.
 
 The input to the module is scaled down using pooling layers, until it reaches a resolution of $4x4$ pixels.
+At each resolution level, features are extracted using a residual module.
 Before each pooling layer, a skip-connection is utilized to branch off the current feature maps.
 They get feed through another residual block and combined back later.
-
-At each resolution level, features are extracted using a residual module.
 Once image is scaled down to $4x4$ pixels, upsampling is utilized until the image is back to its original size.
 Again, residual blocks are used to extract features at the different levels of resolution.
 Also, after the feature extraction, the processed skip-connections from earlier get added onto the extracted features, effectively combining features from two different image scales, because they get combined before upsampling happens.
@@ -764,6 +783,7 @@ Also, after the feature extraction, the processed skip-connections from earlier 
 The authors use another skip-connection between the input and output of the module.
 This means that the input to each module, which is the output of the previous module, is added onto its output.
 The authors argue that this allows the network to refine its prediction with each hourglass module since the high level features, which are the outputs of each module, get processed by consecutive hourglass modules again, creating higher order spatial relationships.
+
 They qualitatively observe that errors made by early modules can be corrected by later modules.
 Also, they evaluated the difference between $2, 4$ and $8$ stacked hourglasses, which will be referred to as $s_2, s_4$ and $s_8$.
 For a better comparability, they altered the hourglass archictecture for the $s_2$ and $s_4$ to keep the number of trainable parameters the same between architectures.
@@ -791,7 +811,6 @@ Also, PCKh was used instead of PCK, as described before, since PCKh was proposed
 Similar to before, they outperformed the state-of-the-art approaches, including \cite{wei_convolutional_2016}.
 In particular, they achieved $90.9\%$ overall accuracy as compared to $88.5\%$ achieved by \cite{wei_convolutional_2016}.
 Also, they achieved significantly better results on each individual part, including a $3.5$ percentage point increase on the average over the most challenging joints (wrists, elbows, kness and ankles) in comparison to \cite{wei_convolutional_2016}. 
-
 
 \begin{itemize}
     \item Cascade Feature Aggregation for Human Pose Estimation \cite{su_cascade_2019}
