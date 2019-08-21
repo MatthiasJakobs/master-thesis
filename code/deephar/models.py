@@ -77,3 +77,19 @@ class Mpii_8(nn.Module):
 
 
         return heatmaps, torch.cat((pose1, pose2, pose3, pose4, pose5, pose6, pose7, pose8), 0)
+
+
+class DeepHar(nn.Module):
+    def __init__(self, num_frames=16, num_joints=16, num_actions=10, use_gt=True):
+        super(DeepHar, self).__init__()
+
+        self.use_gt = use_gt
+        if not use_gt:
+            self.pose_estimator = Mpii_8(num_context=0)
+
+        self.num_frames = num_frames
+        self.num_joints = num_joints
+        self.num_actions = num_actions
+
+        self.pose_model = PoseModel(num_frames, num_joints, num_actions)
+        self.visual_model = VisualModel(num_frames, num_joints, num_actions)
