@@ -54,12 +54,12 @@ The authors tackle this problem by sampling multiple times from the posterior an
 
 To approximate the prior distribution $p(L \mid \theta)$ the authors utilize the joint distribution of a tree structured Markov random field.
 This tree is also referred to as the \textit{kinematic pose prior} since it encodes prior information of how limbs should be connected together.
-The vertices are modeled by $l_i$ and the edges show connections between the different parts. 
+The vertices are modeled by $l_i$ and the edges show connections between the different parts.
 They set the denominator to $1$ because they argue that it can be constant if only relative position between parts are of importance:
 
 \begin{equation}
     \begin{split}
-        p(L \mid \theta) 
+        p(L \mid \theta)
         &\propto \frac{\prod_{(i,j) \in E} p(l_i, l_j \mid \theta)}{\prod_{i \in V} p(l_i \mid \theta)^{\text{deg} ~ v_i -1}} \\
         &\propto \prod_{(i, j) \in E} p(l_i, l_j \mid \theta).
     \end{split}
@@ -70,10 +70,10 @@ This then leads to the following approximation of the posterior distribution:
 \begin{equation}
     \label{eq:pictoral-posterior-general}
     \begin{split}
-        p(L \mid I, \theta) 
+        p(L \mid I, \theta)
         &\propto p(I \mid L, \theta) p(L \mid \theta) \\
         &\propto \prod_{i=1}^n p(I \mid l_i, \theta_i) \prod_{(i, j) \in E} p(l_i, l_j \mid \theta).
-    \end{split} 
+    \end{split}
 \end{equation}
 
 To show the equivalence to the original energy minimization problem, the authors take the formula presented in \eref{eq:pictoral-posterior-general} and apply the logarithmic function. Then, they negate the result.
@@ -102,7 +102,7 @@ A visualization of this process can be seen in \fref{fig:felzenszwalb-overview}.
     \label{fig:felzenszwalb-overview}
 \end{figure}
 
-The authors model the human pose as a collection of $10$ different parts. 
+The authors model the human pose as a collection of $10$ different parts.
 Two parts per arm and leg as well as one torso and one head part \fref{fig:felzenszwalb-overview}.
 Each part configuration $l_i = (x_i, y_i, s_i , \varphi_i)$ contains the $x$ and $y$ coordinate of the center of the rectangle representing the part.
 In addition, $s_i \in [0,1]$ defines the length of the rectangle and $\varphi_i$ its rotation.
@@ -116,8 +116,8 @@ $count_i$ referres to the number of foreground pixels in $area_i$ and $t$ is the
 \begin{equation}
     \label{eq:felz-unary}
     \begin{split}
-        p(I \mid l_i, (q_1, q_2)) = &q_1^{count_1} * (1 - q_1)^{(area_1 - count_1)} \\ 
-        &* q_2^{count_2} * (1 - q_2)^{(area_2 - count_2)} \\ 
+        p(I \mid l_i, (q_1, q_2)) = &q_1^{count_1} * (1 - q_1)^{(area_1 - count_1)} \\
+        &* q_2^{count_2} * (1 - q_2)^{(area_2 - count_2)} \\
         &* 0.5^{(t - area_1 - area_2)}
     \end{split}
 \end{equation}
@@ -151,7 +151,7 @@ The authors express this using Gaussian distributions:
 \begin{equation}
     \begin{split}
         N((\hat{x}_i - \hat{x}_j), 0, \sigma^2_x) \\
-        N((\hat{y}_i - \hat{y}_j), 0, \sigma^2_y),       
+        N((\hat{y}_i - \hat{y}_j), 0, \sigma^2_y),
     \end{split}
 \end{equation}
 
@@ -159,17 +159,17 @@ where $\hat{x}_i$ and $\hat{y}_i$ are transformations of the joint position into
 
 \begin{equation}
     \begin{bmatrix}
-        \hat{x}_i \\ 
+        \hat{x}_i \\
         \hat{y}_i
     \end{bmatrix}
     =
     \begin{bmatrix}
-        x_i \\ 
+        x_i \\
         y_i
     \end{bmatrix}
     + s_i R_{\varphi_i}
     \begin{bmatrix}
-        x_{ij} \\ 
+        x_{ij} \\
         y_{ij}
     \end{bmatrix}.
 \end{equation}
@@ -198,13 +198,13 @@ In summary, each spatial relation is expressed in the following way:
 
 \begin{equation}
     \begin{split}
-        p(l_i, l_j \mid \theta) 
+        p(l_i, l_j \mid \theta)
         &= p(l_i, l_j \mid c_{ij}) \\
         &= N((\hat{x}_i - \hat{x}_j), 0, \sigma_x^2) \\
         &* N((\hat{y}_i - \hat{y}_j), 0, \sigma_y^2) \\
         &* N((s_i - s_j), 0, \sigma_s^2) \\
         &* M((\varphi_i - \varphi_j), \varphi_{ij}, k).
-    \end{split}    
+    \end{split}
 \end{equation}
 
 The prior parameters $c_{ij}$ are then given by $c_{ij} = (x_{ij}, x_{ji}, y_{ij}, y_{ji}, \sigma_x, \sigma_y, \sigma_s, \varphi_{ij}, k)$ and are estimated using maximum likelihood estimation.
@@ -268,7 +268,7 @@ The sign of the result is then used as the output of the weak detector following
 where $\bm{x}$ is the feature vector, $\xi_t \in \{-1, 1\}$ and $n(t)$ is the index of the bin, which is used to compare to $\varphi_t$.
 The authors do not, however, specify how to set $\xi_t$ or which threshold $\varphi_t$ was used.
 
-Combining $t$ weak detectors by summing over the weighted outputs, the complete part detector for part $i$ is given by 
+Combining $t$ weak detectors by summing over the weighted outputs, the complete part detector for part $i$ is given by
 
 \begin{equation}
     H_i(\bm{x}) = sign\left(\sum_t a_{i,t} h_t(\bm{x})\right)
@@ -376,7 +376,7 @@ The authors provide the following score function to evaluate a predicted pose:
 \begin{equation}
     \label{eq:yang-score}
     \begin{split}
-        S(I, l, t) 
+        S(I, l, t)
         &= \sum_{i \in V} b_i^{t_i} + w_i^{t_i} \cdot \phi(I, l_i) \\
         &+ \sum_{(i,j) \in E} b_{ij}^{t_i, t_j} + w_{ij}^{t_i, t_j} \cdot \psi(l_i - l_j)
     \end{split}
@@ -394,7 +394,7 @@ During training, a supervised approach is used where the score for an annotated 
 
 To evaluate their model, the authors use \textit{Percentage of Correct Parts (PCP)}, presented in Section \ref{sec:andriluka-eval}, to be able to compare it to earlier work.
 In addition, they define a new metric, \textit{Probability of Correct Keypoints (PCK))}.
-In terms of datasets, they use Buffy and Iterative Image Parsing. 
+In terms of datasets, they use Buffy and Iterative Image Parsing.
 
 PCK was designed to improve upon two disadvantages of PCP.
 First, the toolkit provided with the Buffy dataset \cite{ferrari_progressive_2008} used a definition of PCP different from the one proposed in the paper, which makes the comparison of PCP values in literature hard because it is unclear which definition was used.
@@ -420,7 +420,7 @@ The authors achieve an overall PCP score of $61.5\%$, which is significantly lar
 Most notably, the detection rate of the legs is about $10$ percentage points higher when compared to \cite{andriluka_pictorial_2009}.
 Since they also propose a new metric, they provide the PCK metric results as well.
 Overall, the accuracy achieved is $72.9\%$, which is higher than the overall PCP value.
-The authors argue that this might be due to the fact that foreshortened limbs are not penalized unfairly by PCK. 
+The authors argue that this might be due to the fact that foreshortened limbs are not penalized unfairly by PCK.
 
 When evaluating the upper-body Buffy dataset, the authors model outperforms the previous methods, when considering the loose definition, on overall accuracy.
 However, when considering the strict definition, they outperform \cite{andriluka_pictorial_2009} with $83.5\%$ (compared to $73.5\%$, see Section \ref{sec:andriluka-eval}), but are themselves outperformed by other competitors.
@@ -430,7 +430,7 @@ The authors also evaluate the effect of the number of mixtures defined as well a
 The results can be seen in \fref{fig:yang-results-chart}.
 While there is a significant increase in accuracy (in terms of PCK) when increasing the number of parts from $14$ to $26$, the effect decreases when further increasing the number of parts.
 When evaluating the number of different types, accuracy increases again when increasing the number of mixtures.
-They argue that $26$ parts and $6$ mixtures is a good trade-off when considering both accuracy and runtime.  
+They argue that $26$ parts and $6$ mixtures is a good trade-off when considering both accuracy and runtime.
 
 \begin{figure}[htb!]
     \centering
@@ -473,7 +473,7 @@ In the end, they use $3$ stages $S = (s_0, s_1, s_2)$ after evaluating different
     2 & local response normalization &  &  &  \\
     3 & pooling & 3 x 3 &  & 2 \\ \hline
     4 & convolutional & 5 x 5 x 48 & 256 & 1 \\
-    5 & local response normalization &  &  &  \\ 
+    5 & local response normalization &  &  &  \\
     6 & pooling & 3 x 3 &  & 2 \\ \hline
     7 & convolutional & 3 x 3 x 256 & 384 & 1 \\
     8 & convolutional & 3 x 3 x 192 & 384 & 1 \\
@@ -526,7 +526,7 @@ These are considered to be the hardest to detect.
 On this subset, the model outperforms \cite{yang_articulated_2013} on average by $13$ percentage points ($69\%$ average acccuracy as opposed to $56\%$).
 
 For the Buffy dataset, they do not publish explicit values, but rather the plot in \fref{fig:deeppose-eval}.
-From the graphic, it becomes clear that the author's model outperforms \cite{yang_articulated_2013} again, this time in terms of PDJ. 
+From the graphic, it becomes clear that the author's model outperforms \cite{yang_articulated_2013} again, this time in terms of PDJ.
 
 \begin{figure}[htb!]
     \centering
@@ -601,7 +601,7 @@ This leads to the following formulation for the output belief maps $\bm{b}_1$:
 
 For context encoder $\varphi$, the authors first compute the receptive field size of the previous stage.
 Then, when computing the context of position $z = (x, y)$, they center a  window of that size around $z$ in the belief maps.
-This leads to 
+This leads to
 
 \begin{equation}
     \bm{b}_t = g_t(x_z, \varphi_t(z, \bm{b}_{t-1}))
@@ -627,15 +627,15 @@ The authors claim that, through experimentation, this provided the best overall 
     4 & pooling & 2 x 2\\
     5 & convolutional & 9 x 9 \\
     6 & pooling & 2 x 2 \\
-    7 & convolutional & 5 x 5 \\ \hline 
-    $a_1$ & convolutional & 9 x 9 \\  
-    $a_2$ & convolutional & 1 x 1 \\  
-    $a_3$ & convolutional & 1 x 1 \\ \hline 
-    $b_1$ & convolutional & 11 x 11 \\  
-    $b_2$ & convolutional & 11 x 11 \\  
-    $b_3$ & convolutional & 11 x 11 \\ 
-    $b_4$ & convolutional & 1 x 1 \\  
-    $b_5$ & convolutional & 1 x 1 \\ \hline     
+    7 & convolutional & 5 x 5 \\ \hline
+    $a_1$ & convolutional & 9 x 9 \\
+    $a_2$ & convolutional & 1 x 1 \\
+    $a_3$ & convolutional & 1 x 1 \\ \hline
+    $b_1$ & convolutional & 11 x 11 \\
+    $b_2$ & convolutional & 11 x 11 \\
+    $b_3$ & convolutional & 11 x 11 \\
+    $b_4$ & convolutional & 1 x 1 \\
+    $b_5$ & convolutional & 1 x 1 \\ \hline
     \end{tabular}}
     \caption{Network architecture of the Convolutional Pose Machine. Layers $1$ to $7$ refer to the feature extraction subnet, which is identical (in terms of architecture) in each stage. However, stages $t > 1$ share the weights of the feature extraction layer to to share the computed image features across stages. $a_1$ to $a_3$ are layers attached to the feature extraction subnet in the first stage, while $b_1$ to $b_5$ are layeres attached to the feature extraction subnet in all subsequent stages.}
     \label{tab:pose-machine-feature-extraction-architecture}
@@ -654,7 +654,7 @@ Thus, their position in the first stage belief maps can aid in finding more diff
 Similarly, the lack of context information can also help in lessening the score in the belief maps.
 For example, consider the local information around \textit{right shoulder}.
 Normally, necks and shoulders are near to each other.
-When there is no indication of \textit{neck} in the belief map around \textit{right shoulder} this may lead to a lower belief score of \textit{right shoulder} being present at that pixel. 
+When there is no indication of \textit{neck} in the belief map around \textit{right shoulder} this may lead to a lower belief score of \textit{right shoulder} being present at that pixel.
 
 \begin{figure}[htb!]
     \centering
@@ -667,7 +667,7 @@ When there is no indication of \textit{neck} in the belief map around \textit{ri
 \label{sec:pose-machine-evaluation}
 
 The authors evaluate their model using three widely used benchmark datasets.
-These are LSP and FLIC \sref{sec:flic-lsp} as well as \textit{MPII Human Pose}.  
+These are LSP and FLIC \sref{sec:flic-lsp} as well as \textit{MPII Human Pose}.
 MPII Human Pose is a benchmark, which consists of $40,000$ annotated images of people.
 These images are also often referred to as \textit{in-the-wild} images since they were downloaded from YouTube videos and are thus representative of every day activaties and situations.
 In addition, since most YouTube videos are uploaded by private individuals, the image quality varies, making the benchmark more realisitic.
@@ -705,13 +705,13 @@ When comparing their results with the traditional Pose machine, they find that t
     \label{fig:pose-machine-vanishing-gradient}
 \end{figure}
 
-The authors also evaluated the result of intermediate supervision on the vanishing gradient problem \sref{sec:vanishing-gradient}. 
+The authors also evaluated the result of intermediate supervision on the vanishing gradient problem \sref{sec:vanishing-gradient}.
 They trained two networks, one with intermediate supervision and one without, for the same amount of time.
 Their results are visualized in \fref{fig:pose-machine-vanishing-gradient}.
 The authors argue that the reason why intermediate supervision does help against the vanishing gradient problem is because it replenishes the gradient after each stage and thus keeps the gradient from decreasing when propagating back towards the network.
 
 \subsubsection{Stacked Hourglass}
-
+\label{sec:hourglass}
 % Introduction
 Building on \cite{toshev_deeppose:_2014}, \cite{newell_stacked_2016} proposed the \textit{Stacked hourglass network}.
 Similar to \cite{wei_convolutional_2016}, the authors compute \textit{belief maps} encoding joint probabilities instead of regressing the coordinates directly.
@@ -795,7 +795,7 @@ In the final architecture, the authors use $8$ hourglass modules.
 While training, the output of each hourglass module is not only feed into the next module, but also processed into a \textit{heatmap} using a $1x1$ convolutional layer.
 Using this heatmap, a loss is computed after each hourglass module, which is then propagated back.
 The authors refer to this process as \textit{intermediate supervision} and argue that it increases the accuracy of the final prediction because the network needs to develop a high-level of understanding very early.
-In their quantitative analysis, they showed an increase in validation accuracy of around $3$ percent when utilizing intermediate supervision. 
+In their quantitative analysis, they showed an increase in validation accuracy of around $3$ percent when utilizing intermediate supervision.
 
 % Evalutation
 %% Meassurements and Datasets
@@ -810,11 +810,27 @@ With \textit{MPII Human Pose}, the threshold was reduced to $50\%$ in accordance
 Also, PCKh was used instead of PCK, as described before, since PCKh was proposed in \cite{andriluka_2d_2014}, and thus most models using the MPII dataset use PCKh for evaluation.
 Similar to before, they outperformed the state-of-the-art approaches, including \cite{wei_convolutional_2016}.
 In particular, they achieved $90.9\%$ overall accuracy as compared to $88.5\%$ achieved by \cite{wei_convolutional_2016}.
-Also, they achieved significantly better results on each individual part, including a $3.5$ percentage point increase on the average over the most challenging joints (wrists, elbows, kness and ankles) in comparison to \cite{wei_convolutional_2016}. 
+Also, they achieved significantly better results on each individual part, including a $3.5$ percentage point increase on the average over the most challenging joints (wrists, elbows, kness and ankles) in comparison to \cite{wei_convolutional_2016}.
 
-\begin{itemize}
-    \item Cascade Feature Aggregation for Human Pose Estimation \cite{su_cascade_2019}
-\end{itemize}
+\subsubsection{Cascade Feature Aggregation for Human Pose Estimation}
+\cite{su_cascade_2019}
+
+% Introduction
+%   - Based on Hourglass
+%   - Key Difference: Input and Output from previous stage taken as input for current stage
+
+Recently, \cite{su_cascade_2019} proposed a model, which is based on the Stacked Hourglass architecture \cite{newell_stacked_2016} \sref{sec:hourglass}.
+The key difference is that the output of the previous hourglass is combined with multiple intermediate results from the Hourglass to form the input of the next hourglass.
+In addition, the intermediate heatmaps are aggregated to further improve the overall performance of the network.
+
+% Architecture
+Create heatmap by using a gaussian where the mean is placed on the ground truth coordinate.
+
+Computing final heatmap by averaging intermediate heatmaps.
+
+% Evaluation
+
+For evaluation, the authors meassure PCKh scores on the MPII and LSP dataset.
 
 \section{Video-based Human Action Recognition}
 
