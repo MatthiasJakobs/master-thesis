@@ -725,6 +725,16 @@ class JHMDBDataset(data.Dataset):
         action_1h = np.zeros(21)
         action_1h[self.action_mapping[action]] = 1
 
+        t_action_1h = torch.from_numpy(action_1h).float()
+        t_normalized_frames = torch.from_numpy(normalized_images).float()
+        t_normalized_poses = torch.from_numpy(normalized_poses).float()
+
+        return {
+            "action_1h": t_action_1h,
+            "normalized_frames": t_normalized_frames,
+            "normalized_poses": t_normalized_poses
+        }
+        '''
         return {
             "action_label": action,
             "action": action_1h,
@@ -736,6 +746,7 @@ class JHMDBDataset(data.Dataset):
             "trans_matrix": trans_matrices,
             "bbox": bbox
         }
+        '''
 
 
 

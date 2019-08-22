@@ -91,5 +91,32 @@ class DeepHar(nn.Module):
         self.num_joints = num_joints
         self.num_actions = num_actions
 
+        self.global_maxmin1 = nn.MaxPool2d(kernel_size=(4,4))
+        self.global_maxmin2 = nn.MaxPool2d(kernel_size=(4,4))
+        self.softmax = nn.Softmax2d()
+
         self.pose_model = PoseModel(num_frames, num_joints, num_actions)
-        self.visual_model = VisualModel(num_frames, num_joints, num_actions)
+        #self.visual_model = VisualModel(num_frames, num_joints, num_actions)
+
+        #self.action_predictions = []
+
+    def forward(self, x, gt):
+        if self.use_gt:
+            pose = gt
+        else:
+            # TODO: Get pose from model
+            print("not implemented")
+        
+        action_predictions = []
+        intermediate_poses = self.pose_model(pose)
+        for y in intermediate_poses:
+            y_plus = self.global_maxmin1(y)
+            y_minus = self.global_maxmin2(-y)
+            y = y_plus - y_minus
+            y = self.softmax(y).squeeze(-1).squeeze(-1).unsqueeze(1)
+
+            action_predictions.append(y)
+
+        #y_final = intermediate_poses[-1]
+        
+        return pose, torch.cat(action_predictions, 1)
