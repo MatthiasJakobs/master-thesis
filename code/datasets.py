@@ -725,14 +725,23 @@ class JHMDBDataset(data.Dataset):
         action_1h = np.zeros(21)
         action_1h[self.action_mapping[action]] = 1
 
+        number_of_frames = len(normalized_images)
+        if number_of_frames < 40:
+            # needs padding
+            desired_shape = normalized_images[0].shape
+            blanks = np.zeros((40 - number_of_frames, desired_shape[0], desired_shape[1], desired_shape[2]))
+            normalized_images = np.concatenate((normalized_images, blanks))
+
         t_action_1h = torch.from_numpy(action_1h).float()
-        t_normalized_frames = torch.from_numpy(normalized_images).float()
+        t_normalized_frames = torch.from_numpy(normalized_images.reshape(-1, 3, self.final_size, self.final_size)).float()
         t_normalized_poses = torch.from_numpy(normalized_poses).float()
+        t_sequence_length = torch.from_numpy(np.array([number_of_frames])).int()
 
         return {
             "action_1h": t_action_1h,
             "normalized_frames": t_normalized_frames,
-            "normalized_poses": t_normalized_poses
+            "normalized_poses": t_normalized_poses,
+            "sequence_length": t_sequence_length
         }
         '''
         return {

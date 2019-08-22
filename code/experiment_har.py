@@ -20,7 +20,7 @@ model = DeepHar(num_actions=21).to(device)
 
 limit_data_percent = 0.01
 validation_amount = 0.1
-batch_size = 2
+batch_size = 1 #TODO: Fix issue where two clips in the same batch cannot have different number of frames
 val_batch_size = batch_size
 
 number_of_datapoints = int(len(ds) * limit_data_percent)
@@ -54,7 +54,7 @@ optimizer = optim.SGD(model.parameters(), lr=0.0002, momentum=0.98, nesterov=Tru
 
 iteration = 0
 
-for epoch in range(1):
+for epoch in range(3):
 
     model.train()
     for batch_idx, train_objects in enumerate(train_loader):
@@ -62,6 +62,7 @@ for epoch in range(1):
         frames = train_objects["normalized_frames"].to(device)
         poses = train_objects["normalized_poses"].to(device)
         actions = train_objects["action_1h"].to(device)
+        sequence_length = train_objects["sequence_length"].to(device)
 
         actions = actions.unsqueeze(1)
         actions = actions.expand(-1, 4, -1)
@@ -69,7 +70,7 @@ for epoch in range(1):
         num_frames = 16
         num_joints = 16
 
-        num_frames_total = frames.size()[1]
+        num_frames_total = sequence_length[0]
         mini_batches = int(num_frames_total / num_frames) + 1
         losses = 0
 
