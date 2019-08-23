@@ -2,6 +2,8 @@ import torch
 import numpy as np
 
 from numpy import linspace, empty
+from scipy.stats import multivariate_normal
+
 
 def spatial_softmax(x):
     maximum, _ = torch.max(x, 1, keepdim=True)
@@ -110,3 +112,20 @@ def get_valid_joints(pose, need_sum=True):
         return valid.float(), valid_sum_tensor.cuda().float()
     return valid.float(), valid_sum_tensor.float()
 
+def create_heatmap(x, y, covariance, width=255, height=255):
+    kernel = multivariate_normal(mean=(x,y), cov=np.eye(2)*covariance)
+
+    xlim = (0, width)
+    ylim = (0, height)
+    xres = width
+    yres = height
+    x = np.linspace(xlim[0], xlim[1], xres)
+    y = np.linspace(ylim[0], ylim[1], yres)
+    xx, yy = np.meshgrid(x,y)
+
+    xxyy = np.c_[xx.ravel(), yy.ravel()]
+    zz = kernel.pdf(xxyy)
+
+    img = zz.reshape((yres,xres))
+    return img
+    

@@ -31,7 +31,7 @@ class Mpii_2(nn.Module):
         return heatmaps, torch.cat((pose1, pose2), 0)
 
 class Mpii_4(nn.Module):
-    def __init__(self, num_context=0):
+    def __init__(self, num_context=0, standalone=True):
         super(Mpii_4, self).__init__()
 
         self.stem = Stem()
@@ -40,6 +40,8 @@ class Mpii_4(nn.Module):
         self.rec3 = ReceptionBlock(num_context=num_context)
         self.rec4 = ReceptionBlock(num_context=num_context)
 
+        self.standalone = standalone
+
     def forward(self, x):
         a = self.stem(x)
         _, pose1 , output1 = self.rec1(a)
@@ -47,7 +49,10 @@ class Mpii_4(nn.Module):
         _, pose3 , output3 = self.rec3(output2)
         heatmaps, pose4 , _ = self.rec4(output3)
 
-        return heatmaps, torch.cat((pose1, pose2, pose3, pose4), 0)
+        if self.standalone:
+            return heatmaps, torch.cat((pose1, pose2, pose3, pose4), 0)
+        else:
+            return pose4, heatmaps, output1
 
 class Mpii_8(nn.Module):
     def __init__(self, num_context=0):
@@ -85,7 +90,7 @@ class DeepHar(nn.Module):
 
         self.use_gt = use_gt
         if not use_gt:
-            self.pose_estimator = Mpii_8(num_context=0)
+            self.pose_estimator = Mpii_4(num_context=0, standalone=False)
 
         self.num_frames = num_frames
         self.num_joints = num_joints
@@ -104,11 +109,29 @@ class DeepHar(nn.Module):
         if self.use_gt:
             pose = gt
         else:
-            # TODO: Get pose from model
-            print("not implemented")
-        
+            # debug
+            x = x[:, 0]
+            pose, heatmaps, features = self.pose_estimator(x)
+
+            nj = heatmaps.size()[1]
+            nf = features.size()[1]
+
+            features = features.unsqueeze(1)
+            features = features.expand(-1, nj, -1, -1, -1)
+
+            heatmaps = heatmaps.unsqueeze(2)
+            heatmaps = heatmaps.expand(-1, -1, nf, -1, -1)
+
+            assert heatmaps.size() == features.size()
+
+            x = features * heatmaps
+            x = torch.sum(x, (3, 4))
+
+            # TODO: Weiter machen
+
         action_predictions = []
         intermediate_poses = self.pose_model(pose)
+
         for y in intermediate_poses:
             y_plus = self.global_maxmin1(y)
             y_minus = self.global_maxmin2(-y)

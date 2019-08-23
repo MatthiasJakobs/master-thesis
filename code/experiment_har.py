@@ -16,7 +16,7 @@ from torchviz import make_dot
 ds = JHMDBDataset("/data/mjakobs/data/jhmdb/", use_random_parameters=False, use_saved_tensors=False)
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-model = DeepHar(num_actions=21).to(device)
+model = DeepHar(num_actions=21, use_gt=False).to(device)
 
 limit_data_percent = 0.01
 validation_amount = 0.1
