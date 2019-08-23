@@ -61,10 +61,12 @@ def AC(input_filters=3, output_filters=32, kernel_size=(3,3), stride=(1,1), padd
 class Softargmax(nn.Module):
 
     def conv_linear_interpolation(self, input_filters, output_filters, kernel_size, dim):
-        space = linspace_2d(kernel_size[0], kernel_size[1], dim)
+        space = linspace_2d(kernel_size[1], kernel_size[0], dim)
 
-        w1 = torch.zeros((input_filters, 1, kernel_size[0], kernel_size[1]), dtype=torch.float32)
+        w1 = torch.zeros((input_filters, 1, kernel_size[1], kernel_size[0]), dtype=torch.float32)
         w2 = torch.zeros((input_filters, input_filters, 1, 1), dtype=torch.float32)
+        if dim == 1:
+            self.w_copy = w1
         
         for i in range(input_filters):
             for idx in range(2):
@@ -82,6 +84,8 @@ class Softargmax(nn.Module):
 
         self.output_filters = output_filters
 
+        self.w_copy = []
+
         self.xx = self.conv_linear_interpolation(input_filters, input_filters, kernel_size, 0)
         self.xy = self.conv_linear_interpolation(input_filters, input_filters, kernel_size, 1)
 
@@ -95,7 +99,7 @@ class Softargmax(nn.Module):
         x_y = torch.squeeze(x_y, dim=-1)        
 
         x = torch.cat((x_x, x_y))
-        return x.reshape((-1, self.output_filters, 2))
+        return x.reshape((-1, self.output_filters, 2))#, self.w_copy
 
 class JointProbability(nn.Module):
     def __init__(self, filters=16, kernel_size=(32,32)):

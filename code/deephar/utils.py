@@ -12,21 +12,27 @@ def spatial_softmax(x):
     return e / s
 
 def linspace_2d(rows, cols, dim):
-    x = empty((rows, cols))
 
     if dim == 0:
+        x = empty((rows, cols))
+
         space = linspace(0.0, 1.0, cols)
 
         for i in range(rows):
             x[i] = space
 
+        return x
+
     else:
+        x = empty((cols, rows))
+
         space = linspace(0.0, 1.0, rows)
 
         for i in range(cols):
-            x[:,i] = space
+            x[i] = space
 
-    return x
+        return x.T
+
 
 def transform_2d_point(A, x, inverse=False):
     # point has shape (2,), so expansion is needed
