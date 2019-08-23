@@ -7,6 +7,7 @@ from matplotlib.patches import Rectangle
 from skimage.transform import resize
 
 from datasets import mpii_joint_order
+from collections import OrderedDict
 
 import os
 
@@ -77,7 +78,7 @@ def show_pose_mpii(annotation):
     plt.pause(0.001)
     plt.show()
 
-def show_predictions_ontop(ground_truth, image, poses, path, matrix, bbox=None):
+def show_predictions_ontop(ground_truth, image, poses, path, matrix, bbox=None, save=True):
 
     plt.xticks([])
     plt.yticks([])
@@ -112,6 +113,24 @@ def show_predictions_ontop(ground_truth, image, poses, path, matrix, bbox=None):
         [15, 14]
     ]
 
+    colors = [
+        "#1176a5",
+        "#fdfe5f",
+        "#abb633",
+        "#17af4f",
+        "#8d403c",
+        "#b7c0d3",
+        "#c0922c",
+        "#486054",
+        "#d4696f",
+        "#2fc64f",
+        "#d53606",
+        "#52043f",
+        "#14a796",
+        "#831b4c",
+        "#0d0072",
+        "#f65fb1"
+    ]
     for i, (src, dst) in enumerate(mapping):
         if not ground_truth[src, 2]:
             continue
@@ -120,23 +139,35 @@ def show_predictions_ontop(ground_truth, image, poses, path, matrix, bbox=None):
             #print("{} => {}".format(mpii_joint_order[src], mpii_joint_order[dst]))
             plt.plot([orig_gt_coordinates[src][0], orig_gt_coordinates[dst][0]], [orig_gt_coordinates[src][1], orig_gt_coordinates[dst][1]], lw=1, c=gt_color)
             plt.plot([orig_pred_coordinates[src][0], orig_pred_coordinates[dst][0]], [orig_pred_coordinates[src][1], orig_pred_coordinates[dst][1]], lw=1, c=pred_color)
-
-            plt.scatter([orig_gt_coordinates[src][0], orig_gt_coordinates[dst][0]], [orig_gt_coordinates[src][1], orig_gt_coordinates[dst][1]], c=gt_color)
-            plt.scatter([orig_pred_coordinates[src][0], orig_pred_coordinates[dst][0]], [orig_pred_coordinates[src][1], orig_pred_coordinates[dst][1]], c=pred_color)
+            plt.scatter(orig_gt_coordinates[src][0], orig_gt_coordinates[src][1], label="{}".format(mpii_joint_order[src]), c=colors[src])
+            plt.scatter(orig_pred_coordinates[src][0], orig_pred_coordinates[src][1], c=colors[src])
+            
+            plt.scatter(orig_gt_coordinates[dst][0], orig_gt_coordinates[dst][1], label="{}".format(mpii_joint_order[dst]), c=colors[dst])
+            plt.scatter(orig_pred_coordinates[dst][0], orig_pred_coordinates[dst][1], c=colors[dst])
         else:
             #print("{}".format(mpii_joint_order[src]))
-            plt.scatter(orig_gt_coordinates[src][0], orig_gt_coordinates[src][1], c=gt_color)
-            plt.scatter(orig_pred_coordinates[src][0], orig_pred_coordinates[src][1], c=pred_color)
+            plt.scatter(orig_gt_coordinates[src][0], orig_gt_coordinates[src][1], label="{}".format(mpii_joint_order[src]), c=colors[src])
+            plt.scatter(orig_pred_coordinates[src][0], orig_pred_coordinates[src][1], c=colors[src])
 
     if bbox is not None:
         bbox_rect_original = Rectangle((bbox[0], bbox[1]), abs(bbox[0] - bbox[2]), abs(bbox[1] - bbox[3]), linewidth=1, facecolor='none', edgecolor=bbox_color)
         ax = plt.gca()
         ax.add_patch(bbox_rect_original)
 
-    if os.path.isfile(path):
-        os.remove(path)
-    plt.savefig(path)
+    # remove duplicate handles in legend (src: https://stackoverflow.com/questions/13588920/stop-matplotlib-repeating-labels-in-legend)
+    handles, labels = plt.gca().get_legend_handles_labels()
+    by_label = OrderedDict(zip(labels, handles))
+    plt.legend(by_label.values(), by_label.keys())
+
+    if save:
+        if os.path.isfile(path):
+            os.remove(path)
+        plt.savefig(path)
+    else:
+        plt.show()
+
     plt.close()
+
     #plt.pause(0.001)
     #plt.show()
 
