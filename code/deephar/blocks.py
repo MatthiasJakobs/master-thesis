@@ -246,3 +246,34 @@ class PoseModel(nn.Module):
         _, y4 = self.act_pred4(x)
 
         return [y1, y2, y3, y4]
+
+class VisualModel(nn.Module):
+    def __init__(self, num_frames, num_joints, num_actions):
+        super(VisualModel, self).__init__()
+
+        self.num_frames = num_frames
+        self.num_joints = num_joints
+        self.num_actions = num_actions
+        self.num_features = 576 # TODO: Can this be derived somehow? what if this changes?
+
+        self.cb = CB(input_filters=self.num_features, output_filters=256, kernel_size=(1,1), padding=(0,0)) #TODO: Padding correct?
+
+        self.pooling = nn.MaxPool2d(kernel_size=(2,2))
+
+        self.act_pred1 = ActionPredictionBlock(num_actions, 256)
+        self.act_pred2 = ActionPredictionBlock(num_actions, 256)
+        self.act_pred3 = ActionPredictionBlock(num_actions, 256)
+        self.act_pred4 = ActionPredictionBlock(num_actions, 256, last=True)
+
+    def forward(self, x):
+        x = self.cb(x)
+
+        x = self.pooling(x)
+
+        x, y1 = self.act_pred1(x)
+        x, y2 = self.act_pred2(x)
+        x, y3 = self.act_pred3(x)
+        _, y4 = self.act_pred4(x)
+
+        return [y1, y2, y3, y4]
+

@@ -101,7 +101,7 @@ class DeepHar(nn.Module):
         self.softmax = nn.Softmax2d()
 
         self.pose_model = PoseModel(num_frames, num_joints, num_actions)
-        #self.visual_model = VisualModel(num_frames, num_joints, num_actions)
+        self.visual_model = VisualModel(num_frames, num_joints, num_actions)
 
         #self.action_predictions = []
 
@@ -109,28 +109,56 @@ class DeepHar(nn.Module):
         if self.use_gt:
             pose = gt
         else:
-            # debug
-            x = x[:, 0]
-            pose, heatmaps, features = self.pose_estimator(x)
+            all_poses = []
+            all_heatmaps = []
+            all_features = []
 
-            nj = heatmaps.size()[1]
-            nf = features.size()[1]
+            batch_size = len(x)
+            
+            # TODO: Make more efficient
+            for frame in range(self.num_frames):
+                single_frame = x[:, frame]
+                
+                pose, heatmaps, features = self.pose_estimator(single_frame)
+                pose_without_vis = pose[:, :, :, 0:2]
+                all_poses.append(pose_without_vis)
+                all_heatmaps.append(heatmaps)
+                all_features.append(features)
 
-            features = features.unsqueeze(1)
-            features = features.expand(-1, nj, -1, -1, -1)
+            nj = all_heatmaps[0].size()[1]
+            nf = all_features[0].size()[1]
 
-            heatmaps = heatmaps.unsqueeze(2)
-            heatmaps = heatmaps.expand(-1, -1, nf, -1, -1)
+            assert nj == self.num_joints
 
-            assert heatmaps.size() == features.size()
+            pose_cube = torch.from_numpy(np.empty((self.num_frames, batch_size, self.num_joints, 2)))
+            action_cube = torch.from_numpy(np.empty((self.num_frames, batch_size, self.num_joints, nf)))
 
-            x = features * heatmaps
-            x = torch.sum(x, (3, 4))
+            for idx in range(len(all_features)):
 
-            # TODO: Weiter machen
+                features = all_features[idx].unsqueeze(1)
+                features = features.expand(-1, nj, -1, -1, -1)
 
-        action_predictions = []
+                heatmaps = all_heatmaps[idx].unsqueeze(2)
+                heatmaps = heatmaps.expand(-1, -1, nf, -1, -1)
+
+                assert heatmaps.size() == features.size()
+
+                y = features * heatmaps
+                y = torch.sum(y, (3, 4))
+
+                action_cube[idx] = y
+                pose_cube[idx] = all_poses[idx]
+
+                #action_cube[]
+
+            pose = pose_cube.reshape((batch_size, 2, self.num_frames, self.num_joints)).float()
+            action_cube = action_cube.reshape((batch_size, nf, self.num_frames, self.num_joints)).float()
+
+
+        pose_action_predictions = []
+        vis_action_predictions = []
         intermediate_poses = self.pose_model(pose)
+        intermediate_vis = self.visual_model(action_cube)
 
         for y in intermediate_poses:
             y_plus = self.global_maxmin1(y)
@@ -138,8 +166,15 @@ class DeepHar(nn.Module):
             y = y_plus - y_minus
             y = self.softmax(y).squeeze(-1).squeeze(-1).unsqueeze(1)
 
-            action_predictions.append(y)
+            pose_action_predictions.append(y)
 
-        #y_final = intermediate_poses[-1]
-        
-        return pose, torch.cat(action_predictions, 1)
+        for y in intermediate_vis:
+            y_plus = self.global_maxmin1(y)
+            y_minus = self.global_maxmin2(-y)
+            y = y_plus - y_minus
+            y = self.softmax(y).squeeze(-1).squeeze(-1).unsqueeze(1)
+
+            vis_action_predictions.append(y)
+
+
+        return pose, torch.cat(pose_action_predictions, 1)
