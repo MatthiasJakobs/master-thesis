@@ -176,5 +176,16 @@ class DeepHar(nn.Module):
 
             vis_action_predictions.append(y)
 
+        # TODO: Weighted matrix
 
-        return pose, torch.cat(pose_action_predictions, 1)
+        final_vis = intermediate_vis[-1]
+        final_pose = intermediate_poses[-1]
+
+        final_output = final_vis + final_pose
+        y_plus = self.global_maxmin1(final_output)
+        y_minus = self.global_maxmin2(-final_output)
+        final_output = y_plus - y_minus
+        final_output = self.softmax(final_output).squeeze(-1).squeeze(-1).unsqueeze(1)
+
+
+        return pose, torch.cat(pose_action_predictions, 1), torch.cat(vis_action_predictions, 1), final_output

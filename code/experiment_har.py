@@ -83,9 +83,10 @@ for epoch in range(3):
 
             mini_poses = mini_poses.reshape(batch_size, 2, num_frames, num_joints)
 
-            pose, predicted_actions = model(mini_frames, mini_poses)
+            pose, pose_predicted_actions, vis_predicted_actions, final_prediction = model(mini_frames, mini_poses)
 
-            partial_loss = torch.sum(categorical_cross_entropy(predicted_actions, actions))
+            partial_loss = torch.sum(categorical_cross_entropy(pose_predicted_actions, actions))
+            partial_loss = partial_loss + torch.sum(categorical_cross_entropy(vis_predicted_actions, actions))
             losses = losses + partial_loss
 
         losses.backward(retain_graph=False)
