@@ -11,11 +11,15 @@ import torch
 import torch.optim as optim
 import torch.nn as nn
 
-from torchviz import make_dot
-
 ds = JHMDBDataset("/data/mjakobs/data/jhmdb/", use_random_parameters=False, use_saved_tensors=False)
 
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+if torch.cuda.is_available():
+    device = 'cuda'
+    cuda = True
+else:
+    device = 'cpu'
+    cuda = False
+
 model = DeepHar(num_actions=21, use_gt=False).to(device)
 
 limit_data_percent = 0.01
@@ -85,9 +89,11 @@ for epoch in range(3):
 
             pose, pose_predicted_actions, vis_predicted_actions, final_prediction = model(mini_frames, mini_poses)
 
-            partial_loss = torch.sum(categorical_cross_entropy(pose_predicted_actions, actions))
-            partial_loss = partial_loss + torch.sum(categorical_cross_entropy(vis_predicted_actions, actions))
-            losses = losses + partial_loss
+            partial_loss_pose = torch.sum(categorical_cross_entropy(pose_predicted_actions, actions))
+            partial_loss_action = torch.sum(categorical_cross_entropy(vis_predicted_actions, actions))
+            print("pose loss {} action loss {}".format(partial_loss_pose, partial_loss_action))
+            losses = losses + partial_loss_pose + partial_loss_action
+            print("sum loss {}".format(losses))
 
         losses.backward(retain_graph=False)
 

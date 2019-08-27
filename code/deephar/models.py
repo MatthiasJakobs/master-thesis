@@ -106,6 +106,7 @@ class DeepHar(nn.Module):
         #self.action_predictions = []
 
     def forward(self, x, gt):
+        print("called forward")
         if self.use_gt:
             pose = gt
         else:
@@ -114,11 +115,11 @@ class DeepHar(nn.Module):
             all_features = []
 
             batch_size = len(x)
-            
+
             # TODO: Make more efficient
             for frame in range(self.num_frames):
                 single_frame = x[:, frame]
-                
+
                 pose, heatmaps, features = self.pose_estimator(single_frame)
                 pose_without_vis = pose[:, :, :, 0:2]
                 all_poses.append(pose_without_vis)
@@ -157,6 +158,10 @@ class DeepHar(nn.Module):
 
         pose_action_predictions = []
         vis_action_predictions = []
+        if torch.cuda.is_available():
+            pose = pose.to('cuda')
+            action_cube = action_cube.to('cuda')
+
         intermediate_poses = self.pose_model(pose)
         intermediate_vis = self.visual_model(action_cube)
 
