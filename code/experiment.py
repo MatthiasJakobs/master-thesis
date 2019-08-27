@@ -203,7 +203,7 @@ def run_experiment_mpii(conf):
                             image_number = "{}".format(int(val_data["image_path"][0].item()))
                             image_name = "{}.jpg".format(image_number.zfill(9))
                             image = io.imread("/data/mjakobs/data/mpii/images/{}".format(image_name))
-                            show_predictions_ontop(val_data["normalized_pose"][0], image, predictions[0], 'experiments/{}/val_images/{}/{}.png'.format(experiment_name, epoch, iteration), val_data["trans_matrix"][0], bbox=val_data["bbox"][0])
+                            show_predictions_ontop(val_data["normalized_pose"][0], image, predictions[0], 'experiments/{}/val_images/{}/{}.png'.format(experiment_name, epoch, batch_idx), val_data["trans_matrix"][0], bbox=val_data["bbox"][0])
                             #io.imsave('experiments/{}/val_images/{}/{}_input.png'.format(experiment_name, epoch, iteration), ((val_data["normalized_image"][0] + 1) * 255).reshape(256, 256, 3).numpy().astype("uint8"))
 
                             scores_05, scores_02 = eval_pckh_batch(predictions, val_data["normalized_pose"], val_data["head_size"], val_data["trans_matrix"])
