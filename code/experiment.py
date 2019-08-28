@@ -167,11 +167,11 @@ def run_experiment_mpii(conf):
 
                 iteration = iteration + 1
 
-                #print("epoch {} batch_nr {} loss {}".format(epoch, batch_idx, loss.item()))
+                print("epoch {} batch_nr {} loss {}".format(epoch, batch_idx, loss.item()))
                 writer.writerow([epoch, batch_idx, iteration, loss.item()])
                 output_file.flush()
 
-                if iteration % 3000 == 0:
+                if iteration % 500 == 0:
                     # evaluate
 
                     val_accuracy_05 = []

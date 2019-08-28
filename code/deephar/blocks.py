@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 from deephar.layers import *
+from deephar.utils import spatial_softmax
 
 class Stem(nn.Module):
 
@@ -96,7 +97,8 @@ class BlockA(nn.Module):
         b = self.sacb7(b)
         b = nn.functional.interpolate(b, scale_factor=2, mode="nearest") # Maybe align_corners needs to be set?
 
-        return b + self.sacb6(x)
+        out = b + self.sacb6(x)
+        return out
 
 class BlockB(nn.Module):
     def __init__(self, Pose_Regression_Module):
@@ -139,13 +141,13 @@ class PoseRegressionNoContext(nn.Module):
 
         self.softargmax = Softargmax(input_filters=16, output_filters=16, kernel_size=(32,32))
         self.probability = JointProbability(filters=16, kernel_size=(32,32))
-        self.softmax = nn.Softmax2d()
 
     def nr_heatmaps(self):
         return 16
 
     def forward(self, x):
-        pose = self.softargmax(x)
+        after_softmax = nn.Softmax(2)(x.view(len(x), 16, -1)).view_as(x)
+        pose = self.softargmax(after_softmax)
         visibility = self.probability(x)
         if torch.cuda.is_available():
             heatmaps = x.cpu().detach().numpy()
