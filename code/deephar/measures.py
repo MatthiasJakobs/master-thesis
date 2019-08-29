@@ -11,7 +11,11 @@ def elastic_net_loss_paper(y_pred, y_true):
     y_pred = y_pred * valid
     y_true = y_true * valid
 
-    l1 = torch.sum(torch.abs(y_pred - y_true), (1, 2, 3))
+    difference = torch.abs(y_pred - y_true)
+    difference_per_axis = torch.sum(difference, (0, 1, 2))
+    #print("difference per axis", difference_per_axis)
+
+    l1 = torch.sum(difference, (1, 2, 3))
     l2 = torch.sum(torch.pow(y_pred - y_true, 2), (1, 2, 3))
 
     final_losses = (l1 + l2) / nr_valid

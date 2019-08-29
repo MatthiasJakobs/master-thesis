@@ -1,6 +1,8 @@
 import torch.utils.data as data
 import numpy as np
 
+import matplotlib.pyplot as plt
+
 from timing import Timer
 
 import csv
@@ -12,6 +14,7 @@ from os import makedirs, remove
 from os.path import exists
 
 from skimage import io
+from skimage.transform import resize
 
 import torch
 import torch.optim as optim
@@ -124,7 +127,7 @@ def run_experiment_mpii(conf):
         writer = csv.writer(output_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         writer.writerow(['epoch', 'batch_nr', 'iteration', 'loss'])
 
-
+        debugging = True
         iteration = 0
         for epoch in range(nr_epochs):
             #t_train_epoch.start()
@@ -147,6 +150,36 @@ def run_experiment_mpii(conf):
                 ground_pose = ground_pose.unsqueeze(1)
                 ground_pose = ground_pose.expand(-1, num_blocks, -1, -1)
 
+
+                if debugging and iteration > 50:
+                    # show prediction for first in batch
+                    plt.subplot(221)
+                    image = (images[0].reshape((256, 256, 3)) + 1) / 2.0
+                    plt.imshow(image)
+                    
+                    pred_detach = pred_pose.detach().numpy()
+
+                    plt.subplot(222)
+                    plt.imshow(image)
+                    plt.scatter(x=pred_detach[0, -1, :, 0]*255.0, y=pred_detach[0, -1, :, 1]*255.0, c="g")
+                    plt.scatter(x=ground_pose[0, -1, :, 0]*255.0, y=ground_pose[0, -1, :, 1]*255.0, c="r")
+
+                    heatmaps_detached = heatmaps.detach().numpy()
+                    plt.subplot(223)
+                    # heatmap left wrist
+                    heatmap_lr = resize(heatmaps_detached[0, -1], (256, 256))
+                    plt.imshow(image)
+                    plt.imshow(heatmap_lr, alpha=0.5)
+                    plt.scatter(x=pred_detach[0, -1, -1, 0]*255.0, y=pred_detach[0, -1, -1, 1]*255.0, c="#000000")
+
+                    plt.subplot(224)
+                    # heatmap head top
+                    heatmap_head_top = resize(heatmaps_detached[0, 9], (256, 256))
+                    plt.imshow(image)
+                    plt.imshow(heatmap_head_top, alpha=0.5)
+                    plt.scatter(x=pred_detach[0, -1, 9, 0]*255.0, y=pred_detach[0, -1, 9, 1]*255.0, c="#000000")
+
+                    plt.show()
 
                 pred_vis = output[:, :, :, 2]
                 ground_vis = poses[:, :, 2]
@@ -173,7 +206,7 @@ def run_experiment_mpii(conf):
                 writer.writerow([epoch, batch_idx, iteration, loss.item()])
                 output_file.flush()
 
-                if iteration % 500 == 0:
+                if iteration % 100 == 0:
                     # evaluate
 
                     val_accuracy_05 = []
@@ -210,9 +243,6 @@ def run_experiment_mpii(conf):
 
                             if predictions.dim() == 2:
                                 predictions = predictions.unsqueeze(0)
-
-
-
 
                             image_number = "{}".format(int(val_data["image_path"][0].item()))
                             image_name = "{}.jpg".format(image_number.zfill(9))

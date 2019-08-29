@@ -91,11 +91,11 @@ class BlockA(nn.Module):
         b = self.sacb2(b)
         b = self.sacb3(b)
         b = self.sacb4(b)
-        b = nn.functional.interpolate(b, scale_factor=2, mode="nearest") # Maybe align_corners needs to be set?
+        b = nn.functional.interpolate(b, scale_factor=2, mode="nearest")
 
         b = b + self.sacb5(a)
         b = self.sacb7(b)
-        b = nn.functional.interpolate(b, scale_factor=2, mode="nearest") # Maybe align_corners needs to be set?
+        b = nn.functional.interpolate(b, scale_factor=2, mode="nearest")
 
         out = b + self.sacb6(x)
         return out
