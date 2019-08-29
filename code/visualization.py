@@ -81,7 +81,14 @@ def show_pose_mpii(annotation):
 def visualize_heatmaps(heatmaps, image, output_image_path):
     plt.xticks([])
     plt.yticks([])
-    
+
+    if torch.cuda.is_available():
+        heatmaps = heatmaps.cpu().detach().numpy()
+        image = image.cpu().detach().numpy()
+    else:
+        heatmaps = heatmaps.detach().numpy()
+        image = image.detach().numpy()
+
     image = image.reshape(256, 256, 3)
     for i, heatmap in enumerate(heatmaps):
         plt.subplot(4, 4, 1 + i)
@@ -156,7 +163,7 @@ def show_predictions_ontop(ground_truth, image, poses, path, matrix, bbox=None, 
             plt.plot([orig_pred_coordinates[src][0], orig_pred_coordinates[dst][0]], [orig_pred_coordinates[src][1], orig_pred_coordinates[dst][1]], lw=1, c=pred_color)
             plt.scatter(orig_gt_coordinates[src][0], orig_gt_coordinates[src][1], label="{}".format(mpii_joint_order[src]), c=colors[src])
             plt.scatter(orig_pred_coordinates[src][0], orig_pred_coordinates[src][1], c=colors[src])
-            
+
             plt.scatter(orig_gt_coordinates[dst][0], orig_gt_coordinates[dst][1], label="{}".format(mpii_joint_order[dst]), c=colors[dst])
             plt.scatter(orig_pred_coordinates[dst][0], orig_pred_coordinates[dst][1], c=colors[dst])
         else:

@@ -188,6 +188,18 @@ def run_experiment_mpii(conf):
                     with torch.no_grad():
                         t_val_epoch.start()
 
+                        if not exists('experiments/{}/heatmaps/{}'.format(experiment_name, iteration)):
+                            makedirs('experiments/{}/heatmaps/{}'.format(experiment_name, iteration))
+                        else:
+                            rmtree('experiments/{}/heatmaps/{}'.format(experiment_name, iteration))
+                            makedirs('experiments/{}/heatmaps/{}'.format(experiment_name, iteration))
+
+                        if not exists('experiments/{}/val_images/{}'.format(experiment_name, iteration)):
+                            makedirs('experiments/{}/val_images/{}'.format(experiment_name, iteration))
+                        else:
+                            rmtree('experiments/{}/val_images/{}'.format(experiment_name, iteration))
+                            makedirs('experiments/{}/val_images/{}'.format(experiment_name, iteration))
+
                         for batch_idx, val_data in enumerate(val_loader):
                             t_val_batch.start()
 
@@ -199,17 +211,7 @@ def run_experiment_mpii(conf):
                             if predictions.dim() == 2:
                                 predictions = predictions.unsqueeze(0)
 
-                            if not exists('experiments/{}/val_images/{}'.format(experiment_name, iteration)):
-                                makedirs('experiments/{}/val_images/{}'.format(experiment_name, iteration))
-                            else:
-                                rmtree('experiments/{}/val_images/{}'.format(experiment_name, iteration))
-                                makedirs('experiments/{}/val_images/{}'.format(experiment_name, iteration))
-                            
-                            if not exists('experiments/{}/heatmaps/{}'.format(experiment_name, iteration)):
-                                makedirs('experiments/{}/heatmaps/{}'.format(experiment_name, iteration))
-                            else:
-                                rmtree('experiments/{}/heatmaps/{}'.format(experiment_name, iteration))
-                                makedirs('experiments/{}/heatmaps/{}'.format(experiment_name, iteration))
+
 
 
                             image_number = "{}".format(int(val_data["image_path"][0].item()))
