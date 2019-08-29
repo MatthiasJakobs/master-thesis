@@ -6,6 +6,8 @@ from timing import Timer
 import csv
 from datetime import datetime
 
+from shutil import rmtree
+
 from os import makedirs, remove
 from os.path import exists
 
@@ -21,7 +23,7 @@ from deephar.utils import get_valid_joints
 from deephar.measures import elastic_net_loss_paper
 from deephar.evaluation import eval_pckh_batch
 from datasets import MPIIDataset
-from visualization import show_predictions_ontop
+from visualization import show_predictions_ontop, visualize_heatmaps
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -135,7 +137,7 @@ def run_experiment_mpii(conf):
                 poses = train_objects["normalized_pose"].to(device)
 
                 t_model.start()
-                _, output = model(images)
+                heatmaps, output = model(images)
                 t_model.stop()
 
                 output = output.view(images.size()[0], num_blocks, -1, 3)
@@ -197,13 +199,26 @@ def run_experiment_mpii(conf):
                             if predictions.dim() == 2:
                                 predictions = predictions.unsqueeze(0)
 
-                            if not exists('experiments/{}/val_images/{}'.format(experiment_name, epoch)):
-                                makedirs('experiments/{}/val_images/{}'.format(experiment_name, epoch))
+                            if not exists('experiments/{}/val_images/{}'.format(experiment_name, iteration)):
+                                makedirs('experiments/{}/val_images/{}'.format(experiment_name, iteration))
+                            else:
+                                rmtree('experiments/{}/val_images/{}'.format(experiment_name, iteration))
+                                makedirs('experiments/{}/val_images/{}'.format(experiment_name, iteration))
+                            
+                            if not exists('experiments/{}/heatmaps/{}'.format(experiment_name, iteration)):
+                                makedirs('experiments/{}/heatmaps/{}'.format(experiment_name, iteration))
+                            else:
+                                rmtree('experiments/{}/heatmaps/{}'.format(experiment_name, iteration))
+                                makedirs('experiments/{}/heatmaps/{}'.format(experiment_name, iteration))
+
 
                             image_number = "{}".format(int(val_data["image_path"][0].item()))
                             image_name = "{}.jpg".format(image_number.zfill(9))
                             image = io.imread("/data/mjakobs/data/mpii/images/{}".format(image_name))
-                            show_predictions_ontop(val_data["normalized_pose"][0], image, predictions[0], 'experiments/{}/val_images/{}/{}.png'.format(experiment_name, epoch, batch_idx), val_data["trans_matrix"][0], bbox=val_data["bbox"][0])
+
+                            visualize_heatmaps(heatmaps[0], val_images[0], 'experiments/{}/heatmaps/{}/{}_hm.png'.format(experiment_name, iteration, batch_idx))
+
+                            show_predictions_ontop(val_data["normalized_pose"][0], image, predictions[0], 'experiments/{}/val_images/{}/{}.png'.format(experiment_name, iteration, batch_idx), val_data["trans_matrix"][0], bbox=val_data["bbox"][0])
                             #io.imsave('experiments/{}/val_images/{}/{}_input.png'.format(experiment_name, epoch, iteration), ((val_data["normalized_image"][0] + 1) * 255).reshape(256, 256, 3).numpy().astype("uint8"))
 
                             scores_05, scores_02 = eval_pckh_batch(predictions, val_data["normalized_pose"], val_data["head_size"], val_data["trans_matrix"])

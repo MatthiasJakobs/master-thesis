@@ -149,11 +149,7 @@ class PoseRegressionNoContext(nn.Module):
         after_softmax = nn.Softmax(2)(x.view(len(x), 16, -1)).view_as(x)
         pose = self.softargmax(after_softmax)
         visibility = self.probability(x)
-        if torch.cuda.is_available():
-            heatmaps = x.cpu().detach().numpy()
-        else:
-            heatmaps = x.detach().numpy()
 
         output = torch.cat((pose, visibility), 2)
 
-        return heatmaps, output.unsqueeze(0)
+        return after_softmax, output.unsqueeze(0)

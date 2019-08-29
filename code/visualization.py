@@ -78,6 +78,21 @@ def show_pose_mpii(annotation):
     plt.pause(0.001)
     plt.show()
 
+def visualize_heatmaps(heatmaps, image, output_image_path):
+    plt.xticks([])
+    plt.yticks([])
+    
+    image = image.reshape(256, 256, 3)
+    for i, heatmap in enumerate(heatmaps):
+        plt.subplot(4, 4, 1 + i)
+        heatmap = resize(heatmap, (256, 256))
+
+        plt.imshow((image+1) / 2.0)
+        plt.imshow(heatmap, alpha=0.5)
+
+    plt.savefig(output_image_path)
+    plt.close()
+
 def show_predictions_ontop(ground_truth, image, poses, path, matrix, bbox=None, save=True):
 
     plt.xticks([])
