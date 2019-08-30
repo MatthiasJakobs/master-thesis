@@ -58,6 +58,40 @@ def AC(input_filters=3, output_filters=32, kernel_size=(3,3), stride=(1,1), padd
         nn.Conv2d(input_filters, output_filters, kernel_size=kernel_size, stride=stride, padding=padding, bias=False)
     )
 
+class SoftargmaxSimpler(nn.Module):
+
+    def conv_linear_interpolation(self, input_filters, output_filters, kernel_size, dim):
+        space = torch.from_numpy(linspace_2d(kernel_size[1], kernel_size[0], dim)).unsqueeze(0).unsqueeze(0).float()
+        space = space.expand(-1, input_filters, -1, -1)
+        conv = nn.Conv2d(input_filters, output_filters, kernel_size=kernel_size, bias=False)
+        with torch.no_grad():
+            conv.weight.data = space
+
+        return conv
+    
+    def __init__(self, input_filters=5, output_filters=5, kernel_size=(3,3)):
+        super(SoftargmaxSimpler, self).__init__()
+
+        self.output_filters = output_filters
+
+        self.w_copy = []
+
+        self.xx = self.conv_linear_interpolation(input_filters, input_filters, kernel_size, 0)
+        self.xy = self.conv_linear_interpolation(input_filters, input_filters, kernel_size, 1)
+
+    def forward(self, x):
+        x_x = self.xx(x)
+        x_x = torch.squeeze(x_x, dim=-1)
+        x_x = torch.squeeze(x_x, dim=-1)
+        
+        x_y = self.xy(x)
+        x_y = torch.squeeze(x_y, dim=-1)
+        x_y = torch.squeeze(x_y, dim=-1)        
+
+        x = torch.cat((x_x, x_y))
+        #return x.reshape((-1, self.output_filters, 2))#, self.w_copy
+        return x
+
 class Softargmax(nn.Module):
 
     def conv_linear_interpolation(self, input_filters, output_filters, kernel_size, dim):
@@ -93,13 +127,15 @@ class Softargmax(nn.Module):
         x_x = self.xx(x)
         x_x = torch.squeeze(x_x, dim=-1)
         x_x = torch.squeeze(x_x, dim=-1)
+        x_x = x_x.reshape((-1, self.output_filters, 1))
         
         x_y = self.xy(x)
         x_y = torch.squeeze(x_y, dim=-1)
-        x_y = torch.squeeze(x_y, dim=-1)        
+        x_y = torch.squeeze(x_y, dim=-1)
+        x_y = x_y.reshape((-1, self.output_filters, 1))
 
-        x = torch.cat((x_x, x_y))
-        return x.reshape((-1, self.output_filters, 2))#, self.w_copy
+        x = torch.cat((x_x, x_y), 2)
+        return x
 
 class JointProbability(nn.Module):
     def __init__(self, filters=16, kernel_size=(32,32)):
