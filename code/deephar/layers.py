@@ -42,7 +42,7 @@ def ACB(input_filters=3, output_filters=32, kernel_size=(3,3), stride=(1,1), pad
 def Sep_ACB(input_filters=384, output_filters=576, kernel_size=(3,3), stride=(1,1), padding=1):
     return nn.Sequential(
         nn.ReLU(),
-        SeparableConv2D(input_filters=input_filters, output_filters=output_filters, kernel_size=(3,3)),
+        SeparableConv2D(input_filters=input_filters, output_filters=output_filters, kernel_size=(3,3)), # TODO: Error! 
         nn.BatchNorm2d(output_filters, momentum=0.99, eps=0.001)
     )
 
@@ -57,40 +57,6 @@ def AC(input_filters=3, output_filters=32, kernel_size=(3,3), stride=(1,1), padd
         nn.ReLU(),
         nn.Conv2d(input_filters, output_filters, kernel_size=kernel_size, stride=stride, padding=padding, bias=False)
     )
-
-class SoftargmaxSimpler(nn.Module):
-
-    def conv_linear_interpolation(self, input_filters, output_filters, kernel_size, dim):
-        space = torch.from_numpy(linspace_2d(kernel_size[1], kernel_size[0], dim)).unsqueeze(0).unsqueeze(0).float()
-        space = space.expand(-1, input_filters, -1, -1)
-        conv = nn.Conv2d(input_filters, output_filters, kernel_size=kernel_size, bias=False)
-        with torch.no_grad():
-            conv.weight.data = space
-
-        return conv
-    
-    def __init__(self, input_filters=5, output_filters=5, kernel_size=(3,3)):
-        super(SoftargmaxSimpler, self).__init__()
-
-        self.output_filters = output_filters
-
-        self.w_copy = []
-
-        self.xx = self.conv_linear_interpolation(input_filters, input_filters, kernel_size, 0)
-        self.xy = self.conv_linear_interpolation(input_filters, input_filters, kernel_size, 1)
-
-    def forward(self, x):
-        x_x = self.xx(x)
-        x_x = torch.squeeze(x_x, dim=-1)
-        x_x = torch.squeeze(x_x, dim=-1)
-        
-        x_y = self.xy(x)
-        x_y = torch.squeeze(x_y, dim=-1)
-        x_y = torch.squeeze(x_y, dim=-1)        
-
-        x = torch.cat((x_x, x_y))
-        #return x.reshape((-1, self.output_filters, 2))#, self.w_copy
-        return x
 
 class Softargmax(nn.Module):
 
