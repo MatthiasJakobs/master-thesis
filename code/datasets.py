@@ -272,6 +272,11 @@ class MPIIDataset(data.Dataset):
             label = annotations["annolist"][0][0][0][idx]
             image_name = label["image"]["name"][0][0][0]
 
+            full_image_path = self.root_dir + "images/{}".format(image_name)
+            if not os.path.exists(full_image_path):
+                print(full_image_path, "does not exist, skip")
+                continue
+
             annorect = label["annorect"]
             if len(annorect) == 0:
                 # some labels are not present in the annotation file
