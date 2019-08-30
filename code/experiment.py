@@ -121,7 +121,7 @@ def run_experiment_mpii(conf):
         writer = csv.writer(output_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         writer.writerow(['epoch', 'batch_nr', 'iteration', 'loss'])
 
-        debugging = True
+        debugging = False
         iteration = 0
         for epoch in range(nr_epochs):
 
@@ -146,7 +146,7 @@ def run_experiment_mpii(conf):
                     plt.subplot(221)
                     image = (images[0].reshape((256, 256, 3)) + 1) / 2.0
                     plt.imshow(image)
-                    
+
                     pred_detach = pred_pose.detach().numpy()
 
                     plt.subplot(222)
@@ -194,7 +194,7 @@ def run_experiment_mpii(conf):
                 writer.writerow([epoch, batch_idx, iteration, loss.item()])
                 output_file.flush()
 
-                if iteration % 25 == 0:
+                if iteration % 500 == 0:
                     # evaluate
 
                     val_accuracy_05 = []
@@ -231,10 +231,9 @@ def run_experiment_mpii(conf):
                             image_name = "{}.jpg".format(image_number.zfill(9))
                             image = io.imread("/data/mjakobs/data/mpii/images/{}".format(image_name))
 
-                            visualize_heatmaps(heatmaps[0], val_images[0], 'experiments/{}/heatmaps/{}/{}_hm.png'.format(experiment_name, iteration, batch_idx))
-
-                            show_predictions_ontop(val_data["normalized_pose"][0], image, predictions[0], 'experiments/{}/val_images/{}/{}.png'.format(experiment_name, iteration, batch_idx), val_data["trans_matrix"][0], bbox=val_data["bbox"][0])
-                            #io.imsave('experiments/{}/val_images/{}/{}_input.png'.format(experiment_name, epoch, iteration), ((val_data["normalized_image"][0] + 1) * 255).reshape(256, 256, 3).numpy().astype("uint8"))
+                            if batch_idx % 10 == 0:
+                                visualize_heatmaps(heatmaps[0], val_images[0], 'experiments/{}/heatmaps/{}/{}_hm.png'.format(experiment_name, iteration, batch_idx), save=True)
+                                show_predictions_ontop(val_data["normalized_pose"][0], image, predictions[0], 'experiments/{}/val_images/{}/{}.png'.format(experiment_name, iteration, batch_idx), val_data["trans_matrix"][0], bbox=val_data["bbox"][0], save=True)
 
                             scores_05, scores_02 = eval_pckh_batch(predictions, val_data["normalized_pose"], val_data["head_size"], val_data["trans_matrix"])
                             val_accuracy_05.extend(scores_05)
@@ -251,7 +250,7 @@ def run_experiment_mpii(conf):
                             val_writer.writerow([iteration, mean_05, mean_02])
 
 
-                        scheduler.step(mean_05)
+                        #scheduler.step(mean_05)
 
                         #torch.save(model.state_dict(), "experiments/{}/weights/weights_{:08d}".format(experiment_name, iteration))
 
