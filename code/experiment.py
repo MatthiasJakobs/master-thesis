@@ -133,7 +133,7 @@ def run_experiment_mpii(conf):
 
                 heatmaps, output = model(images)
 
-                output = output.view(images.size()[0], num_blocks, -1, 3)
+                output = output.permute(1, 0, 2, 3)
                 # output shape: (batch_size, num_blocks, 16, 3)
                 pred_pose = output[:, :, :, 0:2]
                 ground_pose = poses[:, :, 0:2]
