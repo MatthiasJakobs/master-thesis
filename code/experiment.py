@@ -112,12 +112,6 @@ def run_experiment_mpii(conf):
         parameter_file.write("num_blocks,{}\n".format(num_blocks))
         parameter_file.write("nr_epochs,{}\n".format(nr_epochs))
 
-    t_train_epoch = Timer("train_epoch", experiment_name)
-    t_train_batch = Timer("train_batch", experiment_name)
-    t_val_batch = Timer("val_batch", experiment_name)
-    t_val_epoch = Timer("val_epoch", experiment_name)
-    t_model = Timer("model", experiment_name)
-
     with open("experiments/{}/validation.csv".format(experiment_name), mode="w") as val_file:
         val_writer = csv.writer(val_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         val_writer.writerow(['iteration', 'pckh_0.5', 'pckh_0.2'])
@@ -130,18 +124,14 @@ def run_experiment_mpii(conf):
         debugging = True
         iteration = 0
         for epoch in range(nr_epochs):
-            #t_train_epoch.start()
 
             model.train()
             for batch_idx, train_objects in enumerate(train_loader):
-                t_train_batch.start()
 
                 images = train_objects["normalized_image"].to(device)
                 poses = train_objects["normalized_pose"].to(device)
 
-                t_model.start()
                 heatmaps, output = model(images)
-                t_model.stop()
 
                 output = output.view(images.size()[0], num_blocks, -1, 3)
                 # output shape: (batch_size, num_blocks, 16, 3)
@@ -198,20 +188,17 @@ def run_experiment_mpii(conf):
                 optimizer.step()
                 optimizer.zero_grad()
 
-                t_train_batch.stop()
-
                 iteration = iteration + 1
 
-                print("epoch {} batch_nr {} loss {}".format(epoch, batch_idx, loss.item()))
+                print("iteration {} loss {}".format(iteration, loss.item()))
                 writer.writerow([epoch, batch_idx, iteration, loss.item()])
                 output_file.flush()
 
-                if iteration % 100 == 0:
+                if iteration % 25 == 0:
                     # evaluate
 
                     val_accuracy_05 = []
                     val_accuracy_02 = []
-
 
                     model.eval()
 
@@ -219,8 +206,6 @@ def run_experiment_mpii(conf):
                         makedirs('experiments/{}/val_images'.format(experiment_name))
 
                     with torch.no_grad():
-                        t_val_epoch.start()
-
                         if not exists('experiments/{}/heatmaps/{}'.format(experiment_name, iteration)):
                             makedirs('experiments/{}/heatmaps/{}'.format(experiment_name, iteration))
                         else:
@@ -234,8 +219,6 @@ def run_experiment_mpii(conf):
                             makedirs('experiments/{}/val_images/{}'.format(experiment_name, iteration))
 
                         for batch_idx, val_data in enumerate(val_loader):
-                            t_val_batch.start()
-
                             val_images = val_data["normalized_image"].to(device)
 
                             heatmaps, predictions = model(val_images)
@@ -257,9 +240,6 @@ def run_experiment_mpii(conf):
                             val_accuracy_05.extend(scores_05)
                             val_accuracy_02.extend(scores_02)
 
-                            t_val_batch.stop()
-
-
 
                         mean_05 = np.mean(np.array(val_accuracy_05))
                         mean_02 = np.mean(np.array(val_accuracy_02))
@@ -270,16 +250,8 @@ def run_experiment_mpii(conf):
                             val_writer = csv.writer(val_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
                             val_writer.writerow([iteration, mean_05, mean_02])
 
-                        t_val_epoch.stop()
 
                         scheduler.step(mean_05)
 
                         #torch.save(model.state_dict(), "experiments/{}/weights/weights_{:08d}".format(experiment_name, iteration))
-                        #t_train_epoch.stop()
 
-
-    #t_train_epoch.save()
-    t_train_batch.save()
-    t_val_batch.save()
-    t_val_epoch.save()
-    t_model.save()
