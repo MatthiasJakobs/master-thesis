@@ -1,6 +1,3 @@
-import matplotlib
-matplotlib.use('Agg')
-
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
@@ -79,8 +76,8 @@ def show_pose_mpii(annotation):
     plt.show()
 
 def visualize_heatmaps(heatmaps, image, output_image_path, save=True):
-    plt.xticks([])
-    plt.yticks([])
+    #plt.xticks([])
+    #plt.yticks([])
 
     if torch.cuda.is_available():
         heatmaps = heatmaps.cpu().detach().numpy()
