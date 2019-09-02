@@ -31,22 +31,20 @@ class Residual_Sep_ACB(nn.Module):
 
         self.input_filters = input_filters
         self.output_filters = output_filters
+        self.kernel_size = kernel_size
 
         self.acb1 = ACB(input_filters=input_filters, output_filters=output_filters, kernel_size=(1,1), padding=0)
         self.acb2 = ACB(input_filters=input_filters, output_filters=output_filters, kernel_size=(1,1), padding=0)
     
         self.relu = nn.ReLU()
-        self.sep_conv = SeparableConv2D(input_filters=input_filters, output_filters=output_filters, kernel_size=kernel_size) 
+        self.sep_conv = SeparableConv2D(input_filters=input_filters, output_filters=output_filters, kernel_size=kernel_size, padding=padding) 
         self.batch_norm = nn.BatchNorm2d(output_filters, momentum=0.99, eps=0.001)
 
     def forward(self, x):
 
-        if self.input_filters < self.output_filters:
-            x = self.acb1(x)
-
         a = self.relu(x)
-        a = self.sep_conv(x)
-        a = self.batch_norm(x)
+        a = self.sep_conv(a)
+        a = self.batch_norm(a)
 
         if self.input_filters == self.output_filters:
             return a + x
@@ -70,7 +68,7 @@ def ACB(input_filters=3, output_filters=32, kernel_size=(3,3), stride=(1,1), pad
 def Sep_ACB(input_filters=384, output_filters=576, kernel_size=(3,3), stride=(1,1), padding=1):
     return nn.Sequential(
         nn.ReLU(),
-        SeparableConv2D(input_filters=input_filters, output_filters=output_filters, kernel_size=kernel_size),
+        SeparableConv2D(input_filters=input_filters, output_filters=output_filters, kernel_size=kernel_size, padding=padding),
         nn.BatchNorm2d(output_filters, momentum=0.99, eps=0.001)
     )     
 
