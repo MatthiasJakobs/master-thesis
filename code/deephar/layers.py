@@ -136,10 +136,12 @@ class JointProbability(nn.Module):
         self.maxpool = nn.MaxPool2d(kernel_size=kernel_size, padding=0)
         self.sigmoid = nn.Sigmoid()
 
+        self.filters = filters
+
     def forward(self, x):
         x = self.maxpool(x)
         x = self.sigmoid(x)
         x = torch.squeeze(x, dim=-1)
         x = torch.squeeze(x, dim=-1)
   
-        return x.reshape((-1, 16, 1))
+        return x.reshape((-1, self.filters, 1))

@@ -49,17 +49,19 @@ def run_experiment_mpii(conf):
     batch_size = conf["batch_size"]
     val_batch_size = conf["val_batch_size"]
     use_saved_tensors = conf["use_saved_tensors"]
+    nr_context = conf["nr_context"]
+    project_dir = conf["project_dir"]
 
     ds = MPIIDataset("/data/mjakobs/data/mpii/", use_random_parameters=False, use_saved_tensors=use_saved_tensors)
 
     if num_blocks == 1:
-        model = Mpii_1().to(device)
+        model = Mpii_1(num_context=nr_context).to(device)
     elif num_blocks == 2:
-        model = Mpii_2().to(device)
+        model = Mpii_2(num_context=nr_context).to(device)
     elif num_blocks == 4:
-        model = Mpii_4().to(device)
+        model = Mpii_4(num_context=nr_context).to(device)
     elif num_blocks == 8:
-        model = Mpii_8().to(device)
+        model = Mpii_8(num_context=nr_context).to(device)
 
     number_of_datapoints = int(len(ds) * limit_data_percent)
     indices = list(range(number_of_datapoints))
@@ -93,6 +95,8 @@ def run_experiment_mpii(conf):
 
     if name is not None:
         experiment_name = name
+        if project_dir != "":
+            experiment_name = project_dir + "/" + experiment_name
     else:
         experiment_name = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
@@ -232,7 +236,7 @@ def run_experiment_mpii(conf):
                             image = io.imread("/data/mjakobs/data/mpii/images/{}".format(image_name))
 
                             if batch_idx % 10 == 0:
-                                visualize_heatmaps(heatmaps[0], val_images[0], 'experiments/{}/heatmaps/{}/{}_hm.png'.format(experiment_name, iteration, batch_idx), save=True)
+                                #visualize_heatmaps(heatmaps[0], val_images[0], 'experiments/{}/heatmaps/{}/{}_hm.png'.format(experiment_name, iteration, batch_idx), save=True)
                                 show_predictions_ontop(val_data["normalized_pose"][0], image, predictions[0], 'experiments/{}/val_images/{}/{}.png'.format(experiment_name, iteration, batch_idx), val_data["trans_matrix"][0], bbox=val_data["bbox"][0], save=True)
 
                             scores_05, scores_02 = eval_pckh_batch(predictions, val_data["normalized_pose"], val_data["head_size"], val_data["trans_matrix"])
