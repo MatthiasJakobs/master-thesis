@@ -1,6 +1,6 @@
 par(mfrow=c(1,2))
 
-path = "/tmp/fernando_friday/"
+path = "/tmp/sepconf_fix/"
 
 loss.data = read.csv(file=paste(path,"loss.csv", sep=""))
 val.data = read.csv(file=paste(path,"validation.csv", sep=""))
