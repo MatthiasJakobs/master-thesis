@@ -28,7 +28,7 @@ class Stem(nn.Module):
         self.maxpool2 = nn.MaxPool2d(kernel_size=(2,2), stride=(2,2), padding=0)
 
         self.acb2 = ACB(input_filters=384, output_filters=576, kernel_size=(1,1), stride=(1,1), padding=0)
-        self.sep_acb1 = Sep_ACB(input_filters=384, output_filters=576, kernel_size=(3,3), stride=(1,1), padding=1)
+        self.sep_acb1 = Residual_Sep_ACB(input_filters=384, output_filters=576, kernel_size=(3,3), padding=1)
 
 
     def forward(self, x):
@@ -71,13 +71,13 @@ class BlockA(nn.Module):
 
         # calculating padding using
         # padding_zeroes = (kernel_size - 1 ) / 2
-        self.sacb1 = Residual(Sep_ACB(input_filters=288, output_filters=288, kernel_size=(5,5), stride=(1,1), padding=2))
-        self.sacb2 = Residual(Sep_ACB(input_filters=288, output_filters=288, kernel_size=(5,5), stride=(1,1), padding=2))
-        self.sacb3 = Residual(Sep_ACB(input_filters=288, output_filters=288, kernel_size=(5,5), stride=(1,1), padding=2))
-        self.sacb4 = Residual(Sep_ACB(input_filters=288, output_filters=288, kernel_size=(5,5), stride=(1,1), padding=2))
-        self.sacb5 = Residual(Sep_ACB(input_filters=288, output_filters=288, kernel_size=(5,5), stride=(1,1), padding=2))
-        self.sacb6 = Residual(Sep_ACB(input_filters=576, output_filters=576, kernel_size=(5,5), stride=(1,1), padding=2))
-        self.sacb7 = Sep_ACB(input_filters=288, output_filters=576, kernel_size=(5,5), stride=(1,1), padding=2)
+        self.sacb1 = Residual_Sep_ACB(input_filters=288, output_filters=288, kernel_size=(5,5), padding=2)
+        self.sacb2 = Residual_Sep_ACB(input_filters=288, output_filters=288, kernel_size=(5,5), padding=2)
+        self.sacb3 = Residual_Sep_ACB(input_filters=288, output_filters=288, kernel_size=(5,5), padding=2)
+        self.sacb4 = Residual_Sep_ACB(input_filters=288, output_filters=288, kernel_size=(5,5), padding=2)
+        self.sacb5 = Residual_Sep_ACB(input_filters=288, output_filters=288, kernel_size=(5,5), padding=2)
+        self.sacb6 = Residual_Sep_ACB(input_filters=576, output_filters=576, kernel_size=(5,5), padding=2)
+        self.sacb7 = Residual_Sep_ACB(input_filters=288, output_filters=576, kernel_size=(5,5), padding=2)
 
         self.maxpool1 = nn.MaxPool2d(kernel_size=(2,2))
         self.maxpool2 = nn.MaxPool2d(kernel_size=(2,2))
