@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 from deephar.layers import *
+from deephar.utils import spatial_softmax
 
 class Stem(nn.Module):
 
@@ -27,7 +28,7 @@ class Stem(nn.Module):
         self.maxpool2 = nn.MaxPool2d(kernel_size=(2,2), stride=(2,2), padding=0)
 
         self.acb2 = ACB(input_filters=384, output_filters=576, kernel_size=(1,1), stride=(1,1), padding=0)
-        self.sep_acb1 = Sep_ACB(input_filters=384, output_filters=576, kernel_size=(3,3), stride=(1,1), padding=1)
+        self.sep_acb1 = Residual_Sep_ACB(input_filters=384, output_filters=576, kernel_size=(3,3), padding=1)
 
 
     def forward(self, x):
@@ -70,13 +71,13 @@ class BlockA(nn.Module):
 
         # calculating padding using
         # padding_zeroes = (kernel_size - 1 ) / 2
-        self.sacb1 = Residual(Sep_ACB(input_filters=288, output_filters=288, kernel_size=(5,5), stride=(1,1), padding=2))
-        self.sacb2 = Residual(Sep_ACB(input_filters=288, output_filters=288, kernel_size=(5,5), stride=(1,1), padding=2))
-        self.sacb3 = Residual(Sep_ACB(input_filters=288, output_filters=288, kernel_size=(5,5), stride=(1,1), padding=2))
-        self.sacb4 = Residual(Sep_ACB(input_filters=288, output_filters=288, kernel_size=(5,5), stride=(1,1), padding=2))
-        self.sacb5 = Residual(Sep_ACB(input_filters=288, output_filters=288, kernel_size=(5,5), stride=(1,1), padding=2))
-        self.sacb6 = Residual(Sep_ACB(input_filters=576, output_filters=576, kernel_size=(5,5), stride=(1,1), padding=2))
-        self.sacb7 = Sep_ACB(input_filters=288, output_filters=576, kernel_size=(5,5), stride=(1,1), padding=2)
+        self.sacb1 = Residual_Sep_ACB(input_filters=288, output_filters=288, kernel_size=(5,5), padding=2)
+        self.sacb2 = Residual_Sep_ACB(input_filters=288, output_filters=288, kernel_size=(5,5), padding=2)
+        self.sacb3 = Residual_Sep_ACB(input_filters=288, output_filters=288, kernel_size=(5,5), padding=2)
+        self.sacb4 = Residual_Sep_ACB(input_filters=288, output_filters=288, kernel_size=(5,5), padding=2)
+        self.sacb5 = Residual_Sep_ACB(input_filters=288, output_filters=288, kernel_size=(5,5), padding=2)
+        self.sacb6 = Residual_Sep_ACB(input_filters=576, output_filters=576, kernel_size=(5,5), padding=2)
+        self.sacb7 = Residual_Sep_ACB(input_filters=288, output_filters=576, kernel_size=(5,5), padding=2)
 
         self.maxpool1 = nn.MaxPool2d(kernel_size=(2,2))
         self.maxpool2 = nn.MaxPool2d(kernel_size=(2,2))
@@ -90,13 +91,14 @@ class BlockA(nn.Module):
         b = self.sacb2(b)
         b = self.sacb3(b)
         b = self.sacb4(b)
-        b = nn.functional.interpolate(b, scale_factor=2, mode="nearest") # Maybe align_corners needs to be set?
+        b = nn.functional.interpolate(b, scale_factor=2, mode="nearest")
 
         b = b + self.sacb5(a)
         b = self.sacb7(b)
-        b = nn.functional.interpolate(b, scale_factor=2, mode="nearest") # Maybe align_corners needs to be set?
+        b = nn.functional.interpolate(b, scale_factor=2, mode="nearest")
 
-        return b + self.sacb6(x)
+        out = b + self.sacb6(x)
+        return out
 
 class BlockB(nn.Module):
     def __init__(self, Pose_Regression_Module):
@@ -105,8 +107,8 @@ class BlockB(nn.Module):
         self.prm = Pose_Regression_Module
 
         self.sacb = Sep_ACB(input_filters=576, output_filters=576, kernel_size=(5,5), stride=(1,1), padding=2)
-        self.ac = AC(input_filters=576, output_filters=self.prm.nr_heatmaps(), kernel_size=(1,1), stride=(1,1), padding=0)
-        self.acb = ACB(input_filters=self.prm.nr_heatmaps(), output_filters=576, kernel_size=(1,1), stride=(1,1), padding=0)
+        self.ac = AC(input_filters=576, output_filters=self.prm.nr_heatmaps, kernel_size=(1,1), stride=(1,1), padding=0)
+        self.acb = ACB(input_filters=self.prm.nr_heatmaps, output_filters=576, kernel_size=(1,1), stride=(1,1), padding=0)
 
     def forward(self, x):
         a = self.sacb(x)
@@ -122,7 +124,7 @@ class ReceptionBlock(nn.Module):
         self.num_context = num_context
         self.block_a = BlockA()
         if self.num_context > 0:
-            raise("Not implemented")
+            self.regression = PoseRegressionWithContext(self.num_context)
         else:
             self.regression = PoseRegressionNoContext()
 
@@ -139,24 +141,105 @@ class PoseRegressionNoContext(nn.Module):
 
         self.softargmax = Softargmax(input_filters=16, output_filters=16, kernel_size=(32,32))
         self.probability = JointProbability(filters=16, kernel_size=(32,32))
-        self.softmax = nn.Softmax2d()
 
     def nr_heatmaps(self):
         return 16
 
     def forward(self, x):
-        pose = self.softargmax(x)
+        after_softmax = nn.Softmax(2)(x.view(len(x), 16, -1)).view_as(x)
+        pose = self.softargmax(after_softmax)
         visibility = self.probability(x)
-        '''
-        if torch.cuda.is_available():
-            heatmaps = x.cpu().detach().numpy()
-        else:
-            heatmaps = x.detach().numpy()
-        '''
-        heatmaps = self.softmax(x)
+
         output = torch.cat((pose, visibility), 2)
 
-        return heatmaps, output.unsqueeze(0)
+        return after_softmax, output.unsqueeze(0)
+
+class PoseRegressionWithContext(nn.Module):
+    def __init__(self, num_context=2, num_joints=16, alpha=0.8):
+        super(PoseRegressionWithContext, self).__init__()
+
+        self.num_context = num_context
+        self.num_joints = num_joints
+        self.alpha = alpha
+
+        self.nr_heatmaps = (self.num_context + 1) * self.num_joints
+
+        self.softargmax_joints = Softargmax(input_filters=self.num_joints, output_filters=self.num_joints, kernel_size=(32,32))
+        self.softargmax_context = Softargmax(input_filters=(self.nr_heatmaps - self.num_joints), output_filters=(self.nr_heatmaps - self.num_joints), kernel_size=(32,32))
+
+        self.probability_joints = JointProbability(filters=self.num_joints, kernel_size=(32,32))
+        self.probability_context = JointProbability(filters=(self.nr_heatmaps - self.num_joints), kernel_size=(32,32))
+
+    def create_context_sum_layer(self):
+        context_sum_layer = nn.Linear((self.nr_heatmaps - self.num_joints), self.num_joints, bias=False)
+
+        w = torch.zeros(((self.nr_heatmaps - self.num_joints), self.num_joints), dtype=torch.float32)
+        for i in range(0, self.num_joints):
+            w[i * self.num_context : (i + 1) * self.num_context, i] = 1
+
+        w = nn.Parameter(w.t(), requires_grad=False)
+        context_sum_layer.weight = w
+
+        return context_sum_layer
+
+    def forward(self, x):
+        # Input: Heatmaps
+        assert x.shape[1:] == (self.nr_heatmaps, 32, 32)
+
+        # Apply softax to generate belief maps
+        x = nn.Softmax(2)(x.view(len(x), self.nr_heatmaps, -1)).view_as(x)
+
+        hs = x[:, :self.num_joints]
+        hc = x[:, self.num_joints:]
+
+        assert hs.shape[1:] == (self.num_joints, 32, 32)
+        assert hc.shape[1:] == (self.num_joints * self.num_context, 32, 32)
+
+        ys = self.softargmax_joints(hs)
+        yc = self.softargmax_context(hc)
+        pc = self.probability_context(hc)
+
+        assert ys.shape[1:] == (self.num_joints, 2)
+        assert yc.shape[1:] == ((self.nr_heatmaps - self.num_joints), 2)
+        assert pc.shape[1:] == ((self.nr_heatmaps - self.num_joints), 1)
+
+        visibility = self.probability_joints(hs)
+
+        # Context aggregation
+        pxi = yc[:, :, 0].unsqueeze(-1)
+        pyi = yc[:, :, 1].unsqueeze(-1)
+        
+        pxi = pxi * pc 
+        pyi = pyi * pc 
+
+        context_sum = self.create_context_sum_layer()
+
+        # since liner layer expects [batch_size, num_features]: reduce 1-dimension
+        pxi = torch.squeeze(pxi, -1)
+        pyi = torch.squeeze(pyi, -1)
+        pc = torch.squeeze(pc, -1)
+
+        pxi_sum = context_sum(pxi)
+        pyi_sum = context_sum(pyi)
+        pc_sum = context_sum(pc)
+
+        pxi_div = pxi_sum / pc_sum
+        pyi_div = pyi_sum / pc_sum
+
+        assert pxi_div.shape[1:] == (self.num_joints,)
+        assert pyi_div.shape[1:] == (self.num_joints,)
+
+        context_x = torch.unsqueeze(pxi_div, -1)
+        context_y = torch.unsqueeze(pyi_div, -1)
+
+        context_prediction = torch.cat((context_x, context_y), -1)
+
+        assert context_prediction.shape[1:] == (self.num_joints, 2)
+
+        pose = ys * self.alpha + context_prediction * (1 - self.alpha)
+
+        output = torch.cat((pose, visibility), 2)
+        return hs, output.unsqueeze(0)
 
 class ActionPredictionBlock(nn.Module):
     def __init__(self, num_actions, num_filters, last=False):
@@ -276,4 +359,5 @@ class VisualModel(nn.Module):
         _, y4 = self.act_pred4(x)
 
         return [y1, y2, y3, y4]
+
 

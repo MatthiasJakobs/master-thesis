@@ -3,7 +3,7 @@ from datasets import MPIIDataset, mpii_joint_order
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import multivariate_normal
-from deephar.utils import transform_pose
+from deephar.utils import transform_pose, spatial_softmax
 from deephar.utils import linspace_2d as my_linspace_2d
 
 from skimage import io
@@ -67,6 +67,7 @@ def lin_interpolation_2d(inp, dim):
     #print("luv", dim, w[0][:, 0, :, :])
 
     conv.set_weights(w)
+
     conv.trainable = False
 
     # shape: ? 1 1 16
@@ -135,6 +136,7 @@ def create_2d_normal_image(mean, cov, width, height):
     zz = kernel.pdf(xxyy)
 
     img = zz.reshape((yres,xres))
+    print("heatmap shape", img.shape)
     return img
 
 def print_matrices(matrices):
@@ -164,7 +166,7 @@ def test_config(mean, cov, width, height):
     original_model = build_softargmax_2d(tf_heatmap.shape)
     output_original = original_model.predict(tf_heatmap.reshape(1, height, width, 1))
 
-    [scale_x, scale_y] = output.numpy()[0][0]
+    [scale_x, scale_y] = output.numpy()[0]
     pred_x, pred_y = int(scale_x * width), int(scale_y * height)
 
     diff_x = abs(pred_x - x)
@@ -181,13 +183,13 @@ def test_config(mean, cov, width, height):
 
 def main():
     #variances = [1, 2, 5, 10, 20, 50]
+
     variances = [1]
 
     ds = MPIIDataset("/data/mjakobs/data/mpii/", use_saved_tensors=True)
 
     example = ds[1000]
     
-    '''
     image_number = "{}".format(int(example["image_path"][0].item()))
     image_name = "{}.jpg".format(image_number.zfill(9))
     
@@ -196,7 +198,6 @@ def main():
 
     orig_gt_coordinates = transform_pose(example["trans_matrix"], original_pose, inverse=True)
 
-    '''
     original_image = example["normalized_image"].reshape(256, 256, 3)
     orig_gt_coordinates = example["original_pose"] * 256.0
 
@@ -244,5 +245,18 @@ def main():
 
     # print(results)
     # print_matrices(results)
+    
+    # width = 100
+    # height = width
+    # channel = 3
+    # example_image = torch.from_numpy(np.random.rand(1, channel, width, height) * 3 - 1.5).float()
+    # example_image[0, 0, 50, 50] = 15.0
+    # example_image[0, 1, 0, 0] = 15.0
+    # example_image[0, 2, 35, 60] = 15.0
+    # print(example_image.shape)
+    # example_image = torch.nn.Softmax(2)(example_image.view(1, channel, -1)).view_as(example_image)
+
+    # model = Softargmax(kernel_size=(width, height), input_filters=channel, output_filters=channel)
+    # output = model(example_image)
 
 main()

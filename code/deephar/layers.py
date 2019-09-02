@@ -25,6 +25,32 @@ class Residual(nn.Module):
     def forward(self, x):
         return self.input_model(x) + x
 
+class Residual_Sep_ACB(nn.Module):
+    def __init__(self, input_filters, output_filters, kernel_size=3, padding=1):
+        super(Residual_Sep_ACB, self).__init__()
+
+        self.input_filters = input_filters
+        self.output_filters = output_filters
+        self.kernel_size = kernel_size
+
+        self.acb1 = ACB(input_filters=input_filters, output_filters=output_filters, kernel_size=(1,1), padding=0)
+        self.acb2 = ACB(input_filters=input_filters, output_filters=output_filters, kernel_size=(1,1), padding=0)
+    
+        self.relu = nn.ReLU()
+        self.sep_conv = SeparableConv2D(input_filters=input_filters, output_filters=output_filters, kernel_size=kernel_size, padding=padding) 
+        self.batch_norm = nn.BatchNorm2d(output_filters, momentum=0.99, eps=0.001)
+
+    def forward(self, x):
+
+        a = self.relu(x)
+        a = self.sep_conv(a)
+        a = self.batch_norm(a)
+
+        if self.input_filters == self.output_filters:
+            return a + x
+        else:
+            return a + self.acb2(x)
+
 def CBA(input_filters=3, output_filters=32, kernel_size=(3,3), stride=(1,1), padding=1):
     return nn.Sequential(
         nn.Conv2d(input_filters, output_filters, kernel_size=kernel_size, stride=stride, padding=padding, bias=False),
@@ -42,9 +68,9 @@ def ACB(input_filters=3, output_filters=32, kernel_size=(3,3), stride=(1,1), pad
 def Sep_ACB(input_filters=384, output_filters=576, kernel_size=(3,3), stride=(1,1), padding=1):
     return nn.Sequential(
         nn.ReLU(),
-        SeparableConv2D(input_filters=input_filters, output_filters=output_filters, kernel_size=(3,3)),
+        SeparableConv2D(input_filters=input_filters, output_filters=output_filters, kernel_size=kernel_size, padding=padding),
         nn.BatchNorm2d(output_filters, momentum=0.99, eps=0.001)
-    )
+    )     
 
 def CB(input_filters=3, output_filters=32, kernel_size=(3,3), stride=(1,1), padding=1):
     return nn.Sequential(
@@ -93,13 +119,15 @@ class Softargmax(nn.Module):
         x_x = self.xx(x)
         x_x = torch.squeeze(x_x, dim=-1)
         x_x = torch.squeeze(x_x, dim=-1)
+        x_x = x_x.reshape((-1, self.output_filters, 1))
         
         x_y = self.xy(x)
         x_y = torch.squeeze(x_y, dim=-1)
-        x_y = torch.squeeze(x_y, dim=-1)        
+        x_y = torch.squeeze(x_y, dim=-1)
+        x_y = x_y.reshape((-1, self.output_filters, 1))
 
-        x = torch.cat((x_x, x_y))
-        return x.reshape((-1, self.output_filters, 2))#, self.w_copy
+        x = torch.cat((x_x, x_y), 2)
+        return x
 
 class JointProbability(nn.Module):
     def __init__(self, filters=16, kernel_size=(32,32)):
@@ -108,10 +136,12 @@ class JointProbability(nn.Module):
         self.maxpool = nn.MaxPool2d(kernel_size=kernel_size, padding=0)
         self.sigmoid = nn.Sigmoid()
 
+        self.filters = filters
+
     def forward(self, x):
         x = self.maxpool(x)
         x = self.sigmoid(x)
         x = torch.squeeze(x, dim=-1)
         x = torch.squeeze(x, dim=-1)
   
-        return x.reshape((-1, 16, 1))
+        return x.reshape((-1, self.filters, 1))
