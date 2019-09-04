@@ -142,8 +142,7 @@ class PoseRegressionNoContext(nn.Module):
         self.softargmax = Softargmax(input_filters=16, output_filters=16, kernel_size=(32,32))
         self.probability = JointProbability(filters=16, kernel_size=(32,32))
 
-    def nr_heatmaps(self):
-        return 16
+        self.nr_heatmaps = 16
 
     def forward(self, x):
         after_softmax = nn.Softmax(2)(x.view(len(x), 16, -1)).view_as(x)
