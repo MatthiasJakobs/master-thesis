@@ -1,12 +1,15 @@
-from datasets import *
+from datasets.JHMDBDataset import JHMDBDataset
 from visualization import show_predictions_ontop, show_pose_on_image
 import matplotlib.pyplot as plt
+
+import torch
 
 import skimage.io as io
 
 ds = JHMDBDataset("/data/mjakobs/data/jhmdb/", use_random_parameters=False, use_saved_tensors=True)
 
 length = len(ds)
+current = 0
 for idx, entry in enumerate(ds):
         frames = entry["normalized_frames"]
         poses = entry["normalized_poses"]
@@ -28,7 +31,8 @@ for idx, entry in enumerate(ds):
                 assert len(mini_frames == num_frames)
                 assert len(mini_poses == num_frames)
 
-                padded = str(idx).zfill(8)
+                padded = str(current).zfill(8)
+                current = current + 1
                 
                 torch.save(mini_frames, "/data/mjakobs/data/jhmdb_fragments/images/" + padded + ".frames.pt")
                 torch.save(mini_poses, "/data/mjakobs/data/jhmdb_fragments/annotations/" + padded + ".poses.pt")
