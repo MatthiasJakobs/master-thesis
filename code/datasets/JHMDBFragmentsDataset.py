@@ -20,8 +20,8 @@ class JHMDBFragmentsDataset(data.Dataset):
         padded = str(idx).zfill(self.padding_amount)
 
         t_frames = torch.load(self.images_folder + padded + ".frames.pt")
-        t_poses = torch.load(self.images_folder + padded + ".poses.pt")
-        t_action = torch.load(self.images_folder + padded + ".action_1h.pt")
+        t_poses = torch.load(self.annotation_folder + padded + ".poses.pt")
+        t_action = torch.load(self.annotation_folder + padded + ".action_1h.pt")
 
         return {
             "frames": t_frames,
