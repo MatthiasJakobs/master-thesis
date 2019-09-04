@@ -3,7 +3,7 @@ from matplotlib.patches import Rectangle
 
 from skimage.transform import resize
 
-from datasets import mpii_joint_order
+from datasets.MPIIDataset import mpii_joint_order
 from collections import OrderedDict
 
 import os
