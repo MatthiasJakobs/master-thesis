@@ -105,7 +105,7 @@ class DeepHar(nn.Module):
 
         #self.action_predictions = []
 
-    def forward(self, x, gt, train_pose=False):
+    def forward(self, x, gt=None, train_pose=False):
         if self.use_gt:
             pose = gt
         else:
