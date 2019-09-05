@@ -22,19 +22,19 @@ class JHMDBFragmentsDataset(data.Dataset):
 
         t_indices = torch.load(self.indices_folder + padded_indice + ".indices.pt")
 
-        padded_filename = str(t_indices[-1]).zfill(self.padding_amount)
+        padded_filename = str(int(t_indices[-1].item())).zfill(self.padding_amount)
 
         t_poses = torch.load(self.annotation_folder + padded_filename + ".poses.pt")
         t_action = torch.load(self.annotation_folder + padded_filename + ".action_1h.pt")
         t_frames = torch.load(self.images_folder + padded_filename + ".frames.pt")
 
-        start = t_indices[0]
-        end = t_indices[1]
+        start = int(t_indices[0].item())
+        end = int(t_indices[1].item())
 
         t_frames = t_frames[start:end]
 
         return {
             "frames": t_frames,
             "poses": t_poses,
-            "action": t_action
+            "action_1h": t_action
         }

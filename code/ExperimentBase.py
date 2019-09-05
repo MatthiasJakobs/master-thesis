@@ -83,7 +83,7 @@ class ExperimentBase:
     def compute_experiment_name(self):
         if self.conf["name"] is not None:
             self.experiment_name = self.conf["name"]
-            if self.conf["project_dir"] != "":
+            if self.conf["project_dir"] is not None:
                 self.experiment_name = self.conf["project_dir"] + "/" + self.experiment_name
         else:
             self.experiment_name = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
@@ -151,7 +151,7 @@ class ExperimentBase:
 class HAR_Testing_Experiment(ExperimentBase):
     def preparation(self):
         
-        self.model = DeepHar(num_actions=21, use_gt=False).to(self.device)
+        self.model = DeepHar(num_actions=21, use_gt=True, model_path="/Users/Matthias/code/master-thesis/code/weights_00010000").to(self.device)
         self.ds = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/")
 
         train_indices, val_indices = self.split_indices(len(self.ds))
@@ -194,6 +194,7 @@ class HAR_Testing_Experiment(ExperimentBase):
         losses.backward()
 
         self.train_writer.write([self.iteration, losses])
+        print(self.iteration, losses.item())
 
         self.optimizer.step()
         self.optimizer.zero_grad()

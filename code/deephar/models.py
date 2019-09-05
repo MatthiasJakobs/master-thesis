@@ -85,12 +85,20 @@ class Mpii_8(nn.Module):
 
 
 class DeepHar(nn.Module):
-    def __init__(self, num_frames=16, num_joints=16, num_actions=10, use_gt=True):
+    def __init__(self, num_frames=16, num_joints=16, num_actions=10, use_gt=True, model_path=None):
         super(DeepHar, self).__init__()
 
         self.use_gt = use_gt
-        if not use_gt:
-            self.pose_estimator = Mpii_4(num_context=0, standalone=False)
+        self.pose_estimator = Mpii_4(num_context=0, standalone=False)
+
+        if use_gt:
+            if torch.cuda.is_available():
+                device = "cuda"
+            else:
+                device = "cpu"
+
+            self.pose_estimator.load_state_dict(torch.load(model_path, map_location=device))
+            self.pose_estimator.eval()
 
         self.num_frames = num_frames
         self.num_joints = num_joints
@@ -105,49 +113,41 @@ class DeepHar(nn.Module):
 
         #self.action_predictions = []
 
-    def forward(self, x, gt=None, train_pose=False):
-        if self.use_gt:
-            pose = gt
+    def forward(self, x, train_pose=False):
+ 
+        td_poste_estimator = TimeDistributedPoseEstimation(self.pose_estimator)
+
+        batch_size = len(x)
+        
+        if train_pose:
+            poses, heatmaps, features = td_poste_estimator(x)
         else:
+            with torch.no_grad():
+                poses, heatmaps, features = td_poste_estimator(x)
 
-            batch_size = len(x)
-            assert batch_size == 1
-            
-            # Trick: Since batch_size always equal 1: Use frames in a batch 
-            batch_frames = x.squeeze(0)
+        nj = poses.size()[2]
+        nf = features.size()[2]
 
-            if train_pose:
-                poses, heatmaps, features = self.pose_estimator(batch_frames)
-            else:
-                with torch.no_grad():
-                    poses, heatmaps, features = self.pose_estimator(batch_frames)
+        assert nj == self.num_joints
 
-            poses = poses.squeeze(0)
+        pose_cube = torch.from_numpy(np.empty((batch_size, self.num_frames, self.num_joints, 2)))
+        action_cube = torch.from_numpy(np.empty((batch_size, self.num_frames, self.num_joints, nf)))
 
-            nj = poses.size()[1]
-            nf = features.size()[1]
+        features = features.unsqueeze(2)
+        features = features.expand(-1, -1, nj, -1, -1, -1)
+        heatmaps = heatmaps.unsqueeze(3)
+        heatmaps = heatmaps.expand(-1, -1, -1, nf, -1, -1)
 
-            assert nj == self.num_joints
+        assert heatmaps.size() == features.size()
 
-            pose_cube = torch.from_numpy(np.empty((self.num_frames, self.num_joints, 2)))
-            action_cube = torch.from_numpy(np.empty((self.num_frames, self.num_joints, nf)))
+        y = features * heatmaps
+        y = torch.sum(y, (4, 5))
 
-            features = features.unsqueeze(1)
-            features = features.expand(-1, nj, -1, -1, -1)
-            heatmaps = heatmaps.unsqueeze(2)
-            heatmaps = heatmaps.expand(-1, -1, nf, -1, -1)
+        action_cube = y
+        pose_cube = poses[:, :, :, 0:2]
 
-            assert heatmaps.size() == features.size()
-
-            y = features * heatmaps
-            y = torch.sum(y, (3, 4))
-
-            action_cube = y
-            pose_cube = poses[:, :, 0:2]
-
-            pose_cube = pose_cube.unsqueeze(0).permute(0, 3, 1, 2).float()
-            action_cube = action_cube.unsqueeze(0).permute(0, 3, 1, 2).float()
-
+        pose_cube = pose_cube.permute(0, 3, 1, 2).float()
+        action_cube = action_cube.permute(0, 3, 1, 2).float()
 
         pose_action_predictions = []
         vis_action_predictions = []

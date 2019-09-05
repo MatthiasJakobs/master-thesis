@@ -289,7 +289,7 @@ class PoseModel(nn.Module):
         # does not change dimensions
 
         # feature extraction
-        # TODO: input_filters=2 seems reasonable. Could be wrong though
+        # TODO: input_filters=batch_size seems reasonable. Could be wrong though
         self.cba1 = CBA(input_filters=2, output_filters=8, kernel_size=(3,1), padding=(1,0))
         self.cba2 = CBA(input_filters=2, output_filters=16, kernel_size=(3,3))
         self.cba3 = CBA(input_filters=2, output_filters=24, kernel_size=(3,5), padding=(1,2))

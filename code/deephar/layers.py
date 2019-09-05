@@ -145,3 +145,26 @@ class JointProbability(nn.Module):
         x = torch.squeeze(x, dim=-1)
   
         return x.reshape((-1, self.filters, 1))
+
+# based on https://discuss.pytorch.org/t/any-pytorch-function-can-work-as-keras-timedistributed/1346/4
+class TimeDistributedPoseEstimation(nn.Module):
+    def __init__(self, module):
+        super(TimeDistributedPoseEstimation, self).__init__()
+        self.module = module
+
+    def forward(self, x):
+
+        # Squash samples and timesteps into a single axis
+        size_before = x.size()
+
+        x_reshape = x.contiguous().view(size_before[0] * size_before[1], 3, 255, 255)  # (samples * timesteps, input_size)
+
+        poses, heatmaps, features = self.module(x_reshape)
+
+        poses = poses.squeeze(0)
+
+        poses_correct = poses.contiguous().view((size_before[0], size_before[1], 16, 3))
+        heatmaps_correct = heatmaps.contiguous().view((size_before[0], size_before[1], 16, 32, 32))
+        features_correct = features.contiguous().view((size_before[0], size_before[1], 576, 32, 32))
+
+        return poses_correct, heatmaps_correct, features_correct
