@@ -1,4 +1,4 @@
-from datasets import JHMDBDataset
+from datasets.JHMDBDataset import JHMDBDataset
 from deephar.models import DeepHar
 from deephar.measures import categorical_cross_entropy
 
@@ -22,8 +22,8 @@ else:
 
 model = DeepHar(num_actions=21, use_gt=False).to(device)
 
-limit_data_percent = 0.01
-validation_amount = 0.1
+limit_data_percent = 1
+validation_amount = 0.01
 batch_size = 1 #TODO: Fix issue where two clips in the same batch cannot have different number of frames
 val_batch_size = batch_size
 
@@ -57,8 +57,9 @@ val_loader = data.DataLoader(
 optimizer = optim.SGD(model.parameters(), lr=0.0002, momentum=0.98, nesterov=True)
 
 iteration = 0
+nr_epochs = 50
 
-for epoch in range(3):
+for epoch in range(nr_epochs):
 
     model.train()
     for batch_idx, train_objects in enumerate(train_loader):
@@ -91,17 +92,56 @@ for epoch in range(3):
 
             partial_loss_pose = torch.sum(categorical_cross_entropy(pose_predicted_actions, actions))
             partial_loss_action = torch.sum(categorical_cross_entropy(vis_predicted_actions, actions))
-            print("pose loss {} action loss {}".format(partial_loss_pose, partial_loss_action))
-            losses = losses + partial_loss_pose + partial_loss_action
-            print("sum loss {}".format(losses))
+            losses = partial_loss_pose + partial_loss_action
 
-        losses.backward(retain_graph=False)
+            losses.backward(retain_graph=False)
 
-        optimizer.step()
-        optimizer.zero_grad()
+            optimizer.step()
+            optimizer.zero_grad()
 
-        iteration = iteration + 1
+            iteration = iteration + 1
 
-        print("iteration {} loss {}".format(iteration, losses))
+            print("batch {} iteration {} loss {}".format(batch_idx, iteration, losses))
 
-        # evaluate
+        if batch_idx % 1 == 0:
+            # evaluate
+
+            model.eval()
+            with torch.no_grad():
+                accuracy = 0
+
+                for batch_idx, validation_objects in enumerate(val_loader):
+                    frames = validation_objects["normalized_frames"].to(device)
+                    sequence_length = validation_objects["sequence_length"].to(device)
+                    actions = validation_objects["action_1h"].to(device)
+
+                    num_frames = 16
+                    num_frames_total = sequence_length[0]
+
+                    ground_class = torch.argmax(actions[0])
+
+                    num_miniframes = 0
+                    for i in range(num_frames_total - num_frames):
+                        start = i
+                        end = min(i + num_frames, num_frames_total)
+
+                        mini_frames = frames[:, start:end]
+                        _, _, _, prediction = model(mini_frames, None)
+
+                        pred_class = torch.argmax(prediction)
+
+                        num_miniframes = num_miniframes + 1
+                        accuracy = accuracy + int(pred_class == ground_class)
+                        print("done with one 16 frame batch")
+
+                print("accuracy", accuracy / float(num_miniframes))
+
+
+
+
+
+
+
+
+
+
