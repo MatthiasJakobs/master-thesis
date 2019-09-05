@@ -21,3 +21,8 @@ def elastic_net_loss_paper(y_pred, y_true):
     final_losses = (l1 + l2) / nr_valid
     loss = torch.sum(final_losses)
     return loss
+
+def categorical_cross_entropy(y_pred, y_true, axis=1):
+    # based on keras implementation
+
+    return -torch.sum(y_true * torch.log(y_pred),  (1,2))

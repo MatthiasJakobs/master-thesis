@@ -25,7 +25,7 @@ from deephar.models import *
 from deephar.utils import get_valid_joints
 from deephar.measures import elastic_net_loss_paper
 from deephar.evaluation import eval_pckh_batch
-from datasets import MPIIDataset
+from datasets.MPIIDataset import MPIIDataset
 from visualization import show_predictions_ontop, visualize_heatmaps
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'

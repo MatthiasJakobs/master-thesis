@@ -31,7 +31,7 @@ class Mpii_2(nn.Module):
         return heatmaps, torch.cat((pose1, pose2), 0)
 
 class Mpii_4(nn.Module):
-    def __init__(self, num_context=0):
+    def __init__(self, num_context=0, standalone=True):
         super(Mpii_4, self).__init__()
 
         self.stem = Stem()
@@ -40,6 +40,8 @@ class Mpii_4(nn.Module):
         self.rec3 = ReceptionBlock(num_context=num_context)
         self.rec4 = ReceptionBlock(num_context=num_context)
 
+        self.standalone = standalone
+
     def forward(self, x):
         a = self.stem(x)
         _, pose1 , output1 = self.rec1(a)
@@ -47,7 +49,10 @@ class Mpii_4(nn.Module):
         _, pose3 , output3 = self.rec3(output2)
         heatmaps, pose4 , _ = self.rec4(output3)
 
-        return heatmaps, torch.cat((pose1, pose2, pose3, pose4), 0)
+        if self.standalone:
+            return heatmaps, torch.cat((pose1, pose2, pose3, pose4), 0)
+        else:
+            return pose4, heatmaps, output1
 
 class Mpii_8(nn.Module):
     def __init__(self, num_context=0):
@@ -77,3 +82,108 @@ class Mpii_8(nn.Module):
 
 
         return heatmaps, torch.cat((pose1, pose2, pose3, pose4, pose5, pose6, pose7, pose8), 0)
+
+
+class DeepHar(nn.Module):
+    def __init__(self, num_frames=16, num_joints=16, num_actions=10, use_gt=True, model_path=None):
+        super(DeepHar, self).__init__()
+
+        self.use_gt = use_gt
+        self.pose_estimator = Mpii_4(num_context=0, standalone=False)
+
+        if use_gt:
+            if torch.cuda.is_available():
+                device = "cuda"
+            else:
+                device = "cpu"
+
+            self.pose_estimator.load_state_dict(torch.load(model_path, map_location=device))
+            self.pose_estimator.eval()
+
+        self.num_frames = num_frames
+        self.num_joints = num_joints
+        self.num_actions = num_actions
+
+        self.global_maxmin1 = nn.MaxPool2d(kernel_size=(4,4))
+        self.global_maxmin2 = nn.MaxPool2d(kernel_size=(4,4))
+        self.softmax = nn.Softmax2d()
+
+        self.pose_model = PoseModel(num_frames, num_joints, num_actions)
+        self.visual_model = VisualModel(num_frames, num_joints, num_actions)
+
+        #self.action_predictions = []
+
+    def forward(self, x, train_pose=False):
+ 
+        td_poste_estimator = TimeDistributedPoseEstimation(self.pose_estimator)
+
+        batch_size = len(x)
+        
+        if train_pose:
+            poses, heatmaps, features = td_poste_estimator(x)
+        else:
+            with torch.no_grad():
+                poses, heatmaps, features = td_poste_estimator(x)
+
+        nj = poses.size()[2]
+        nf = features.size()[2]
+
+        assert nj == self.num_joints
+
+        pose_cube = torch.from_numpy(np.empty((batch_size, self.num_frames, self.num_joints, 2)))
+        action_cube = torch.from_numpy(np.empty((batch_size, self.num_frames, self.num_joints, nf)))
+
+        features = features.unsqueeze(2)
+        features = features.expand(-1, -1, nj, -1, -1, -1)
+        heatmaps = heatmaps.unsqueeze(3)
+        heatmaps = heatmaps.expand(-1, -1, -1, nf, -1, -1)
+
+        assert heatmaps.size() == features.size()
+
+        y = features * heatmaps
+        y = torch.sum(y, (4, 5))
+
+        action_cube = y
+        pose_cube = poses[:, :, :, 0:2]
+
+        pose_cube = pose_cube.permute(0, 3, 1, 2).float()
+        action_cube = action_cube.permute(0, 3, 1, 2).float()
+
+        pose_action_predictions = []
+        vis_action_predictions = []
+        if torch.cuda.is_available():
+            pose_cube = pose_cube.to('cuda')
+            action_cube = action_cube.to('cuda')
+
+        intermediate_poses = self.pose_model(pose_cube)
+        intermediate_vis = self.visual_model(action_cube)
+
+        for y in intermediate_poses:
+            y_plus = self.global_maxmin1(y)
+            y_minus = self.global_maxmin2(-y)
+            y = y_plus - y_minus
+            y = self.softmax(y).squeeze(-1).squeeze(-1).unsqueeze(1)
+
+            pose_action_predictions.append(y)
+
+        for y in intermediate_vis:
+            y_plus = self.global_maxmin1(y)
+            y_minus = self.global_maxmin2(-y)
+            y = y_plus - y_minus
+            y = self.softmax(y).squeeze(-1).squeeze(-1).unsqueeze(1)
+
+            vis_action_predictions.append(y)
+
+        # TODO: Weighted matrix
+
+        final_vis = intermediate_vis[-1]
+        final_pose = intermediate_poses[-1]
+
+        final_output = final_vis + final_pose
+        y_plus = self.global_maxmin1(final_output)
+        y_minus = self.global_maxmin2(-final_output)
+        final_output = y_plus - y_minus
+        final_output = self.softmax(final_output).squeeze(-1).squeeze(-1).unsqueeze(1)
+
+
+        return poses, torch.cat(pose_action_predictions, 1), torch.cat(vis_action_predictions, 1), final_output

@@ -142,8 +142,7 @@ class PoseRegressionNoContext(nn.Module):
         self.softargmax = Softargmax(input_filters=16, output_filters=16, kernel_size=(32,32))
         self.probability = JointProbability(filters=16, kernel_size=(32,32))
 
-    def nr_heatmaps(self):
-        return 16
+        self.nr_heatmaps = 16
 
     def forward(self, x):
         after_softmax = nn.Softmax(2)(x.view(len(x), 16, -1)).view_as(x)
@@ -240,3 +239,124 @@ class PoseRegressionWithContext(nn.Module):
 
         output = torch.cat((pose, visibility), 2)
         return hs, output.unsqueeze(0)
+
+class ActionPredictionBlock(nn.Module):
+    def __init__(self, num_actions, num_filters, last=False):
+        super(ActionPredictionBlock, self).__init__()
+
+        self.num_actions = num_actions
+        self.last = last
+
+        self.acb1 = ACB(input_filters=num_filters, output_filters=int(num_filters/2), kernel_size=(1,1), padding=(0,0))
+        self.acb2 = ACB(input_filters=int(num_filters / 2), output_filters=num_filters, kernel_size=(3,3))
+
+        self.acb3 = ACB(input_filters=num_filters, output_filters=num_filters, kernel_size=(3,3))
+        self.pooling = nn.MaxPool2d(kernel_size=(2,2))
+        self.ac = AC(input_filters=num_filters, output_filters=num_actions, kernel_size=(3,3))
+
+        if not last:
+            self.acb4 = ACB(input_filters=num_actions, output_filters=num_filters, kernel_size=(3,3))
+
+    def forward(self, x):
+        a = x
+        x = self.acb1(x)
+        x = self.acb2(x)
+        x = x + a
+
+        a = x
+        b = self.acb3(x)
+        x = self.pooling(b)
+        heatmaps = self.ac(x)
+        y = heatmaps
+
+        if not self.last:
+            heatmaps = nn.functional.interpolate(heatmaps, scale_factor=2, mode="nearest") # Maybe align_corners needs to be set?
+            heatmaps = self.acb4(heatmaps)
+            x = a + b + heatmaps
+        return x, y
+
+
+class PoseModel(nn.Module):
+    def __init__(self, num_frames, num_joints, num_actions):
+        super(PoseModel, self).__init__()
+
+        self.num_frames = num_frames
+        self.num_joints = num_joints
+        self.num_actions = num_actions
+
+        # TODO: Add layers for preparation of pose
+        # multiply visibility score to input
+        # does not change dimensions
+
+        # feature extraction
+        # TODO: input_filters=batch_size seems reasonable. Could be wrong though
+        self.cba1 = CBA(input_filters=2, output_filters=8, kernel_size=(3,1), padding=(1,0))
+        self.cba2 = CBA(input_filters=2, output_filters=16, kernel_size=(3,3))
+        self.cba3 = CBA(input_filters=2, output_filters=24, kernel_size=(3,5), padding=(1,2))
+
+        # TODO: Check if 48 is correct
+        self.cb1 = CB(input_filters=48, output_filters=56, kernel_size=(3,3))
+        self.cb2 = CB(input_filters=48, output_filters=32, kernel_size=(1,1), padding=(0,0))
+        self.cb3 = CB(input_filters=32, output_filters=56, kernel_size=(3,3))
+
+        # TODO: Start with simple max pooling
+        self.pooling = nn.MaxPool2d(kernel_size=(2,2))
+
+        self.act_pred1 = ActionPredictionBlock(num_actions, 112) # TODO: Kind of a magic number
+        self.act_pred2 = ActionPredictionBlock(num_actions, 112)
+        self.act_pred3 = ActionPredictionBlock(num_actions, 112)
+        self.act_pred4 = ActionPredictionBlock(num_actions, 112, last=True)
+
+    def forward(self, x):
+        # TODO: Add preparation
+        a = self.cba1(x)
+        b = self.cba2(x)
+        c = self.cba3(x)
+        x = torch.cat((a, b, c), 1) # concat on channels
+
+        a = self.cb1(x)
+        b = self.cb2(x)
+        b = self.cb3(b)
+
+        x = torch.cat((a, b), 1) # concat on channels
+
+        x = self.pooling(x)
+
+        x, y1 = self.act_pred1(x)
+        x, y2 = self.act_pred2(x)
+        x, y3 = self.act_pred3(x)
+        _, y4 = self.act_pred4(x)
+
+        return [y1, y2, y3, y4]
+
+class VisualModel(nn.Module):
+    def __init__(self, num_frames, num_joints, num_actions):
+        super(VisualModel, self).__init__()
+
+        self.num_frames = num_frames
+        self.num_joints = num_joints
+        self.num_actions = num_actions
+        self.num_features = 576 # TODO: Can this be derived somehow? what if this changes?
+
+        self.cb = CB(input_filters=self.num_features, output_filters=256, kernel_size=(1,1), padding=(0,0)) #TODO: Padding correct?
+
+        self.pooling = nn.MaxPool2d(kernel_size=(2,2))
+
+        self.act_pred1 = ActionPredictionBlock(num_actions, 256)
+        self.act_pred2 = ActionPredictionBlock(num_actions, 256)
+        self.act_pred3 = ActionPredictionBlock(num_actions, 256)
+        self.act_pred4 = ActionPredictionBlock(num_actions, 256, last=True)
+
+    def forward(self, x):
+        x = self.cb(x)
+
+        x = self.pooling(x)
+
+        x, y1 = self.act_pred1(x)
+        x, y2 = self.act_pred2(x)
+        x, y3 = self.act_pred3(x)
+        _, y4 = self.act_pred4(x)
+
+        return [y1, y2, y3, y4]
+
+
