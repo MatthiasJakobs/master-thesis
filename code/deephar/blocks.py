@@ -251,7 +251,7 @@ class ActionPredictionBlock(nn.Module):
         self.acb2 = ACB(input_filters=int(num_filters / 2), output_filters=num_filters, kernel_size=(3,3))
 
         self.acb3 = ACB(input_filters=num_filters, output_filters=num_filters, kernel_size=(3,3))
-        self.pooling = nn.MaxPool2d(kernel_size=(2,2))
+        self.pooling = MaxMinPooling(kernel_size=(2,2))
         self.ac = AC(input_filters=num_filters, output_filters=num_actions, kernel_size=(3,3))
 
         if not last:
@@ -284,31 +284,30 @@ class PoseModel(nn.Module):
         self.num_joints = num_joints
         self.num_actions = num_actions
 
-        # TODO: Add layers for preparation of pose
-        # multiply visibility score to input
-        # does not change dimensions
-
         # feature extraction
-        # TODO: input_filters=batch_size seems reasonable. Could be wrong though
         self.cba1 = CBA(input_filters=2, output_filters=8, kernel_size=(3,1), padding=(1,0))
         self.cba2 = CBA(input_filters=2, output_filters=16, kernel_size=(3,3))
         self.cba3 = CBA(input_filters=2, output_filters=24, kernel_size=(3,5), padding=(1,2))
 
-        # TODO: Check if 48 is correct
         self.cb1 = CB(input_filters=48, output_filters=56, kernel_size=(3,3))
         self.cb2 = CB(input_filters=48, output_filters=32, kernel_size=(1,1), padding=(0,0))
         self.cb3 = CB(input_filters=32, output_filters=56, kernel_size=(3,3))
 
-        # TODO: Start with simple max pooling
-        self.pooling = nn.MaxPool2d(kernel_size=(2,2))
+        self.pooling = MaxMinPooling(kernel_size=(2,2))
 
         self.act_pred1 = ActionPredictionBlock(num_actions, 112) # TODO: Kind of a magic number
         self.act_pred2 = ActionPredictionBlock(num_actions, 112)
         self.act_pred3 = ActionPredictionBlock(num_actions, 112)
         self.act_pred4 = ActionPredictionBlock(num_actions, 112, last=True)
 
-    def forward(self, x):
-        # TODO: Add preparation
+    def forward(self, x, p):
+        prob = p[:, :, :, 2]
+        prob = prob.unsqueeze(-1)
+        prob = prob.expand(-1, -1, -1, 2)
+        prob = prob.permute(0, 3, 1, 2)
+
+        x = x * prob # I dont really know why they do that
+
         a = self.cba1(x)
         b = self.cba2(x)
         c = self.cba3(x)
@@ -338,7 +337,7 @@ class VisualModel(nn.Module):
         self.num_actions = num_actions
         self.num_features = 576 # TODO: Can this be derived somehow? what if this changes?
 
-        self.cb = CB(input_filters=self.num_features, output_filters=256, kernel_size=(1,1), padding=(0,0)) #TODO: Padding correct?
+        self.cb = CB(input_filters=self.num_features, output_filters=256, kernel_size=(1,1), padding=(0,0))
 
         self.pooling = nn.MaxPool2d(kernel_size=(2,2))
 

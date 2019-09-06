@@ -84,6 +84,18 @@ def AC(input_filters=3, output_filters=32, kernel_size=(3,3), stride=(1,1), padd
         nn.Conv2d(input_filters, output_filters, kernel_size=kernel_size, stride=stride, padding=padding, bias=False)
     )
 
+class MaxMinPooling(nn.Module):
+    def __init__(self, kernel_size=(4,4)):
+        super(MaxMinPooling, self).__init__()
+
+        self.plus = nn.MaxPool2d(kernel_size=kernel_size)
+        self.minus = nn.MaxPool2d(kernel_size=kernel_size)
+
+    def forward(self, x):
+        x_plus = self.plus(x)
+        x_minus = self.minus(-x)
+        return x_plus - x_minus
+
 class Softargmax(nn.Module):
 
     def conv_linear_interpolation(self, input_filters, output_filters, kernel_size, dim):

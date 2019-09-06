@@ -1,6 +1,7 @@
 import torch.nn as nn
 
 from deephar.blocks import *
+from deephar.layers import MaxMinPooling
 
 class Mpii_1(nn.Module):
     def __init__(self, num_context=0):
@@ -104,8 +105,7 @@ class DeepHar(nn.Module):
         self.num_joints = num_joints
         self.num_actions = num_actions
 
-        self.global_maxmin1 = nn.MaxPool2d(kernel_size=(4,4))
-        self.global_maxmin2 = nn.MaxPool2d(kernel_size=(4,4))
+        self.max_min_pooling = MaxMinPooling(kernel_size=(4,4))
         self.softmax = nn.Softmax2d()
 
         self.pose_model = PoseModel(num_frames, num_joints, num_actions)
@@ -155,21 +155,17 @@ class DeepHar(nn.Module):
             pose_cube = pose_cube.to('cuda')
             action_cube = action_cube.to('cuda')
 
-        intermediate_poses = self.pose_model(pose_cube)
+        intermediate_poses = self.pose_model(pose_cube, poses)
         intermediate_vis = self.visual_model(action_cube)
 
         for y in intermediate_poses:
-            y_plus = self.global_maxmin1(y)
-            y_minus = self.global_maxmin2(-y)
-            y = y_plus - y_minus
+            y = self.max_min_pooling(y)
             y = self.softmax(y).squeeze(-1).squeeze(-1).unsqueeze(1)
 
             pose_action_predictions.append(y)
 
         for y in intermediate_vis:
-            y_plus = self.global_maxmin1(y)
-            y_minus = self.global_maxmin2(-y)
-            y = y_plus - y_minus
+            y = self.max_min_pooling(y)
             y = self.softmax(y).squeeze(-1).squeeze(-1).unsqueeze(1)
 
             vis_action_predictions.append(y)
@@ -180,9 +176,7 @@ class DeepHar(nn.Module):
         final_pose = intermediate_poses[-1]
 
         final_output = final_vis + final_pose
-        y_plus = self.global_maxmin1(final_output)
-        y_minus = self.global_maxmin2(-final_output)
-        final_output = y_plus - y_minus
+        final_output = self.max_min_pooling(final_output)
         final_output = self.softmax(final_output).squeeze(-1).squeeze(-1).unsqueeze(1)
 
 
