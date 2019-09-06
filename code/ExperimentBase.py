@@ -5,6 +5,8 @@ from shutil import rmtree
 from os import makedirs, remove
 from os.path import exists
 
+import matplotlib.pyplot as plt
+
 import torch
 import torch.utils.data as data
 import torch.optim as optim
@@ -55,7 +57,6 @@ class ExperimentBase:
         self.train_loader = None
         self.val_loader = None
 
-        # TODO: How to write first line correctly?  
         self.remove_if_exists("experiments/{}/{}.csv".format(self.experiment_name, "loss"), file=True)
         self.train_writer = CSVWriter(self.experiment_name, "loss")
 
@@ -73,31 +74,36 @@ class ExperimentBase:
     def preparation(self):
         raise("Preparation not implemented")
 
-    def create_dynamic_folders(self):
-        self.remove_if_exists('experiments/{}/heatmaps/{}'.format(self.experiment_name, self.iteration))
-        self.create_if_not_exists('experiments/{}/heatmaps/{}'.format(self.experiment_name, self.iteration))
-
-        self.remove_if_exists('experiments/{}/val_images/{}'.format(self.experiment_name, self.iteration))
-        self.create_if_not_exists('experiments/{}/val_images/{}'.format(self.experiment_name, self.iteration))
+    def create_dynamic_folders(self, heatmaps=True, val_images=True):
+        if heatmaps:
+            self.remove_if_exists('experiments/{}/heatmaps/{}'.format(self.experiment_name, self.iteration))
+            self.create_if_not_exists('experiments/{}/heatmaps/{}'.format(self.experiment_name, self.iteration))
+        if val_images:
+            self.remove_if_exists('experiments/{}/val_images/{}'.format(self.experiment_name, self.iteration))
+            self.create_if_not_exists('experiments/{}/val_images/{}'.format(self.experiment_name, self.iteration))
 
     def compute_experiment_name(self):
         if self.conf["name"] is not None:
             self.experiment_name = self.conf["name"]
-            if self.conf["project_dir"] is not None:
+            if self.conf["project_dir"] != "":
                 self.experiment_name = self.conf["project_dir"] + "/" + self.experiment_name
         else:
             self.experiment_name = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
-    def create_experiment_folders(self):
+    def create_experiment_folders(self, heatmaps=True, val_images=True):
         self.create_if_not_exists("experiments")
         self.create_if_not_exists("experiments/{}".format(self.experiment_name))
         
         self.remove_if_exists('experiments/{}/weights'.format(self.experiment_name))
         self.create_if_not_exists("experiments/{}/weights".format(self.experiment_name))
-        self.remove_if_exists('experiments/{}/val_images'.format(self.experiment_name))
-        self.create_if_not_exists('experiments/{}/val_images'.format(self.experiment_name))
-        self.remove_if_exists('experiments/{}/heatmaps'.format(self.experiment_name))
-        self.create_if_not_exists('experiments/{}/heatmaps'.format(self.experiment_name))
+        
+        if val_images:
+            self.remove_if_exists('experiments/{}/val_images'.format(self.experiment_name))
+            self.create_if_not_exists('experiments/{}/val_images'.format(self.experiment_name))
+
+        if heatmaps:
+            self.remove_if_exists('experiments/{}/heatmaps'.format(self.experiment_name))
+            self.create_if_not_exists('experiments/{}/heatmaps'.format(self.experiment_name))
 
     def create_if_not_exists(self, path):
         if not exists(path):
@@ -176,6 +182,8 @@ class HAR_Testing_Experiment(ExperimentBase):
         self.train_writer.write(["iteration", "loss"])
         self.val_writer.write(["iteration", "accuracy"])
 
+        self.create_experiment_folders(heatmaps=False)
+
 
     def train(self, train_objects):
 
@@ -205,13 +213,27 @@ class HAR_Testing_Experiment(ExperimentBase):
     def evaluate(self):
         correct = 0
         total = 0
-        for validation_objects in self.val_loader:
+        for batch_idx, validation_objects in enumerate(self.val_loader):
             frames = validation_objects["frames"].to(self.device)
             actions = validation_objects["action_1h"].to(self.device)
 
             ground_class = torch.argmax(actions[0])
 
-            _, _, _, prediction = self.model(frames)
+            predicted_poses, _, _, prediction = self.model(frames)
+
+            if batch_idx % 1 == 0:
+                self.create_dynamic_folders(heatmaps=False)
+                for i in range(len(frames)):
+                    for frame in range(len(frames[0])):
+                        path = 'experiments/{}/val_images/{}/{}_{}_{}.png'.format(self.experiment_name, self.iteration, batch_idx, i, frame)
+                        plt.imshow(frames[i, frame].reshape(255, 255, 3))
+                        
+                        pred_x = predicted_poses[i, frame, :, 0]
+                        pred_y = predicted_poses[i, frame, :, 1]
+
+                        plt.scatter(x=pred_x * 255.0, y=pred_y * 255.0)
+                        plt.savefig(path)
+                        plt.close()
 
             pred_class = torch.argmax(prediction)
 
