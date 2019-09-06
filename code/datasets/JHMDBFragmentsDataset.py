@@ -32,6 +32,7 @@ class JHMDBFragmentsDataset(data.Dataset):
         end = int(t_indices[1].item())
 
         t_frames = t_frames[start:end]
+        t_poses = t_poses[start:end]
 
         return {
             "frames": t_frames,

@@ -16,12 +16,17 @@ for idx, entry in enumerate(ds):
         actions = entry["action_1h"]
         sequence_length = entry["sequence_length"]
 
+        assert len(frames) == 40
+        assert len(poses) == 40
+
         num_frames = 16
 
         num_frames_total = sequence_length[0]
+
         if num_frames_total < 16:
                 print("less than 16 frames")
                 continue
+
         mini_batches = int(num_frames_total / num_frames) + 1
         padded_image = str(idx).zfill(8)
 
@@ -30,13 +35,11 @@ for idx, entry in enumerate(ds):
         torch.save(poses, "/data/mjakobs/data/jhmdb_fragments/annotations/" + padded_image + ".poses.pt")
 
         indices = torch.zeros((num_frames_total - num_frames), 2)
-        if idx == 54:
-                print('here')
 
         for i in range(num_frames_total - num_frames):
                 start = i
                 end = min(i + num_frames, num_frames_total)
-        
+
                 padded = str(current).zfill(8)
                 current = current + 1
 
@@ -46,5 +49,6 @@ for idx, entry in enumerate(ds):
                 indices[2] = idx
 
                 torch.save(indices, "/data/mjakobs/data/jhmdb_fragments/indices/" + padded + ".indices.pt")
-                
+                assert indices.shape == (3,)
+
         #print("{} / {}".format(idx, length))
