@@ -20,7 +20,7 @@ from skimage import io
 
 from datasets.MPIIDataset import *
 from datasets.JHMDBFragmentsDataset import JHMDBFragmentsDataset
-from deephar.models import DeepHar, Mpii_1, Mpii_2, Mpii_4, Mpii_8
+from deephar.models import DeepHar, Mpii_1, Mpii_2, Mpii_4, Mpii_8, TimeDistributedPoseEstimation
 from deephar.utils import get_valid_joints
 from deephar.measures import elastic_net_loss_paper, categorical_cross_entropy
 from deephar.evaluation import eval_pckh_batch
@@ -252,6 +252,128 @@ class HAR_Testing_Experiment(ExperimentBase):
         self.val_writer.write([self.iteration, accuracy])
 
         return accuracy
+
+class Finetune_JHMDB(ExperimentBase):
+    def preparation(self):
+
+        self.model = Mpii_4(num_context=0, standalone=True)
+        self.model.load_state_dict(torch.load("/data/mjakobs/data/pretrained_weights_4", map_location=self.device))
+        
+        self.ds = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/")
+
+        train_indices, val_indices = self.split_indices(len(self.ds))
+
+        train_sampler = SubsetRandomSampler(train_indices)
+        val_sampler = SubsetRandomSampler(val_indices)
+
+        self.train_loader = data.DataLoader(
+            self.ds,
+            batch_size=self.conf["batch_size"],
+            sampler=train_sampler
+        )
+
+        self.val_loader = data.DataLoader(
+            self.ds,
+            batch_size=self.conf["batch_size"],
+            sampler=val_sampler
+        )
+
+        self.optimizer = optim.RMSprop(self.model.parameters(), lr=self.conf["learning_rate"])
+
+        self.train_writer.write(["iteration", "loss"])
+        self.val_writer.write(["iteration", "pckh_0.5", "pckh_0.2"])
+
+        self.create_experiment_folders()
+
+
+    def train(self, train_objects):
+
+        images = train_objects["frames"].to(self.device)
+        train_poses = train_objects["poses"].to(self.device)
+
+        images = images.contiguous().view(images.size()[0] * images.size()[1], 3, 255, 255)
+        train_poses = train_poses.contiguous().view(train_poses.size()[0] * train_poses.size()[1], 16, 3)
+
+        heatmaps, poses = self.model(images)
+
+        poses = poses.permute(1, 0, 2, 3)
+
+        pred_pose = poses[:, :, :, 0:2]
+        ground_pose = train_poses[:, :, 0:2] / 255.0
+        ground_pose = ground_pose.unsqueeze(1)
+        ground_pose = ground_pose.expand(-1, self.conf["num_blocks"], -1, -1)
+
+        pred_vis = poses[:, :, :, 2]
+        ground_vis = train_poses[:, :, 2]
+        ground_vis = ground_vis.unsqueeze(1)
+        ground_vis = ground_vis.expand(-1, self.conf["num_blocks"], -1)
+
+        binary_crossentropy = nn.BCELoss()
+
+        vis_loss = binary_crossentropy(pred_vis, ground_vis)
+
+        pose_loss = elastic_net_loss_paper(pred_pose, ground_pose)
+        loss = vis_loss * 0.01 + pose_loss
+
+        loss.backward()
+
+        self.optimizer.step()
+        self.optimizer.zero_grad()
+
+        self.train_writer.write([self.iteration, loss.item()])
+        self.iteration = self.iteration + 1
+
+        print("iteration {} loss {}".format(self.iteration, loss.item()))
+
+    def evaluate(self):
+        val_accuracy_05 = []
+        val_accuracy_02 = []
+        for batch_idx, val_data in enumerate(self.val_loader):
+            val_images = val_data["frames"].to(self.device)
+            val_images = val_images.contiguous().view(val_data["frames"].size()[0] * val_data["frames"].size()[1], 3, 255, 255)
+
+            val_poses = val_data["poses"].to(self.device)
+            val_poses = val_poses.contiguous().view(val_data["poses"].size()[0] * val_data["poses"].size()[1], 16, 3)
+
+
+            heatmaps, predictions = self.model(val_images)
+            predictions = predictions[-1, :, :, :].squeeze(dim=0)
+
+            if predictions.dim() == 2:
+                predictions = predictions.unsqueeze(0)
+
+            self.create_dynamic_folders()
+
+            if batch_idx % 10 == 0:
+                # save predictions
+                image = val_images[0].reshape(255, 255, 3)
+                prediction = predictions[0]
+                gt_pose = val_poses[0]
+                gt_poses = gt_poses.contiguous().view(val_data["poses"].size()[0] * val_data["poses"].size()[1], 16, 3)
+
+                plt.imshow(image)
+                pred_x = prediction[:, 0]
+                pred_y = prediction[:, 1]
+                gt_x = gt_pose[:, 0]
+                gt_y = gt_pose[:, 1]
+                plt.scatter(x=pred_x, y=pred_y, c="b")
+                plt.scatter(x=gt_x, y=gt_y, c="r")
+                path = 'experiments/{}/val_images/{}/{}png'.format(self.experiment_name, self.iteration, batch_idx)
+                self.create_dynamic_folders(heatmaps=False)
+                plt.savefig(path)
+                plt.close()
+
+            scores_05, scores_02 = eval_pckh_batch(predictions, val_poses, val_data["head_size"], val_data["trans_matrix"])
+            val_accuracy_05.extend(scores_05)
+            val_accuracy_02.extend(scores_02)
+
+
+        mean_05 = np.mean(np.array(val_accuracy_05))
+        mean_02 = np.mean(np.array(val_accuracy_02))
+
+        self.val_writer.write([self.iteration, mean_05, mean_02])
+        return mean_05
+
 
 
 class MPIIExperiment(ExperimentBase):

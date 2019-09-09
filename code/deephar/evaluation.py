@@ -17,6 +17,19 @@ def pckh(y_true, y_pred, head_size, distance_threshold=0.5):
 
     return np.sum(matches) / np.sum(valid)
 
+def pck_upperbody(y_true, y_pred, distance_threshold=0.5):
+    upper_body_size_difference = y_true[0] - y_true[1] # distance between neck and belly, because there is no head size given by the dataset
+    
+    upper_body_size = torch.sqrt(torch.sum(torch.mul(upper_body_size_difference, upper_body_size_difference)))
+
+    squares = torch.mul(y_true - y_pred, y_true - y_pred)
+    sums = torch.sum(squares)
+    distances = torch.sqrt(sums) / upper_body_size
+
+    matches = (distances <= distance_threshold)
+
+    return torch.sum(matches) / len(y_true)
+
 def eval_pckh_batch(predictions, poses, headsizes, matrices):
     scores_05 = []
     scores_02 = []
