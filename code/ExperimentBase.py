@@ -93,10 +93,10 @@ class ExperimentBase:
     def create_experiment_folders(self, heatmaps=True, val_images=True):
         self.create_if_not_exists("experiments")
         self.create_if_not_exists("experiments/{}".format(self.experiment_name))
-        
+
         self.remove_if_exists('experiments/{}/weights'.format(self.experiment_name))
         self.create_if_not_exists("experiments/{}/weights".format(self.experiment_name))
-        
+
         if val_images:
             self.remove_if_exists('experiments/{}/val_images'.format(self.experiment_name))
             self.create_if_not_exists('experiments/{}/val_images'.format(self.experiment_name))
@@ -156,7 +156,7 @@ class ExperimentBase:
 
 class HAR_Testing_Experiment(ExperimentBase):
     def preparation(self):
-        
+
         self.model = DeepHar(num_actions=21, use_gt=True, model_path="/data/mjakobs/data/pretrained_weights_4").to(self.device)
         self.ds = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/")
 
@@ -177,7 +177,7 @@ class HAR_Testing_Experiment(ExperimentBase):
             sampler=val_sampler
         )
 
-        self.optimizer = optim.SGD(self.model.parameters(), lr=0.0002, momentum=0.98, nesterov=True)
+        self.optimizer = optim.SGD(self.model.parameters(), lr=0.00002, momentum=0.98, nesterov=True)
 
         self.train_writer.write(["iteration", "loss"])
         self.val_writer.write(["iteration", "accuracy"])
@@ -209,7 +209,7 @@ class HAR_Testing_Experiment(ExperimentBase):
         self.iteration = self.iteration + 1
 
         print("iteration {} train-loss {}".format(self.iteration, losses.item()))
-        
+
     def evaluate(self):
         correct = 0
         total = 0
@@ -217,9 +217,15 @@ class HAR_Testing_Experiment(ExperimentBase):
             frames = validation_objects["frames"].to(self.device)
             actions = validation_objects["action_1h"].to(self.device)
 
+
             ground_class = torch.argmax(actions[0])
 
             predicted_poses, _, _, prediction = self.model(frames)
+
+            if torch.cuda.is_available():
+                frames = frames.cpu()
+                actions = actions.cpu()
+                predicted_poses = predicted_poses.cpu()
 
             if batch_idx % 1 == 0:
                 self.create_dynamic_folders(heatmaps=False)
@@ -227,7 +233,7 @@ class HAR_Testing_Experiment(ExperimentBase):
                     for frame in range(len(frames[0])):
                         path = 'experiments/{}/val_images/{}/{}_{}_{}.png'.format(self.experiment_name, self.iteration, batch_idx, i, frame)
                         plt.imshow(frames[i, frame].reshape(255, 255, 3))
-                        
+
                         pred_x = predicted_poses[i, frame, :, 0]
                         pred_y = predicted_poses[i, frame, :, 1]
 
@@ -240,9 +246,9 @@ class HAR_Testing_Experiment(ExperimentBase):
             total = total + 1
             if pred_class == ground_class:
                 correct = correct + 1
-        
+
         accuracy = correct / float(total)
-        
+
         self.val_writer.write([self.iteration, accuracy])
 
         return accuracy
@@ -260,7 +266,7 @@ class MPIIExperiment(ExperimentBase):
         if self.conf["num_blocks"] == 4:
             self.model = Mpii_4(num_context=self.conf["nr_context"]).to(self.device)
         if self.conf["num_blocks"] == 8:
-            self.model = Mpii_8(num_context=self.conf["nr_context"]).to(self.device)        
+            self.model = Mpii_8(num_context=self.conf["nr_context"]).to(self.device)
 
         train_indices, val_indices = self.split_indices(len(self.ds))
 
