@@ -101,6 +101,84 @@ def visualize_heatmaps(heatmaps, image, output_image_path, save=True):
 
     plt.close()
 
+joint_mapping = [
+    [0, 1],
+    [1, 2],
+    [2, 6],
+    [3, 6],
+    [4, 3],
+    [5, 4],
+    [6, 7],
+    [7, 8],
+    [8, 9],
+    [10, 11],
+    [11, 12],
+    [12, 7],
+    [13, 7],
+    [14, 13],
+    [15, 14]
+]
+
+joint_colors = [
+    "#1176a5",
+    "#fdfe5f",
+    "#abb633",
+    "#17af4f",
+    "#8d403c",
+    "#b7c0d3",
+    "#c0922c",
+    "#486054",
+    "#d4696f",
+    "#2fc64f",
+    "#d53606",
+    "#52043f",
+    "#14a796",
+    "#831b4c",
+    "#0d0072",
+    "#f65fb1"
+]
+
+def show_prediction_jhmbd(image, ground_truth, prediction, matrix, path=None):
+
+    plt.xticks([])
+    plt.yticks([])
+
+    ground_truth_after = ground_truth[:, 0:2] * 255.0
+    prediction_after = prediction * 255.0
+
+    assert image.shape == (255, 255, 3)
+    plt.imshow(image)
+
+    gt_color = "r"
+    pred_color = "b"
+
+    for i, (src, dst) in enumerate(joint_mapping):
+        if not ground_truth[src, 2]:
+            continue
+
+        if ground_truth[dst, 2]:
+            #print("{} => {}".format(mpii_joint_order[src], mpii_joint_order[dst]))
+            plt.plot([ground_truth_after[src][0], ground_truth_after[dst][0]], [ground_truth_after[src][1], ground_truth_after[dst][1]], lw=1, c=gt_color)
+            plt.plot([prediction_after[src][0], prediction_after[dst][0]], [prediction_after[src][1], prediction_after[dst][1]], lw=1, c=pred_color)
+            plt.scatter(ground_truth_after[src][0], ground_truth_after[src][1], label="{}".format(mpii_joint_order[src]), c=joint_colors[src])
+            plt.scatter(prediction_after[src][0], prediction_after[src][1], c=joint_colors[src])
+
+            plt.scatter(ground_truth_after[dst][0], ground_truth_after[dst][1], label="{}".format(mpii_joint_order[dst]), c=joint_colors[dst])
+            plt.scatter(prediction_after[dst][0], prediction_after[dst][1], c=joint_colors[dst])
+        else:
+            #print("{}".format(mpii_joint_order[src]))
+            plt.scatter(ground_truth_after[src][0], ground_truth_after[src][1], label="{}".format(mpii_joint_order[src]), c=joint_colors[src])
+            plt.scatter(prediction_after[src][0], prediction_after[src][1], c=joint_colors[src])
+
+    if path is not None:
+        if os.path.isfile(path):
+            os.remove(path)
+        plt.savefig(path)
+    else:
+        plt.show()
+
+    plt.close()
+
 def show_predictions_ontop(ground_truth, image, poses, path, matrix, bbox=None, save=True):
 
     plt.xticks([])
@@ -118,43 +196,8 @@ def show_predictions_ontop(ground_truth, image, poses, path, matrix, bbox=None, 
     pred_color = "b"
     bbox_color = "#ff00ff"
 
-    mapping = [
-        [0, 1],
-        [1, 2],
-        [2, 6],
-        [3, 6],
-        [4, 3],
-        [5, 4],
-        [6, 7],
-        [7, 8],
-        [8, 9],
-        [10, 11],
-        [11, 12],
-        [12, 7],
-        [13, 7],
-        [14, 13],
-        [15, 14]
-    ]
 
-    colors = [
-        "#1176a5",
-        "#fdfe5f",
-        "#abb633",
-        "#17af4f",
-        "#8d403c",
-        "#b7c0d3",
-        "#c0922c",
-        "#486054",
-        "#d4696f",
-        "#2fc64f",
-        "#d53606",
-        "#52043f",
-        "#14a796",
-        "#831b4c",
-        "#0d0072",
-        "#f65fb1"
-    ]
-    for i, (src, dst) in enumerate(mapping):
+    for i, (src, dst) in enumerate(joint_mapping):
         if not ground_truth[src, 2]:
             continue
 
@@ -162,15 +205,15 @@ def show_predictions_ontop(ground_truth, image, poses, path, matrix, bbox=None, 
             #print("{} => {}".format(mpii_joint_order[src], mpii_joint_order[dst]))
             plt.plot([orig_gt_coordinates[src][0], orig_gt_coordinates[dst][0]], [orig_gt_coordinates[src][1], orig_gt_coordinates[dst][1]], lw=1, c=gt_color)
             plt.plot([orig_pred_coordinates[src][0], orig_pred_coordinates[dst][0]], [orig_pred_coordinates[src][1], orig_pred_coordinates[dst][1]], lw=1, c=pred_color)
-            plt.scatter(orig_gt_coordinates[src][0], orig_gt_coordinates[src][1], label="{}".format(mpii_joint_order[src]), c=colors[src])
-            plt.scatter(orig_pred_coordinates[src][0], orig_pred_coordinates[src][1], c=colors[src])
+            plt.scatter(orig_gt_coordinates[src][0], orig_gt_coordinates[src][1], label="{}".format(mpii_joint_order[src]), c=joint_colors[src])
+            plt.scatter(orig_pred_coordinates[src][0], orig_pred_coordinates[src][1], c=joint_colors[src])
 
-            plt.scatter(orig_gt_coordinates[dst][0], orig_gt_coordinates[dst][1], label="{}".format(mpii_joint_order[dst]), c=colors[dst])
-            plt.scatter(orig_pred_coordinates[dst][0], orig_pred_coordinates[dst][1], c=colors[dst])
+            plt.scatter(orig_gt_coordinates[dst][0], orig_gt_coordinates[dst][1], label="{}".format(mpii_joint_order[dst]), c=joint_colors[dst])
+            plt.scatter(orig_pred_coordinates[dst][0], orig_pred_coordinates[dst][1], c=joint_colors[dst])
         else:
             #print("{}".format(mpii_joint_order[src]))
-            plt.scatter(orig_gt_coordinates[src][0], orig_gt_coordinates[src][1], label="{}".format(mpii_joint_order[src]), c=colors[src])
-            plt.scatter(orig_pred_coordinates[src][0], orig_pred_coordinates[src][1], c=colors[src])
+            plt.scatter(orig_gt_coordinates[src][0], orig_gt_coordinates[src][1], label="{}".format(mpii_joint_order[src]), c=joint_colors[src])
+            plt.scatter(orig_pred_coordinates[src][0], orig_pred_coordinates[src][1], c=joint_colors[src])
 
     if bbox is not None:
         bbox_rect_original = Rectangle((bbox[0], bbox[1]), abs(bbox[0] - bbox[2]), abs(bbox[1] - bbox[3]), linewidth=1, facecolor='none', edgecolor=bbox_color)

@@ -15,6 +15,7 @@ for idx, entry in enumerate(ds):
         poses = entry["normalized_poses"]
         actions = entry["action_1h"]
         sequence_length = entry["sequence_length"]
+        matrices = entry["trans_matrices"]
 
         assert len(frames) == 40
         assert len(poses) == 40
@@ -33,6 +34,7 @@ for idx, entry in enumerate(ds):
         torch.save(frames, "/data/mjakobs/data/jhmdb_fragments/images/" + padded_image + ".frames.pt")
         torch.save(actions, "/data/mjakobs/data/jhmdb_fragments/annotations/" + padded_image + ".action_1h.pt")
         torch.save(poses, "/data/mjakobs/data/jhmdb_fragments/annotations/" + padded_image + ".poses.pt")
+        torch.save(matrices, "/data/mjakobs/data/jhmdb_fragments/annotations/" + padded_image + ".matrices.pt")
 
         indices = torch.zeros((num_frames_total - num_frames), 2)
 

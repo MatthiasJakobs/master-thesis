@@ -27,15 +27,18 @@ class JHMDBFragmentsDataset(data.Dataset):
         t_poses = torch.load(self.annotation_folder + padded_filename + ".poses.pt")
         t_action = torch.load(self.annotation_folder + padded_filename + ".action_1h.pt")
         t_frames = torch.load(self.images_folder + padded_filename + ".frames.pt")
+        t_matrices = torch.load(self.annotation_folder + padded_filename + ".matrices.pt")
 
         start = int(t_indices[0].item())
         end = int(t_indices[1].item())
 
         t_frames = t_frames[start:end]
         t_poses = t_poses[start:end]
+        t_matrices = t_matrices[start:end]
 
         return {
             "frames": t_frames,
             "poses": t_poses,
-            "action_1h": t_action
+            "action_1h": t_action,
+            "trans_matrices": t_matrices
         }

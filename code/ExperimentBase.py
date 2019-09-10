@@ -25,7 +25,7 @@ from deephar.utils import get_valid_joints
 from deephar.measures import elastic_net_loss_paper, categorical_cross_entropy
 from deephar.evaluation import *
 
-from visualization import show_predictions_ontop, visualize_heatmaps
+from visualization import show_predictions_ontop, visualize_heatmaps, show_prediction_jhmbd
 
 class CSVWriter:
     def __init__(self, experiment_name, file_name):
@@ -300,7 +300,7 @@ class Finetune_JHMDB(ExperimentBase):
         poses = poses.permute(1, 0, 2, 3)
 
         pred_pose = poses[:, :, :, 0:2]
-        ground_pose = train_poses[:, :, 0:2] / 255.0
+        ground_pose = train_poses[:, :, 0:2]
         ground_pose = ground_pose.unsqueeze(1)
         ground_pose = ground_pose.expand(-1, self.conf["num_blocks"], -1, -1)
 
@@ -329,48 +329,56 @@ class Finetune_JHMDB(ExperimentBase):
     def evaluate(self):
         val_accuracy_05 = []
         val_accuracy_02 = []
+
+        self.create_dynamic_folders()
+
         for batch_idx, val_data in enumerate(self.val_loader):
             val_images = val_data["frames"].to(self.device)
             val_images = val_images.contiguous().view(val_data["frames"].size()[0] * val_data["frames"].size()[1], 3, 255, 255)
 
             val_poses = val_data["poses"].to(self.device)
             val_poses = val_poses.contiguous().view(val_data["poses"].size()[0] * val_data["poses"].size()[1], 16, 3)
-
+            
+            trans_matrices = val_data["trans_matrices"].to(self.device)
+            trans_matrices = trans_matrices.contiguous().view(val_data["trans_matrices"].size()[0] * val_data["trans_matrices"].size()[1], 3, 3)
+            
             heatmaps, predictions = self.model(val_images)
             predictions = predictions[-1, :, :, :].squeeze(dim=0)
 
             if predictions.dim() == 2:
                 predictions = predictions.unsqueeze(0)
 
-            self.create_dynamic_folders()
 
             # save predictions
             image = val_images[0].reshape(255, 255, 3)
-            predictions = predictions[:, :, 0:2]
-            gt_poses = val_poses[:, :, 0:2]
+            gt_poses = val_poses
 
-
-            val_accuracy_05.append(eval_pcku_batch(predictions, gt_poses))
+            val_accuracy_05.append(eval_pcku_batch(predictions[:, :, 0:2], gt_poses[:, :, 0:2], trans_matrices))
 
             if batch_idx % 10 == 0:
-                prediction = predictions[0]
+                prediction = predictions[0, :, 0:2]
                 gt_pose = gt_poses[0]
+                matrix = trans_matrices[0]
 
                 if torch.cuda.is_available():
                     image = image.cpu()
                     prediction = prediction.cpu()
                     gt_pose = gt_pose.cpu()
 
-                plt.imshow(image)
-                pred_x = prediction[:, 0]
-                pred_y = prediction[:, 1]
-                gt_x = gt_pose[:, 0]
-                gt_y = gt_pose[:, 1]
-                plt.scatter(x=pred_x, y=pred_y, c="b")
-                plt.scatter(x=gt_x, y=gt_y, c="r")
                 path = 'experiments/{}/val_images/{}/{}.png'.format(self.experiment_name, self.iteration, batch_idx)
-                plt.savefig(path)
-                plt.close()
+
+                show_prediction_jhmbd(image, gt_pose, prediction, matrix, path=path)
+
+                # plt.imshow(image)
+                # pred_x = prediction[:, 0]
+                # pred_y = prediction[:, 1]
+                # gt_x = gt_pose[:, 0]
+                # gt_y = gt_pose[:, 1]
+                # plt.scatter(x=pred_x, y=pred_y, c="b")
+                # plt.scatter(x=gt_x, y=gt_y, c="r")
+                # path = 'experiments/{}/val_images/{}/{}.png'.format(self.experiment_name, self.iteration, batch_idx)
+                # plt.savefig(path)
+                # plt.close()
 
 
         if self.iteration % 500 == 0:

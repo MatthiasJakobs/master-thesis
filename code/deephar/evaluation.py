@@ -19,7 +19,6 @@ def pckh(y_true, y_pred, head_size, distance_threshold=0.5):
     return np.sum(matches) / np.sum(valid)
 
 def pck_upperbody(y_true, y_pred, distance_threshold=0.5):
-    y_pred = y_pred * 255.0
     upper_body_size_difference = y_true[8] - y_true[6] # distance between neck and belly, because there is no head size given by the dataset
     upper_body_size = torch.sqrt(torch.sum(torch.mul(upper_body_size_difference, upper_body_size_difference)))
 
@@ -42,11 +41,16 @@ def pck_upperbody(y_true, y_pred, distance_threshold=0.5):
 
     return torch.sum(matches) / torch.sum(valid)
 
-def eval_pcku_batch(predictions, poses):
+def eval_pcku_batch(predictions, poses, matrices):
     scores_05 = []
 
     for i, prediction in enumerate(predictions):
-        scores_05.append(pck_upperbody(poses[i], predictions[i], distance_threshold=0.5)) #TODO: gt_pose need be 16, 2
+
+        # transform coordinates back to original
+        pred_pose = torch.from_numpy(transform_pose(matrices[i], predictions[i], inverse=True))
+        ground_pose = torch.from_numpy(transform_pose(matrices[i], poses[i], inverse=True))
+
+        scores_05.append(pck_upperbody(ground_pose, pred_pose, distance_threshold=0.5))
         #pck_upperbody(poses, predictions, distance_threshold=0.2)
 
     return scores_05

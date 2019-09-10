@@ -46,18 +46,18 @@ class JHMDBDataset(data.Dataset):
             [0, 8],  # neck -> upper neck
             [1, 6], # belly -> pelvis
             [2, 9], # face -> head_top
-            [3, 13], # left shoulder
-            [4, 12], # right shoulder
-            [5, 3], # left hip
-            [6, 2], # right hip
-            [7, 14],  # left elbow
-            [8, 11],  # right elbow
-            [9, 4],  # left knee
-            [10, 1], # right knee
-            [11, 15], # left wrist
-            [12, 10],  # right wrist
-            [13, 5], # left ankle
-            [14, 0]  # right ankle
+            [3, 12], # left shoulder
+            [4, 13], # right shoulder
+            [5, 2], # left hip
+            [6, 3], # right hip
+            [7, 11],  # left elbow
+            [8, 14],  # right elbow
+            [9, 1],  # left knee
+            [10, 4], # right knee
+            [11, 10], # left wrist
+            [12, 15],  # right wrist
+            [13, 0], # left ankle
+            [14, 5]  # right ankle
         ])
 
         self.action_mapping = {
@@ -152,6 +152,8 @@ class JHMDBDataset(data.Dataset):
                 trans_matrix = flip_h(trans_matrix)
                 trans_matrix = translate(trans_matrix, image.shape[1] / 2, image.shape[0] / 2)
 
+            trans_matrix = scale(trans_matrix, 1.0 / self.final_size, 1.0 / self.final_size)
+
             transformed_pose = transform_pose(trans_matrix, pose)
 
             normalized_image = normalize_channels(image, power_factors=conf_exponents)
@@ -164,7 +166,7 @@ class JHMDBDataset(data.Dataset):
                 mpii_index = self.mpii_mapping[i][1]
                 jhmdb_index = self.mpii_mapping[i][0]
 
-                joint_in_frame =  (0 <= transformed_pose[jhmdb_index][0] <= self.final_size) and (0 <= transformed_pose[jhmdb_index][1] <= self.final_size)
+                joint_in_frame =  (0 <= transformed_pose[jhmdb_index][0] <= 1) and (0 <= transformed_pose[jhmdb_index][1] <= 1)
                 if joint_in_frame:
                     final_pose[mpii_index, 0:2] = transformed_pose[jhmdb_index]
                 else:
@@ -232,14 +234,21 @@ class JHMDBDataset(data.Dataset):
             blanks = np.zeros((40 - number_of_frames, 16, 3))
             normalized_poses = np.concatenate((normalized_poses, blanks))
 
+            # padding for matrices
+            assert trans_matrices.shape[1:] == (3, 3)
+            blanks = np.zeros((40 - number_of_frames, 3, 3))
+            trans_matrices = np.concatenate((trans_matrices, blanks))
+
         t_action_1h = torch.from_numpy(action_1h).float()
         t_normalized_frames = torch.from_numpy(normalized_images.reshape(-1, 3, self.final_size, self.final_size)).float()
         t_normalized_poses = torch.from_numpy(normalized_poses).float()
+        t_trans_matrices = torch.from_numpy(trans_matrices).float()
         t_sequence_length = torch.from_numpy(np.array([number_of_frames])).int()
 
         return {
             "action_1h": t_action_1h,
             "normalized_frames": t_normalized_frames,
             "normalized_poses": t_normalized_poses,
-            "sequence_length": t_sequence_length
+            "sequence_length": t_sequence_length,
+            "trans_matrices": t_trans_matrices
         }
