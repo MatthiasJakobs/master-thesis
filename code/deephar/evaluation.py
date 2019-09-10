@@ -46,7 +46,7 @@ def eval_pcku_batch(predictions, poses):
     scores_05 = []
 
     for i, prediction in enumerate(predictions):
-        scores_05.append(pck_upperbody(poses, predictions, distance_threshold=0.5))
+        scores_05.append(pck_upperbody(poses[i], predictions[i], distance_threshold=0.5)) #TODO: gt_pose need be 16, 2
         #pck_upperbody(poses, predictions, distance_threshold=0.2)
 
     return scores_05
