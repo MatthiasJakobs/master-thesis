@@ -23,7 +23,7 @@ from datasets.JHMDBFragmentsDataset import JHMDBFragmentsDataset
 from deephar.models import DeepHar, Mpii_1, Mpii_2, Mpii_4, Mpii_8, TimeDistributedPoseEstimation
 from deephar.utils import get_valid_joints
 from deephar.measures import elastic_net_loss_paper, categorical_cross_entropy
-from deephar.evaluation import eval_pckh_batch
+from deephar.evaluation import *
 
 from visualization import show_predictions_ontop, visualize_heatmaps
 
@@ -256,9 +256,10 @@ class HAR_Testing_Experiment(ExperimentBase):
 class Finetune_JHMDB(ExperimentBase):
     def preparation(self):
 
-        self.model = Mpii_4(num_context=0, standalone=True)
+        self.model = Mpii_4(num_context=0, standalone=True).to(self.device)
         self.model.load_state_dict(torch.load("/data/mjakobs/data/pretrained_weights_4", map_location=self.device))
-        
+        self.model.train()
+
         self.ds = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/")
 
         train_indices, val_indices = self.split_indices(len(self.ds))
@@ -281,7 +282,7 @@ class Finetune_JHMDB(ExperimentBase):
         self.optimizer = optim.RMSprop(self.model.parameters(), lr=self.conf["learning_rate"])
 
         self.train_writer.write(["iteration", "loss"])
-        self.val_writer.write(["iteration", "pckh_0.5", "pckh_0.2"])
+        self.val_writer.write(["iteration", "pckh_0.5"])
 
         self.create_experiment_folders()
 
@@ -335,7 +336,6 @@ class Finetune_JHMDB(ExperimentBase):
             val_poses = val_data["poses"].to(self.device)
             val_poses = val_poses.contiguous().view(val_data["poses"].size()[0] * val_data["poses"].size()[1], 16, 3)
 
-
             heatmaps, predictions = self.model(val_images)
             predictions = predictions[-1, :, :, :].squeeze(dim=0)
 
@@ -344,12 +344,22 @@ class Finetune_JHMDB(ExperimentBase):
 
             self.create_dynamic_folders()
 
+            # save predictions
+            image = val_images[0].reshape(255, 255, 3)
+            predictions = predictions[:, :, 0:2]
+            gt_poses = val_poses[:, :, 0:2]
+
+
+            val_accuracy_05.append(eval_pcku_batch(predictions, gt_poses))
+
             if batch_idx % 10 == 0:
-                # save predictions
-                image = val_images[0].reshape(255, 255, 3)
                 prediction = predictions[0]
-                gt_pose = val_poses[0]
-                gt_poses = gt_poses.contiguous().view(val_data["poses"].size()[0] * val_data["poses"].size()[1], 16, 3)
+                gt_pose = gt_poses[0]
+
+                if torch.cuda.is_available():
+                    image = image.cpu()
+                    prediction = prediction.cpu()
+                    gt_pose = gt_pose.cpu()
 
                 plt.imshow(image)
                 pred_x = prediction[:, 0]
@@ -358,20 +368,16 @@ class Finetune_JHMDB(ExperimentBase):
                 gt_y = gt_pose[:, 1]
                 plt.scatter(x=pred_x, y=pred_y, c="b")
                 plt.scatter(x=gt_x, y=gt_y, c="r")
-                path = 'experiments/{}/val_images/{}/{}png'.format(self.experiment_name, self.iteration, batch_idx)
-                self.create_dynamic_folders(heatmaps=False)
+                path = 'experiments/{}/val_images/{}/{}.png'.format(self.experiment_name, self.iteration, batch_idx)
                 plt.savefig(path)
                 plt.close()
 
-            scores_05, scores_02 = eval_pckh_batch(predictions, val_poses, val_data["head_size"], val_data["trans_matrix"])
-            val_accuracy_05.extend(scores_05)
-            val_accuracy_02.extend(scores_02)
 
+        if self.iteration % 500 == 0:
+            torch.save(self.model.state_dict(), "experiments/{}/weights/weights_{:08d}".format(self.experiment_name, self.iteration))
 
-        mean_05 = np.mean(np.array(val_accuracy_05))
-        mean_02 = np.mean(np.array(val_accuracy_02))
-
-        self.val_writer.write([self.iteration, mean_05, mean_02])
+        mean_05 = torch.mean(torch.FloatTensor(val_accuracy_05)).item()
+        self.val_writer.write([self.iteration, mean_05])
         return mean_05
 
 
