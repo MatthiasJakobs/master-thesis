@@ -34,10 +34,11 @@ def pck_upperbody(y_true, y_pred, distance_threshold=0.5):
 
     if torch.cuda.is_available():
         valid = torch.from_numpy(np.apply_along_axis(np.all, axis=1, arr=valid.cpu()).astype(float)).float().to("cuda")
+        matches = (distances <= distance_threshold).float().to("cuda") * valid
     else:
         valid = torch.from_numpy(np.apply_along_axis(np.all, axis=1, arr=valid).astype(float)).float()
+        matches = (distances <= distance_threshold).float() * valid
 
-    matches = (distances <= distance_threshold).float() * valid
 
     return torch.sum(matches) / torch.sum(valid)
 

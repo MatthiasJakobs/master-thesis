@@ -253,11 +253,18 @@ class HAR_Testing_Experiment(ExperimentBase):
 
         return accuracy
 
-class Finetune_JHMDB(ExperimentBase):
+class Pose_JHMDB(ExperimentBase):
+
+    def __init__(self, conf, use_pretrained=False):
+        super().__init__(conf)
+        self.use_pretrained = use_pretrained
+
     def preparation(self):
 
         self.model = Mpii_4(num_context=0, standalone=True).to(self.device)
-        self.model.load_state_dict(torch.load("/data/mjakobs/data/pretrained_weights_4", map_location=self.device))
+        if self.use_pretrained:
+            print("Using pretrained model")
+            self.model.load_state_dict(torch.load("/data/mjakobs/data/pretrained_weights_4", map_location=self.device))
         self.model.train()
 
         self.ds = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/")
@@ -338,10 +345,10 @@ class Finetune_JHMDB(ExperimentBase):
 
             val_poses = val_data["poses"].to(self.device)
             val_poses = val_poses.contiguous().view(val_data["poses"].size()[0] * val_data["poses"].size()[1], 16, 3)
-            
+
             trans_matrices = val_data["trans_matrices"].to(self.device)
             trans_matrices = trans_matrices.contiguous().view(val_data["trans_matrices"].size()[0] * val_data["trans_matrices"].size()[1], 3, 3)
-            
+
             heatmaps, predictions = self.model(val_images)
             predictions = predictions[-1, :, :, :].squeeze(dim=0)
 
@@ -381,8 +388,7 @@ class Finetune_JHMDB(ExperimentBase):
                 # plt.close()
 
 
-        if self.iteration % 500 == 0:
-            torch.save(self.model.state_dict(), "experiments/{}/weights/weights_{:08d}".format(self.experiment_name, self.iteration))
+        torch.save(self.model.state_dict(), "experiments/{}/weights/weights_{:08d}".format(self.experiment_name, self.iteration))
 
         mean_05 = torch.mean(torch.FloatTensor(val_accuracy_05)).item()
         self.val_writer.write([self.iteration, mean_05])
