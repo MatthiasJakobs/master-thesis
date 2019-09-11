@@ -14,7 +14,7 @@ conf["numpy_seed"] = 30004
 conf["use_saved_tensors"] = True
 conf["use_random_parameters"] = True
 conf["nr_context"] = 0
-conf["project_dir"] = "initial_experiment"
+conf["project_dir"] = "initial_experiment_augmented"
 conf["evaluate_rate"] = 1000
 
 ## With Context
@@ -45,7 +45,7 @@ conf["nr_context"] = 0
 conf["num_blocks"] = 2
 conf["name"] = "without_context_2"
 conf["batch_size"] = 45
-conf["total_iterations"] = 100000
+conf["total_iterations"] = 120000
 conf["val_batch_size"] = conf["batch_size"]
 experiment = MPIIExperiment(conf)
 experiment.run_experiment()
@@ -54,7 +54,7 @@ experiment.run_experiment()
 conf["num_blocks"] = 4
 conf["name"] = "without_context_4"
 conf["batch_size"] = 30
-conf["total_iterations"] = 130000
+conf["total_iterations"] = 150000
 conf["val_batch_size"] = conf["batch_size"]
 experiment = MPIIExperiment(conf)
 experiment.run_experiment()
@@ -63,7 +63,7 @@ experiment.run_experiment()
 conf["num_blocks"] = 8
 conf["name"] = "without_context_8"
 conf["batch_size"] = 20
-conf["total_iterations"] = 185000
+conf["total_iterations"] = 190000
 conf["val_batch_size"] = conf["batch_size"]
 
 experiment = MPIIExperiment(conf)
