@@ -140,7 +140,7 @@ class ExperimentBase:
 
         self.preparation()
 
-        for epoch in range(self.conf["nr_epochs"]):
+        while True:
 
             for train_objects in self.train_loader:
 
@@ -152,6 +152,10 @@ class ExperimentBase:
                         print("-----------------------------------")
                         print("iteration {} val-accuracy {}".format(self.iteration, val_accuracy))
                         print("-----------------------------------")
+
+                if self.iteration >= self.conf["total_iterations"]:
+                    print("done")
+                    return
 
 
 class HAR_Testing_Experiment(ExperimentBase):
@@ -399,7 +403,7 @@ class Pose_JHMDB(ExperimentBase):
 class MPIIExperiment(ExperimentBase):
 
     def preparation(self):
-        self.ds = MPIIDataset("/data/mjakobs/data/mpii/", use_random_parameters=False, use_saved_tensors=self.conf["use_saved_tensors"])
+        self.ds = MPIIDataset("/data/mjakobs/data/mpii/", use_random_parameters=self.conf["use_random_parameters"], use_saved_tensors=self.conf["use_saved_tensors"])
 
         if self.conf["num_blocks"] == 1:
             self.model = Mpii_1(num_context=self.conf["nr_context"]).to(self.device)
