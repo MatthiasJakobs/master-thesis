@@ -147,7 +147,7 @@ def show_prediction_jhmbd(image, ground_truth, prediction, matrix, path=None):
     prediction_after = prediction * 255.0
 
     assert image.shape == (255, 255, 3)
-    plt.imshow(image)
+    plt.imshow((image + 1) / 2.0)
 
     gt_color = "r"
     pred_color = "b"

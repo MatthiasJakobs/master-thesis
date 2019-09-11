@@ -6,6 +6,7 @@ import random
 import os
 import re
 import glob
+import csv
 
 import scipy.io as sio
 import numpy as np
@@ -19,9 +20,32 @@ from deephar.utils import transform_2d_point, translate, scale, flip_h, superfla
 
 class JHMDBDataset(data.Dataset):
 
-    def __init__(self, root_dir, transform=None, use_random_parameters=False, use_saved_tensors=False):
+    def __init__(self, root_dir, transform=None, use_random_parameters=False, use_saved_tensors=False, split=1, train=True):
         self.root_dir = root_dir
-        self.items = sorted(glob.glob(self.root_dir + "*/*"))
+        self.train = train
+        self.split = split
+        
+        split_file_paths = self.root_dir + "splits/*_test_split" + str(split) + ".txt"
+        split_files = glob.glob(split_file_paths)
+        
+        clips = []
+        all_images = []
+        key = 1 if train else 2
+
+        for train_test_file in split_files:
+            with open(train_test_file) as csv_file:
+                reader = csv.reader(csv_file, delimiter=" ")
+                for row in reader:
+                    if int(row[1]) == key:
+                        clips.append(row[0][:-4])
+
+        # TODO: Save in JHMDBFragments where I save where fragments start and end: is it train (0) or test(1)
+
+        for clip_name in clips:
+            frames = glob.glob(self.root_dir + "*/" + clip_name)
+            all_images.extend(frames)
+
+        self.items = sorted(all_images)
 
         self.final_size = 255
 

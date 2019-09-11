@@ -4,7 +4,7 @@ import torch.utils.data as data
 import glob
 
 class JHMDBFragmentsDataset(data.Dataset):
-    def __init__(self, root_dir, transform=None):
+    def __init__(self, root_dir, transform=None, split=1, train=True):
         self.root_dir = root_dir
         self.padding_amount = 8
 
