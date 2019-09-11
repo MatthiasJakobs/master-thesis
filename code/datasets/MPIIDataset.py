@@ -40,8 +40,15 @@ class MPIIDataset(data.Dataset):
         self.final_size=256
 
         self.use_saved_tensors = use_saved_tensors
-        if not os.path.exists(root_dir + "tensors"):
-            os.makedirs(root_dir + "tensors")
+        self.use_random_parameters = use_random_parameters
+
+        if self.use_random_parameters:
+            self.prefix = "rand_"
+        else:
+            self.prefix = ""
+
+        if not os.path.exists(root_dir + self.prefix + "tensors"):
+            os.makedirs(root_dir + self.prefix + "tensors")
 
         if use_random_parameters:
             self.angles=np.array(range(-40, 40+1, 5))
@@ -133,7 +140,7 @@ class MPIIDataset(data.Dataset):
         output = {}
 
         if self.use_saved_tensors:
-            name_path = self.root_dir + "tensors/{}".format(label["image_name"])
+            name_path = self.root_dir + "{}tensors/{}".format(self.prefix, label["image_name"])
             t_filepath = torch.load(name_path + ".image_path.pt")
             t_normalized_image = torch.load(name_path + ".normalized_image.pt")
             t_normalized_pose = torch.load(name_path + ".normalized_pose.pt")
@@ -265,7 +272,7 @@ class MPIIDataset(data.Dataset):
         output["original_size"] = t_original_size
 
         if not self.use_saved_tensors:
-            name_path = self.root_dir + "tensors/{}".format(label["image_name"])
+            name_path = self.root_dir + "{}tensors/{}".format(self.prefix, label["image_name"])
             if not os.path.exists(name_path + ".image_path.pt"):
                 torch.save(t_filepath, name_path + ".image_path.pt")
             if not os.path.exists(name_path + ".normalized_image.pt"):
