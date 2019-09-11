@@ -9,16 +9,16 @@ import skimage.io as io
 import os
 import glob
 
-for i in ["images", "annotations", "indices/train/1", "indices/train/2", "indices/train/3", "indices/test/1", "indices/test/2", "indices/test/3"]:
-        folder_path = "/data/mjakobs/data/jhmdb_fragments/{}".format(i)
-        if os.path.exists(folder_path):
-                shutil.rmtree(folder_path)
-                os.makedirs(folder_path)
-        else:
-                os.makedirs(folder_path)
+# for i in ["images", "annotations", "indices/train/1", "indices/train/2", "indices/train/3", "indices/test/1", "indices/test/2", "indices/test/3"]:
+#         folder_path = "/data/mjakobs/data/jhmdb_fragments/{}".format(i)
+#         if os.path.exists(folder_path):
+#                 shutil.rmtree(folder_path)
+#                 os.makedirs(folder_path)
+#         else:
+#                 os.makedirs(folder_path)
 
 
-train = True
+train = False
 split = 1
 
 ds = JHMDBDataset("/data/mjakobs/data/jhmdb/", use_random_parameters=False, use_saved_tensors=True, train=train, split=split)
@@ -56,14 +56,17 @@ for idx, entry in enumerate(ds):
         mini_batches = int(num_frames_total / num_frames) + 1
         padded_image = str(idx).zfill(8)
 
-        if not os.path.exists("/data/mjakobs/data/jhmdb_fragments/images/" + padded_image + ".frames.pt"):
-                torch.save(frames, "/data/mjakobs/data/jhmdb_fragments/images/" + padded_image + ".frames.pt")
-        if not os.path.exists("/data/mjakobs/data/jhmdb_fragments/annotations/" + padded_image + ".action_1h.pt"):
-                torch.save(actions, "/data/mjakobs/data/jhmdb_fragments/annotations/" + padded_image + ".action_1h.pt")
-        if not os.path.exists("/data/mjakobs/data/jhmdb_fragments/annotations/" + padded_image + ".poses.pt"):
-                torch.save(poses, "/data/mjakobs/data/jhmdb_fragments/annotations/" + padded_image + ".poses.pt")
-        if not os.path.exists("/data/mjakobs/data/jhmdb_fragments/annotations/" + padded_image + ".matrices.pt"):
-                torch.save(matrices, "/data/mjakobs/data/jhmdb_fragments/annotations/" + padded_image + ".matrices.pt")
+        original_image = ds.indices[idx]
+        padded_original_image = str(original_image).zfill(8)
+
+        if not os.path.exists("/data/mjakobs/data/jhmdb_fragments/images/" + padded_original_image + ".frames.pt"):
+                torch.save(frames, "/data/mjakobs/data/jhmdb_fragments/images/" + padded_original_image + ".frames.pt")
+        if not os.path.exists("/data/mjakobs/data/jhmdb_fragments/annotations/" + padded_original_image + ".action_1h.pt"):
+                torch.save(actions, "/data/mjakobs/data/jhmdb_fragments/annotations/" + padded_original_image + ".action_1h.pt")
+        if not os.path.exists("/data/mjakobs/data/jhmdb_fragments/annotations/" + padded_original_image + ".poses.pt"):
+                torch.save(poses, "/data/mjakobs/data/jhmdb_fragments/annotations/" + padded_original_image + ".poses.pt")
+        if not os.path.exists("/data/mjakobs/data/jhmdb_fragments/annotations/" + padded_original_image + ".matrices.pt"):
+                torch.save(matrices, "/data/mjakobs/data/jhmdb_fragments/annotations/" + padded_original_image + ".matrices.pt")
 
         indices = torch.zeros((num_frames_total - num_frames), 2)
 
@@ -77,9 +80,9 @@ for idx, entry in enumerate(ds):
                 indices = torch.zeros(3)
                 indices[0] = start
                 indices[1] = end
-                indices[2] = idx
+                indices[2] = original_image
 
                 torch.save(indices, "/data/mjakobs/data/jhmdb_fragments/indices/{}/{}/{}.indices.pt".format(train_test_folder, str(split), padded))
                 assert indices.shape == (3,)
 
-        print("{} - {}: {} / {}".format(train_test_folder, split, idx, length))
+        print("{} - {}: {} / {}".format(train_test_folder, split, idx+1, length))

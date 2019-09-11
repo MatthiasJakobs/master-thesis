@@ -8,19 +8,27 @@ class JHMDBFragmentsDataset(data.Dataset):
         self.root_dir = root_dir
         self.padding_amount = 8
 
+        self.split = split
+        self.train = train
+
         self.images_folder = self.root_dir + "images/"
         self.annotation_folder = self.root_dir + "annotations/"
         self.indices_folder = self.root_dir + "indices/"
 
-        self.number_of_fragments = len(glob.glob(self.root_dir + "indices/*"))
+        if self.train:
+            self.train_test_folder = "train/"
+        else:
+            self.train_test_folder = "test/"
+
+        self.number_of_fragments = len(glob.glob("{}indices/{}{}/*".format(self.root_dir, self.train_test_folder, str(self.split))))
 
     def __len__(self):
         return self.number_of_fragments
 
     def __getitem__(self, idx):
         padded_indice = str(idx).zfill(self.padding_amount)
-
-        t_indices = torch.load(self.indices_folder + padded_indice + ".indices.pt")
+        
+        t_indices = torch.load(self.indices_folder + self.train_test_folder + str(self.split) + "/" + padded_indice + ".indices.pt")
 
         padded_filename = str(int(t_indices[-1].item())).zfill(self.padding_amount)
 

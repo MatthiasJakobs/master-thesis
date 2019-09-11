@@ -27,25 +27,34 @@ class JHMDBDataset(data.Dataset):
         
         split_file_paths = self.root_dir + "splits/*_test_split" + str(split) + ".txt"
         split_files = glob.glob(split_file_paths)
+
+        all_images = sorted(glob.glob(self.root_dir + "*/*"))
         
         clips = []
-        all_images = []
+        all_frames = []
         key = 1 if train else 2
+
+        self.indices = []
 
         for train_test_file in split_files:
             with open(train_test_file) as csv_file:
                 reader = csv.reader(csv_file, delimiter=" ")
                 for row in reader:
                     if int(row[1]) == key:
-                        clips.append(row[0][:-4])
+                        clip_name = row[0][:-4]
+                        for idx, name in enumerate(all_images):
+                            if name.split("/")[-1] == clip_name:
+                                self.indices.append(idx)
+                        clips.append(clip_name)
 
-        # TODO: Save in JHMDBFragments where I save where fragments start and end: is it train (0) or test(1)
+        self.indices = sorted(self.indices)
 
         for clip_name in clips:
             frames = glob.glob(self.root_dir + "*/" + clip_name)
-            all_images.extend(frames)
+            all_frames.extend(frames)
 
-        self.items = sorted(all_images)
+        self.items = sorted(all_frames)
+        assert len(self.items) == len(self.indices)
 
         self.final_size = 255
 
