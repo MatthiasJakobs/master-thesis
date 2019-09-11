@@ -503,6 +503,8 @@ class MPIIExperiment(ExperimentBase):
 
         mean_05 = np.mean(np.array(val_accuracy_05))
         mean_02 = np.mean(np.array(val_accuracy_02))
+        
+        torch.save(self.model.state_dict(), "experiments/{}/weights/weights_{:08d}".format(self.experiment_name, self.iteration))
 
         self.val_writer.write([self.iteration, mean_05, mean_02])
         return mean_05
