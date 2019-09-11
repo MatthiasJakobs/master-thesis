@@ -157,7 +157,7 @@ class ExperimentBase:
 class HAR_Testing_Experiment(ExperimentBase):
     def preparation(self):
 
-        self.model = DeepHar(num_actions=21, use_gt=True, model_path="/data/mjakobs/data/pretrained_weights_4").to(self.device)
+        self.model = DeepHar(num_actions=21, use_gt=True, model_path="/data/mjakobs/data/pretrained_jhmdb").to(self.device)
         self.ds = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/")
 
         train_indices, val_indices = self.split_indices(len(self.ds))
@@ -177,7 +177,7 @@ class HAR_Testing_Experiment(ExperimentBase):
             sampler=val_sampler
         )
 
-        self.optimizer = optim.SGD(self.model.parameters(), lr=0.00002, momentum=0.98, nesterov=True)
+        self.optimizer = optim.SGD(self.model.parameters(), lr=self.conf["learning_rate"], momentum=0.98, nesterov=True)
 
         self.train_writer.write(["iteration", "loss"])
         self.val_writer.write(["iteration", "accuracy"])

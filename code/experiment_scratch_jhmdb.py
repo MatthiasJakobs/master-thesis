@@ -12,7 +12,7 @@ conf["name"] = "scratch_jhmdb"
 conf["num_blocks"] = 4
 conf["nr_context"] = 0
 conf["project_dir"] = ""
-conf["evaluate_rate"] = 1000
+conf["evaluate_rate"] = 1
 
 ft = Pose_JHMDB(conf, use_pretrained=False)
 ft.run_experiment()
