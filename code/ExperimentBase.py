@@ -205,7 +205,7 @@ class HAR_Testing_Experiment(ExperimentBase):
 
         losses.backward()
 
-        self.train_writer.write([self.iteration, losses])
+        self.train_writer.write([self.iteration, losses.item()])
 
         self.optimizer.step()
         self.optimizer.zero_grad()
