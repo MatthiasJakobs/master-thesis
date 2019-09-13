@@ -18,6 +18,30 @@ from skimage.transform import resize
 from deephar.image_processing import center_crop, rotate_and_crop, normalize_channels
 from deephar.utils import transform_2d_point, translate, scale, flip_h, superflatten, transform_pose, get_valid_joints
 
+actions = [
+    "brush_hair",
+    "catch",
+    "clap",
+    "climb_stairs",
+    "golf",
+    "jump",
+    "kick_ball",
+    "pick",
+    "pour",
+    "pullup",
+    "push",
+    "run",
+    "shoot_ball",
+    "shoot_bow",
+    "shoot_gun",
+    "sit",
+    "stand",
+    "swing_baseball",
+    "throw",
+    "walk",
+    "wave"
+]
+
 class JHMDBDataset(data.Dataset):
 
     def __init__(self, root_dir, transform=None, use_random_parameters=False, use_saved_tensors=False, split=1, train=True):

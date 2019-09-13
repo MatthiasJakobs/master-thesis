@@ -20,6 +20,7 @@ from skimage import io
 
 from datasets.MPIIDataset import *
 from datasets.JHMDBFragmentsDataset import JHMDBFragmentsDataset
+from datasets.JHMDBDataset import actions as jhmdb_actions
 from deephar.models import DeepHar, Mpii_1, Mpii_2, Mpii_4, Mpii_8, TimeDistributedPoseEstimation
 from deephar.utils import get_valid_joints
 from deephar.measures import elastic_net_loss_paper, categorical_cross_entropy
@@ -221,8 +222,7 @@ class HAR_Testing_Experiment(ExperimentBase):
             frames = validation_objects["frames"].to(self.device)
             actions = validation_objects["action_1h"].to(self.device)
 
-
-            ground_class = torch.argmax(actions[0])
+            ground_class = torch.argmax(actions, 1)
 
             predicted_poses, _, _, prediction = self.model(frames)
 
@@ -231,7 +231,7 @@ class HAR_Testing_Experiment(ExperimentBase):
                 actions = actions.cpu()
                 predicted_poses = predicted_poses.cpu()
 
-            if batch_idx % 1 == 0:
+            if batch_idx % 10 == 0:
                 self.create_dynamic_folders(heatmaps=False)
                 for i in range(len(frames)):
                     for frame in range(len(frames[0])):
@@ -245,11 +245,10 @@ class HAR_Testing_Experiment(ExperimentBase):
                         plt.savefig(path)
                         plt.close()
 
-            pred_class = torch.argmax(prediction)
+            pred_class = torch.argmax(prediction.squeeze(1), 1)
 
-            total = total + 1
-            if pred_class == ground_class:
-                correct = correct + 1
+            total = total + len(pred_class)
+            correct = correct + torch.sum(pred_class == ground_class).item()
 
         accuracy = correct / float(total)
 
@@ -338,7 +337,6 @@ class Pose_JHMDB(ExperimentBase):
         print("iteration {} loss {}".format(self.iteration, loss.item()))
 
     def evaluate(self):
-        val_accuracy_05 = []
         val_accuracy_02 = []
 
         self.create_dynamic_folders()
@@ -364,7 +362,7 @@ class Pose_JHMDB(ExperimentBase):
             image = val_images[0].reshape(255, 255, 3)
             gt_poses = val_poses
 
-            val_accuracy_05.append(eval_pcku_batch(predictions[:, :, 0:2], gt_poses[:, :, 0:2], trans_matrices))
+            val_accuracy_02.append(eval_pcku_batch(predictions[:, :, 0:2], gt_poses[:, :, 0:2], trans_matrices))
 
             if batch_idx % 10 == 0:
                 prediction = predictions[0, :, 0:2]
@@ -394,9 +392,9 @@ class Pose_JHMDB(ExperimentBase):
 
         torch.save(self.model.state_dict(), "experiments/{}/weights/weights_{:08d}".format(self.experiment_name, self.iteration))
 
-        mean_05 = torch.mean(torch.FloatTensor(val_accuracy_05)).item()
-        self.val_writer.write([self.iteration, mean_05])
-        return mean_05
+        mean_02 = torch.mean(torch.FloatTensor(val_accuracy_02)).item()
+        self.val_writer.write([self.iteration, mean_02])
+        return mean_02
 
 
 

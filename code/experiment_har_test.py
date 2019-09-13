@@ -14,7 +14,8 @@ conf["name"] = "har_test"
 conf["use_saved_tensors"] = True
 conf["nr_context"] = 0
 conf["project_dir"] = ""
-conf["evaluate_rate"] = 10000
+conf["total_iterations"] = 140000
+conf["evaluate_rate"] = 5000
 
 mpii = HAR_Testing_Experiment(conf)
 mpii.run_experiment()

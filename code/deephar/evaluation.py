@@ -43,7 +43,7 @@ def pck_upperbody(y_true, y_pred, distance_threshold=0.5):
     return torch.sum(matches) / torch.sum(valid)
 
 def eval_pcku_batch(predictions, poses, matrices):
-    scores_05 = []
+    scores_02 = []
 
     for i, prediction in enumerate(predictions):
 
@@ -51,10 +51,10 @@ def eval_pcku_batch(predictions, poses, matrices):
         pred_pose = torch.from_numpy(transform_pose(matrices[i], predictions[i], inverse=True))
         ground_pose = torch.from_numpy(transform_pose(matrices[i], poses[i], inverse=True))
 
-        scores_05.append(pck_upperbody(ground_pose, pred_pose, distance_threshold=0.5))
+        scores_02.append(pck_upperbody(ground_pose, pred_pose, distance_threshold=0.2))
         #pck_upperbody(poses, predictions, distance_threshold=0.2)
 
-    return scores_05
+    return scores_02
 
 def eval_pckh_batch(predictions, poses, headsizes, matrices):
     scores_05 = []
