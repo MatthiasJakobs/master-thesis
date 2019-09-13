@@ -403,7 +403,8 @@ class Pose_JHMDB(ExperimentBase):
 class MPIIExperiment(ExperimentBase):
 
     def preparation(self):
-        self.ds = MPIIDataset("/data/mjakobs/data/mpii/", use_random_parameters=self.conf["use_random_parameters"], use_saved_tensors=self.conf["use_saved_tensors"])
+        self.ds_train = MPIIDataset("/data/mjakobs/data/mpii/", use_random_parameters=self.conf["use_random_parameters"], use_saved_tensors=self.conf["use_saved_tensors"])
+        self.ds_val = MPIIDataset("/data/mjakobs/data/mpii/", use_random_parameters=False, use_saved_tensors=self.conf["use_saved_tensors"])
 
         if self.conf["num_blocks"] == 1:
             self.model = Mpii_1(num_context=self.conf["nr_context"]).to(self.device)
@@ -414,19 +415,19 @@ class MPIIExperiment(ExperimentBase):
         if self.conf["num_blocks"] == 8:
             self.model = Mpii_8(num_context=self.conf["nr_context"]).to(self.device)
 
-        train_indices, val_indices = self.split_indices(len(self.ds))
+        train_indices, val_indices = self.split_indices(len(self.ds_train))
 
         train_sampler = SubsetRandomSampler(train_indices)
         val_sampler = SubsetRandomSampler(val_indices)
 
         self.train_loader = data.DataLoader(
-            self.ds,
+            self.ds_train,
             batch_size=self.conf["batch_size"],
             sampler=train_sampler
         )
 
         self.val_loader = data.DataLoader(
-            self.ds,
+            self.ds_val,
             batch_size=self.conf["batch_size"],
             sampler=val_sampler
         )
@@ -503,7 +504,7 @@ class MPIIExperiment(ExperimentBase):
 
         mean_05 = np.mean(np.array(val_accuracy_05))
         mean_02 = np.mean(np.array(val_accuracy_02))
-        
+
         torch.save(self.model.state_dict(), "experiments/{}/weights/weights_{:08d}".format(self.experiment_name, self.iteration))
 
         self.val_writer.write([self.iteration, mean_05, mean_02])
