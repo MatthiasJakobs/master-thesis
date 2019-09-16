@@ -254,6 +254,8 @@ class HAR_Testing_Experiment(ExperimentBase):
 
         self.val_writer.write([self.iteration, accuracy])
 
+        torch.save(self.model.state_dict(), "experiments/{}/weights/weights_{:08d}".format(self.experiment_name, self.iteration))
+
         return accuracy
 
 class Pose_JHMDB(ExperimentBase):
