@@ -480,6 +480,8 @@ class MPIIExperiment(ExperimentBase):
     def evaluate(self):
         val_accuracy_05 = []
         val_accuracy_02 = []
+        self.create_dynamic_folders()
+
         for batch_idx, val_data in enumerate(self.val_loader):
             val_images = val_data["normalized_image"].to(self.device)
 
@@ -492,8 +494,6 @@ class MPIIExperiment(ExperimentBase):
             image_number = "{}".format(int(val_data["image_path"][0].item()))
             image_name = "{}.jpg".format(image_number.zfill(9))
             image = io.imread("/data/mjakobs/data/mpii/images/{}".format(image_name))
-
-            self.create_dynamic_folders()
 
             if batch_idx % 10 == 0:
                 #visualize_heatmaps(heatmaps[0], val_images[0], 'experiments/{}/heatmaps/{}/{}_hm.png'.format(experiment_name, iteration, batch_idx), save=True)
