@@ -4,19 +4,23 @@ import torch.utils.data as data
 import glob
 
 class JHMDBFragmentsDataset(data.Dataset):
-    def __init__(self, root_dir, transform=None, split=1, train=True):
+    def __init__(self, root_dir, transform=None, split=1, train=True, val=False):
         self.root_dir = root_dir
         self.padding_amount = 8
 
         self.split = split
         self.train = train
+        self.val = val
 
         self.images_folder = self.root_dir + "images/"
         self.annotation_folder = self.root_dir + "annotations/"
         self.indices_folder = self.root_dir + "indices/"
 
         if self.train:
-            self.train_test_folder = "train/"
+            if self.val:
+                self.train_test_folder = "val/"
+            else:
+                self.train_test_folder = "train/"
         else:
             self.train_test_folder = "test/"
 

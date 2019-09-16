@@ -137,6 +137,10 @@ class ExperimentBase:
         Warning("this is an abstract class. Evaluate needs to be implemented")
         return 0
 
+    def test(self, pretrained_model=None):
+        Warning("this is an abstract class. Test needs to be implemented")
+        return 0
+
     def run_experiment(self):
 
         self.preparation()
@@ -163,21 +167,20 @@ class HAR_Testing_Experiment(ExperimentBase):
     def preparation(self):
 
         self.model = DeepHar(num_actions=21, use_gt=True, model_path="/data/mjakobs/data/pretrained_jhmdb").to(self.device)
-        self.ds = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/")
+        self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False)
+        self.ds_val = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=True)
 
-        train_indices, val_indices = self.split_indices(len(self.ds))
-
-        train_sampler = SubsetRandomSampler(train_indices)
-        val_sampler = SubsetRandomSampler(val_indices)
+        train_sampler = SubsetRandomSampler(list(range(len(self.ds_train))))
+        val_sampler = SubsetRandomSampler(list(range(len(self.ds_val))))
 
         self.train_loader = data.DataLoader(
-            self.ds,
+            self.ds_train,
             batch_size=self.conf["batch_size"],
             sampler=train_sampler
         )
 
         self.val_loader = data.DataLoader(
-            self.ds,
+            self.ds_val,
             batch_size=self.conf["batch_size"],
             sampler=val_sampler
         )
@@ -272,21 +275,20 @@ class Pose_JHMDB(ExperimentBase):
             self.model.load_state_dict(torch.load("/data/mjakobs/data/pretrained_weights_4", map_location=self.device))
         self.model.train()
 
-        self.ds = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/")
+        self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False)
+        self.ds_val = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=True)
 
-        train_indices, val_indices = self.split_indices(len(self.ds))
-
-        train_sampler = SubsetRandomSampler(train_indices)
-        val_sampler = SubsetRandomSampler(val_indices)
+        train_sampler = SubsetRandomSampler(list(range(len(ds_train))))
+        val_sampler = SubsetRandomSampler(list(range(len(ds_val))))
 
         self.train_loader = data.DataLoader(
-            self.ds,
+            self.ds_train,
             batch_size=self.conf["batch_size"],
             sampler=train_sampler
         )
 
         self.val_loader = data.DataLoader(
-            self.ds,
+            self.ds_val,
             batch_size=self.conf["batch_size"],
             sampler=val_sampler
         )
@@ -294,7 +296,7 @@ class Pose_JHMDB(ExperimentBase):
         self.optimizer = optim.RMSprop(self.model.parameters(), lr=self.conf["learning_rate"])
 
         self.train_writer.write(["iteration", "loss"])
-        self.val_writer.write(["iteration", "pckh_0.5"])
+        self.val_writer.write(["iteration", "pckh_0.2"])
 
         self.create_experiment_folders()
 
