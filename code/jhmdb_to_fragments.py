@@ -6,16 +6,15 @@ import matplotlib.pyplot as plt
 import torch
 import shutil
 
-from random import shuffle
-
+import random
 import skimage.io as io
 import os
 import glob
 
-def delete_and_create(root_dir, random=False, split=1):
+def delete_and_create(root_dir, use_random=False, split=1):
         base_list = []
 
-        if random:
+        if use_random:
             prefix = "rand_"
         else:
             prefix = ""
@@ -23,7 +22,7 @@ def delete_and_create(root_dir, random=False, split=1):
         base_list.append(prefix + "images")
         base_list.append(prefix + "annotations")
 
-        if not random:
+        if not use_random:
                 base_list.append(prefix + "indices/val/" + str(split))
                 base_list.append(prefix + "indices/test/" + str(split))
         
@@ -50,7 +49,8 @@ def create_fragments_pennaction(train, val, split):
         all_indices = list(range(len(ds)))
 
         if train:
-                shuffle(all_indices)
+                random.seed(1)
+                random.shuffle(all_indices)
                 ten_percent = int(0.1 * len(ds))
                 train_indices = all_indices[ten_percent:]
                 val_indices = all_indices[:ten_percent]
@@ -118,11 +118,11 @@ def create_fragments_pennaction(train, val, split):
 
                 print("{} - {}: {} / {}".format(train_test_folder, split, counter+1, len(all_indices)))
 
-def create_fragments_jhmdb(train, val, split, random=False):
-        ds = JHMDBDataset("/data/mjakobs/data/jhmdb/", use_random_parameters=random, use_saved_tensors=True, train=train, split=split)
+def create_fragments_jhmdb(train, val, split, use_random=False):
+        ds = JHMDBDataset("/data/mjakobs/data/jhmdb/", use_random_parameters=use_random, use_saved_tensors=True, train=train, split=split)
 
         print("-" * 50)
-        print("Train: {}, Val: {}, Split: {}, Random: {}".format(train, val, split, random))
+        print("Train: {}, Val: {}, Split: {}, Random: {}".format(train, val, split, use_random))
         print("-" * 50)
 
         length = len(ds)
@@ -130,7 +130,7 @@ def create_fragments_jhmdb(train, val, split, random=False):
 
         root_dir = "/data/mjakobs/data/jhmdb_fragments/"
 
-        if random:
+        if use_random:
             prefix = "rand_"
         else:
             prefix = ""
@@ -138,7 +138,8 @@ def create_fragments_jhmdb(train, val, split, random=False):
         all_indices = list(range(len(ds)))
 
         if train:
-                shuffle(all_indices)
+                random.seed(1)
+                random.shuffle(all_indices)
                 ten_percent = int(0.1 * len(ds))
                 train_indices = all_indices[ten_percent:]
                 val_indices = all_indices[:ten_percent]
@@ -208,9 +209,9 @@ def create_fragments_jhmdb(train, val, split, random=False):
 
 split = 1
 
-for random in [True, False]:
-        delete_and_create("/data/mjakobs/data/jhmdb_fragments/", random=random)
-        create_fragments_jhmdb(True, False, split, random=random)
+for use_random in [True, False]:
+        delete_and_create("/data/mjakobs/data/jhmdb_fragments/", use_random=use_random)
+        create_fragments_jhmdb(True, False, split, use_random=use_random)
 
 create_fragments_jhmdb(False, False, split)
 create_fragments_jhmdb(True, True, split)

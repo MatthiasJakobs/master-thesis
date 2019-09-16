@@ -278,8 +278,8 @@ class Pose_JHMDB(ExperimentBase):
         self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False)
         self.ds_val = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=True)
 
-        train_sampler = SubsetRandomSampler(list(range(len(ds_train))))
-        val_sampler = SubsetRandomSampler(list(range(len(ds_val))))
+        train_sampler = SubsetRandomSampler(list(range(len(self.ds_train))))
+        val_sampler = SubsetRandomSampler(list(range(len(self.ds_val))))
 
         self.train_loader = data.DataLoader(
             self.ds_train,

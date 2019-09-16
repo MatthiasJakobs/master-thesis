@@ -4,7 +4,7 @@ import torch.utils.data as data
 import glob
 
 class JHMDBFragmentsDataset(data.Dataset):
-    def __init__(self, root_dir, transform=None, split=1, train=True, val=False):
+    def __init__(self, root_dir, transform=None, use_random_parameters=False, split=1, train=True, val=False):
         self.root_dir = root_dir
         self.padding_amount = 8
 
@@ -12,9 +12,16 @@ class JHMDBFragmentsDataset(data.Dataset):
         self.train = train
         self.val = val
 
-        self.images_folder = self.root_dir + "images/"
-        self.annotation_folder = self.root_dir + "annotations/"
-        self.indices_folder = self.root_dir + "indices/"
+        self.use_random_parameters = use_random_parameters
+
+        if self.use_random_parameters:
+            self.prefix = "rand_"
+        else:
+            self.prefix = ""
+
+        self.images_folder = self.root_dir + self.prefix + "images/"
+        self.annotation_folder = self.root_dir + self.prefix + "annotations/"
+        self.indices_folder = self.root_dir + self.prefix + "indices/"
 
         if self.train:
             if self.val:
@@ -24,7 +31,7 @@ class JHMDBFragmentsDataset(data.Dataset):
         else:
             self.train_test_folder = "test/"
 
-        self.number_of_fragments = len(glob.glob("{}indices/{}{}/*".format(self.root_dir, self.train_test_folder, str(self.split))))
+        self.number_of_fragments = len(glob.glob("{}{}indices/{}{}/*".format(self.root_dir, self.prefix, self.train_test_folder, str(self.split))))
 
     def __len__(self):
         return self.number_of_fragments
