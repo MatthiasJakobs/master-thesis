@@ -253,12 +253,12 @@ class HAR_Testing_Experiment(ExperimentBase):
                 for i in range(len(frames)):
                     for frame in range(len(frames[0])):
                         path = 'experiments/{}/val_images/{}/{}_{}_{}.png'.format(self.experiment_name, self.iteration, batch_idx, i, frame)
-                        plt.imshow(frames[i, frame].reshape(255, 255, 3))
+                        plt.imshow((frames[i, frame].reshape(255, 255, 3) + 1) / 2.0)
 
                         pred_x = predicted_poses[i, frame, :, 0]
                         pred_y = predicted_poses[i, frame, :, 1]
 
-                        plt.scatter(x=pred_x * 255.0, y=pred_y * 255.0)
+                        plt.scatter(x=pred_x * 255.0, y=pred_y * 255.0, c="#FF00FF")
                         plt.savefig(path)
                         plt.close()
 
