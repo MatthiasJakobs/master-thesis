@@ -21,6 +21,7 @@ from skimage import io
 from datasets.MPIIDataset import *
 from datasets.JHMDBFragmentsDataset import JHMDBFragmentsDataset
 from datasets.JHMDBDataset import actions as jhmdb_actions
+from datasets.JHMDBDataset import JHMDBDataset
 from deephar.models import DeepHar, Mpii_1, Mpii_2, Mpii_4, Mpii_8, TimeDistributedPoseEstimation
 from deephar.utils import get_valid_joints
 from deephar.measures import elastic_net_loss_paper, categorical_cross_entropy
@@ -145,10 +146,11 @@ class ExperimentBase:
 
         self.preparation()
 
-        while True:
+        running = True
+
+        while running:
 
             for train_objects in self.train_loader:
-
                 self.train(train_objects)
 
                 if self.iteration % self.conf["evaluate_rate"] == 0:
@@ -160,7 +162,10 @@ class ExperimentBase:
 
                 if self.iteration >= self.conf["total_iterations"]:
                     print("done")
-                    return
+                    running = False
+                    break
+
+        self.test()
 
 
 class HAR_Testing_Experiment(ExperimentBase):
@@ -169,9 +174,11 @@ class HAR_Testing_Experiment(ExperimentBase):
         self.model = DeepHar(num_actions=21, use_gt=True, model_path="/data/mjakobs/data/pretrained_jhmdb").to(self.device)
         self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False)
         self.ds_val = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=True)
+        self.ds_test = JHMDBDataset("/data/mjakobs/data/jhmdb/", train=False)
 
         train_sampler = SubsetRandomSampler(list(range(len(self.ds_train))))
         val_sampler = SubsetRandomSampler(list(range(len(self.ds_val))))
+        test_sampler = SubsetRandomSampler(list(range(len(self.ds_test))))
 
         self.train_loader = data.DataLoader(
             self.ds_train,
@@ -185,6 +192,12 @@ class HAR_Testing_Experiment(ExperimentBase):
             sampler=val_sampler
         )
 
+        self.test_loader = data.DataLoader(
+            self.ds_test,
+            batch_size=1,
+            sampler=test_sampler
+        )
+
         self.optimizer = optim.SGD(self.model.parameters(), lr=self.conf["learning_rate"], momentum=0.98, nesterov=True)
 
         self.train_writer.write(["iteration", "loss"])
@@ -194,7 +207,7 @@ class HAR_Testing_Experiment(ExperimentBase):
 
 
     def train(self, train_objects):
-
+        self.model.train()
         frames = train_objects["frames"].to(self.device)
         actions = train_objects["action_1h"].to(self.device)
 
@@ -219,6 +232,7 @@ class HAR_Testing_Experiment(ExperimentBase):
         print("iteration {} train-loss {}".format(self.iteration, losses.item()))
 
     def evaluate(self):
+        self.model.eval()
         correct = 0
         total = 0
         for batch_idx, validation_objects in enumerate(self.val_loader):
@@ -260,6 +274,57 @@ class HAR_Testing_Experiment(ExperimentBase):
         torch.save(self.model.state_dict(), "experiments/{}/weights/weights_{:08d}".format(self.experiment_name, self.iteration))
 
         return accuracy
+
+    def test(self, pretrained_model=None):
+        with torch.no_grad():
+            if pretrained_model is not None:
+                self.preparation()
+                self.model.load_state_dict(torch.load(pretrained_model, map_location=self.device))
+
+            self.model.eval()
+
+            length = len(self.ds_test)
+            current = 1
+
+            correct_single = 0
+            correct_multi = 0
+            total = 0
+            for batch_idx, test_objects in enumerate(self.test_loader):
+                frames = test_objects["normalized_frames"].to(self.device)
+                actions = test_objects["action_1h"].to(self.device)
+                sequence_length = test_objects["sequence_length"].to(self.device).item()
+                padding = int((sequence_length - 16) / 2.0)
+
+                ground_class = torch.argmax(actions, 1)
+                single_clip = frames[:, padding:(16 + padding)]
+                assert len(single_clip[0]) == 16
+
+                spacing = 8
+                nr_multiple_clips = int((sequence_length - 16) / spacing)
+                multi_clip = torch.zeros(nr_multiple_clips, 16, 3, 255, 255)
+                for i in range(nr_multiple_clips):
+                    multi_clip[i] = frames[0, i * spacing : i * spacing + 16]
+
+                _, _, _, single_result = self.model(single_clip)
+               # _, _, _, multi_result = self.model(multi_clip)
+
+                pred_class_single = torch.argmax(single_result.squeeze(1), 1)
+                #pred_class_multi = torch.argmax(multi_result.squeeze(1), 1)
+
+                correct_single = correct_single + (pred_class_single == ground_class).item()
+
+                ground_class = ground_class.expand(nr_multiple_clips).long()
+                #correct_multi = correct_multi + torch.mean((pred_class_multi == ground_class).float()).item()
+                total = total + 1
+
+                print("test {} / {}".format(current, length))
+                print(correct_single / float(total), correct_multi / float(total))
+                current = current + 1
+
+            return correct_single / float(total), correct_multi / float(total)
+
+
+
 
 class Pose_JHMDB(ExperimentBase):
 
