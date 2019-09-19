@@ -149,6 +149,7 @@ class MPIIDataset(data.Dataset):
             t_trans_matrix = torch.load(name_path + ".trans_matrix.pt")
             t_original_size = torch.load(name_path + ".original_size.pt")
             t_bbox = torch.load(name_path + ".bbox.pt")
+            t_parameters = torch.load(name_path + ".parameters.pt")
 
             output["image_path"] = t_filepath
             output["normalized_image"] = t_normalized_image
@@ -158,6 +159,8 @@ class MPIIDataset(data.Dataset):
             output["trans_matrix"] = t_trans_matrix
             output["original_size"] = t_original_size
             output["bbox"] = t_bbox
+            output["parameters"] = t_parameters
+            
 
             return output
 
@@ -176,6 +179,11 @@ class MPIIDataset(data.Dataset):
             ])
         else:
             conf_exponents = None
+
+        self.test = {}
+        self.test["scale"] = conf_scale
+        self.test["flip"] = conf_flip
+        self.test["angle"] = conf_angle
 
         new_scale = label["scale"] * 1.25 # magic value
         new_objpose = np.array([label["obj_pose"][0], label["obj_pose"][1] + 12 * new_scale]) # magic values, no idea where they are comming from
@@ -226,8 +234,16 @@ class MPIIDataset(data.Dataset):
         original_pose[:] = np.nan
 
         for it, joint_index in enumerate(label["pose"]["ids"]):
-            original_pose[joint_index, 0] = new_x[it]
-            original_pose[joint_index, 1] = new_y[it]
+            x = new_x[it]
+            y = new_y[it]
+
+            if x < 0 or y < 0 or x > 1 or y > 1:
+                original_pose[joint_index, 0] = np.nan
+                original_pose[joint_index, 1] = np.nan
+            else:
+                original_pose[joint_index, 0] = x
+                original_pose[joint_index, 1] = y
+
             original_pose[joint_index, 2] = label["pose"]["visible"][it]
 
         original_pose[np.isnan(original_pose)] = -1e9
@@ -256,6 +272,11 @@ class MPIIDataset(data.Dataset):
         t_original_pose = torch.from_numpy(original_pose).float()
         t_headsize = torch.from_numpy(np.array([head_size])).float()
         t_trans_matrix = torch.from_numpy(trans_matrix.copy()).float()
+
+        t_parameters = torch.zeros(3).float()
+        t_parameters[0] = self.test["scale"]
+        t_parameters[1] = float(self.test["angle"])
+        t_parameters[2] = float(self.test["flip"])
 
         image_number = int(full_image_path[-13:-4])
         
@@ -288,7 +309,9 @@ class MPIIDataset(data.Dataset):
             if not os.path.exists(name_path + ".original_size.pt"):
                 torch.save(t_original_size, name_path + ".original_size.pt")
             if not os.path.exists(name_path + ".bbox.pt"):
-                torch.save(t_bbox, name_path + ".bbox.pt")
+                torch.save(t_bbox, name_path + ".bbox.pt")            
+            if not os.path.exists(name_path + ".parameters.pt"):
+                torch.save(t_parameters, name_path + ".parameters.pt")
 
         return output
 

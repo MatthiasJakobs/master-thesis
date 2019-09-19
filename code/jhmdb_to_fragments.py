@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 import torch
 import shutil
 
+import numpy as np
+
 import random
 import skimage.io as io
 import os
@@ -36,11 +38,11 @@ def delete_and_create(root_dir, use_random=False, split=1):
                 else:
                         os.makedirs(folder_path)
 
-def create_fragments_pennaction(train, val, split):
+def create_fragments_pennaction(train, val):
         ds = PennActionDataset("/data/mjakobs/data/pennaction/", use_random_parameters=False, train=train)
 
         print("-" * 50)
-        print("Train: {}, Val: {}, Split: {}".format(train, val, split))
+        print("Train: {}, Val: {}".format(train, val))
         print("-" * 50)
 
         length = len(ds)
@@ -67,18 +69,16 @@ def create_fragments_pennaction(train, val, split):
 
         for counter, idx in enumerate(all_indices):
                 entry = ds[idx]
-                frames = entry["normalized_frames"]
+                frames = ((entry["normalized_frames"] + 1 )/ 2.0 * 255.0).int()
                 poses = entry["normalized_poses"]
                 actions = entry["action_1h"]
-                sequence_length = entry["sequence_length"]
                 matrices = entry["trans_matrices"]
-
-                assert len(frames) == 40
-                assert len(poses) == 40
+                bbox = entry["bbox"]
+                parameters = entry["parameters"]
 
                 num_frames = 16
 
-                num_frames_total = sequence_length[0]
+                num_frames_total = len(frames)
 
                 if num_frames_total < 16:
                         print("less than 16 frames")
@@ -88,17 +88,22 @@ def create_fragments_pennaction(train, val, split):
                 padded_image = str(idx).zfill(8)
 
                 original_image = ds.indices[idx]
-                padded_original_image = str(original_image).zfill(8)
+                padded_original_image = str(original_image).zfill(4)
 
-                if not os.path.exists("/data/mjakobs/data/jhmdb_fragments/images/" + padded_original_image + ".frames.pt"):
-                        torch.save(frames, "/data/mjakobs/data/jhmdb_fragments/images/" + padded_original_image + ".frames.pt")
-                if not os.path.exists("/data/mjakobs/data/jhmdb_fragments/annotations/" + padded_original_image + ".action_1h.pt"):
-                        torch.save(actions, "/data/mjakobs/data/jhmdb_fragments/annotations/" + padded_original_image + ".action_1h.pt")
-                if not os.path.exists("/data/mjakobs/data/jhmdb_fragments/annotations/" + padded_original_image + ".poses.pt"):
-                        torch.save(poses, "/data/mjakobs/data/jhmdb_fragments/annotations/" + padded_original_image + ".poses.pt")
-                if not os.path.exists("/data/mjakobs/data/jhmdb_fragments/annotations/" + padded_original_image + ".matrices.pt"):
-                        torch.save(matrices, "/data/mjakobs/data/jhmdb_fragments/annotations/" + padded_original_image + ".matrices.pt")
+                root_dir = "/data/mjakobs/data/pennaction_fragments/"
 
+                if not os.path.exists(root_dir + "images/" + padded_original_image + ".frames.pt"):
+                        torch.save(frames, root_dir + "images/" + padded_original_image + ".frames.pt")
+                if not os.path.exists(root_dir + "annotations/" + padded_original_image + ".action_1h.pt"):
+                        torch.save(actions, root_dir + "annotations/" + padded_original_image + ".action_1h.pt")
+                if not os.path.exists(root_dir + "annotations/" + padded_original_image + ".poses.pt"):
+                        torch.save(poses, root_dir + "annotations/" + padded_original_image + ".poses.pt")
+                if not os.path.exists(root_dir + "annotations/" + padded_original_image + ".matrices.pt"):
+                        torch.save(matrices, root_dir + "annotations/" + padded_original_image + ".matrices.pt")
+                if not os.path.exists(root_dir + "annotations/" + padded_original_image + ".bbox.pt"):
+                        torch.save(bbox, root_dir + "annotations/" + padded_original_image + ".bbox.pt")
+                if not os.path.exists(root_dir + "annotations/" + padded_original_image + ".parameters.pt"):
+                        torch.save(parameters, root_dir + "annotations/" + padded_original_image + ".parameters.pt")
                 indices = torch.zeros((num_frames_total - num_frames), 2)
 
                 for i in range(num_frames_total - num_frames):
@@ -113,7 +118,7 @@ def create_fragments_pennaction(train, val, split):
                         indices[1] = end
                         indices[2] = original_image
 
-                        torch.save(indices, "/data/mjakobs/data/jhmdb_fragments/indices/{}/{}/{}.indices.pt".format(train_test_folder, str(split), padded))
+                        torch.save(indices, root_dir + "indices/{}/{}.indices.pt".format(train_test_folder, padded))
                         assert indices.shape == (3,)
 
                 print("{} - {}: {} / {}".format(train_test_folder, split, counter+1, len(all_indices)))
@@ -161,6 +166,9 @@ def create_fragments_jhmdb(train, val, split, use_random=False):
                 actions = entry["action_1h"]
                 sequence_length = entry["sequence_length"]
                 matrices = entry["trans_matrices"]
+                bbox = entry["bbox"]
+                index = entry["index"]
+                parameters = entry["parameters"]
 
                 assert len(frames) == 40
                 assert len(poses) == 40
@@ -187,6 +195,13 @@ def create_fragments_jhmdb(train, val, split, use_random=False):
                         torch.save(poses, root_dir + prefix + "annotations/" + padded_original_image + ".poses.pt")
                 if not os.path.exists(root_dir + prefix + "annotations/" + padded_original_image + ".matrices.pt"):
                         torch.save(matrices, root_dir + prefix + "annotations/" + padded_original_image + ".matrices.pt")
+                if not os.path.exists(root_dir + prefix + "annotations/" + padded_original_image + ".index.pt"):
+                        torch.save(index, root_dir + prefix + "annotations/" + padded_original_image + ".index.pt")
+                if not os.path.exists(root_dir + prefix + "annotations/" + padded_original_image + ".bbox.pt"):
+                        torch.save(bbox, root_dir + prefix + "annotations/" + padded_original_image + ".bbox.pt")
+                if not os.path.exists(root_dir + prefix + "annotations/" + padded_original_image + ".parameters.pt"):
+                        torch.save(parameters, root_dir + prefix + "annotations/" + padded_original_image + ".parameters.pt")
+
 
                 indices = torch.zeros((num_frames_total - num_frames), 2)
 
@@ -209,15 +224,15 @@ def create_fragments_jhmdb(train, val, split, use_random=False):
 
 split = 1
 
-for use_random in [True, False]:
-        delete_and_create("/data/mjakobs/data/jhmdb_fragments/", use_random=use_random)
-        create_fragments_jhmdb(True, False, split, use_random=use_random)
+# for use_random in [True, False]:
+#         delete_and_create("/data/mjakobs/data/jhmdb_fragments/", use_random=use_random)
+#         create_fragments_jhmdb(True, False, split, use_random=use_random)
 
-create_fragments_jhmdb(False, False, split)
-create_fragments_jhmdb(True, True, split)
+# create_fragments_jhmdb(False, False, split)
+# create_fragments_jhmdb(True, True, split)
 
 
-# delete_and_create("/data/mjakobs/data/pennaction_fragments/")
-# create_fragments_pennaction(False, False, split)
-# create_fragments_pennaction(True, True, split)
-# create_fragments_pennaction(True, False, split)
+delete_and_create("/data/mjakobs/data/pennaction_fragments/")
+create_fragments_pennaction(False, False)
+create_fragments_pennaction(True, True)
+create_fragments_pennaction(True, False)

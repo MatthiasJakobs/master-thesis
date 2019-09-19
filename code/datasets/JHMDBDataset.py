@@ -52,7 +52,7 @@ class JHMDBDataset(data.Dataset):
         split_file_paths = self.root_dir + "splits/*_test_split" + str(split) + ".txt"
         split_files = glob.glob(split_file_paths)
 
-        all_images = sorted(glob.glob(self.root_dir + "*/*"))
+        self.all_images = sorted(glob.glob(self.root_dir + "*/*"))
         
         clips = []
         all_frames = []
@@ -66,7 +66,7 @@ class JHMDBDataset(data.Dataset):
                 for row in reader:
                     if int(row[1]) == key:
                         clip_name = row[0][:-4]
-                        for idx, name in enumerate(all_images):
+                        for idx, name in enumerate(self.all_images):
                             if name.split("/")[-1] == clip_name:
                                 self.indices.append(idx)
                         clips.append(clip_name)
@@ -84,11 +84,11 @@ class JHMDBDataset(data.Dataset):
 
         if use_random_parameters:
             self.angles=np.array(range(-30, 30+1, 5))
-            self.scales=np.array([0.7, 1.0, 1.3, 2.5])
+            self.scales=np.array([0.7, 1.0, 1.3])
             self.channel_power_exponent = 0.01*np.array(range(90, 110+1, 2))
             self.flip_horizontal = np.array([0, 1])
-            self.trans_x=np.array(range(-40, 40+1, 5))[0],
-            self.trans_y=np.array(range(-40, 40+1, 5))[0],
+            self.trans_x=np.array(range(-40, 40+1, 5))
+            self.trans_y=np.array(range(-40, 40+1, 5))
             self.subsampling=[1, 2]
         else:
             self.angles=np.array([0, 0, 0])
@@ -152,6 +152,13 @@ class JHMDBDataset(data.Dataset):
         conf_trans_x = self.trans_x[np.random.randint(0, len(self.trans_x))]
         conf_trans_y = self.trans_y[np.random.randint(0, len(self.trans_y))]
 
+        self.test = {}
+        self.test["scale"] = conf_scale
+        self.test["angle"] = conf_angle
+        self.test["flip"] = conf_flip
+        self.test["trans_x"] = conf_trans_x
+        self.test["trans_y"] = conf_trans_y
+
         '''if self.channel_power_exponent is not None:
             conf_exponents = np.array([
                 self.channel_power_exponent[np.random.randint(0, len(self.channel_power_exponent))],
@@ -172,6 +179,8 @@ class JHMDBDataset(data.Dataset):
             int(image_width / 2) + (window_size / 2), # x2, lower right
             int(image_height / 2) + (window_size / 2)  # y2, lower right
         ])
+
+        self.bbox = bbox
 
         bbox_width = int(abs(bbox[0] - bbox[2]))
         bbox_height = int(abs(bbox[1] - bbox[3]))
@@ -227,9 +236,9 @@ class JHMDBDataset(data.Dataset):
                 if joint_in_frame:
                     final_pose[mpii_index, 0:2] = transformed_pose[jhmdb_index]
                 else:
-                    final_pose[mpii_index, 0:2] = np.array([1e-9, 1e-9])
+                    final_pose[mpii_index, 0:2] = np.array([-1e9, -1e9])
 
-            final_pose[np.isnan(final_pose)] = 1e-9
+            final_pose[np.isnan(final_pose)] = -1e9
 
             valid_joints = get_valid_joints(final_pose, need_sum=False)[:, 0:2]
             visibility = np.apply_along_axis(np.all, 1, valid_joints)
@@ -250,9 +259,9 @@ class JHMDBDataset(data.Dataset):
         label = sio.loadmat(item_path + "/joint_positions")
         poses = label["pos_img"].T
 
-        all_images = sorted(glob.glob(item_path + "/*.png"))
+        all_frames = sorted(glob.glob(item_path + "/*.png"))
         images = []
-        for image_path in all_images:
+        for image_path in all_frames:
             images.append(io.imread(image_path))
 
         image_height = len(images[0])
@@ -301,11 +310,25 @@ class JHMDBDataset(data.Dataset):
         t_normalized_poses = torch.from_numpy(normalized_poses).float()
         t_trans_matrices = torch.from_numpy(trans_matrices).float()
         t_sequence_length = torch.from_numpy(np.array([number_of_frames])).int()
+        t_bbox = torch.from_numpy(self.bbox).float()
+        
+        t_index = torch.zeros(1).float()
+        t_index[0] = idx
+
+        t_parameters = torch.zeros(5).float()
+        t_parameters[0] = self.test["scale"]
+        t_parameters[1] = float(self.test["angle"])
+        t_parameters[2] = float(self.test["flip"])
+        t_parameters[3] = float(self.test["trans_x"])
+        t_parameters[4] = float(self.test["trans_y"])
 
         return {
             "action_1h": t_action_1h,
             "normalized_frames": t_normalized_frames,
             "normalized_poses": t_normalized_poses,
             "sequence_length": t_sequence_length,
-            "trans_matrices": t_trans_matrices
+            "trans_matrices": t_trans_matrices,
+            "parameters": t_parameters,
+            "index": t_index,
+            "bbox": t_bbox
         }
