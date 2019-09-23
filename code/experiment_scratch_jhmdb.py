@@ -12,7 +12,7 @@ conf["name"] = "scratch_jhmdb"
 conf["num_blocks"] = 4
 conf["nr_context"] = 0
 conf["project_dir"] = ""
-conf["total_iterations"] = 140000
+conf["total_iterations"] = 160000
 conf["evaluate_rate"] = 5000
 
 ft = Pose_JHMDB(conf, use_pretrained=False)

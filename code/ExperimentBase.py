@@ -340,7 +340,7 @@ class Pose_JHMDB(ExperimentBase):
             self.model.load_state_dict(torch.load("/data/mjakobs/data/pretrained_weights_4", map_location=self.device))
         self.model.train()
 
-        self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False)
+        self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False, augmentation_amount=3, use_random_parameters=True)
         self.ds_val = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=True)
 
         train_sampler = SubsetRandomSampler(list(range(len(self.ds_train))))
