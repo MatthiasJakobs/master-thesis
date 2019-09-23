@@ -87,8 +87,8 @@ class JHMDBDataset(data.Dataset):
             self.scales=np.array([0.7, 1.0, 1.3])
             self.channel_power_exponent = 0.01*np.array(range(90, 110+1, 2))
             self.flip_horizontal = np.array([0, 1])
-            self.trans_x=np.array(range(-40, 40+1, 5))
-            self.trans_y=np.array(range(-40, 40+1, 5))
+            self.trans_x=np.array(range(-10, 10+1, 5))
+            self.trans_y=np.array(range(-10, 10+1, 5))
             self.subsampling=[1, 2]
         else:
             self.angles=np.array([0, 0, 0])
