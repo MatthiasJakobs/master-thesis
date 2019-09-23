@@ -48,12 +48,12 @@ class JHMDBDataset(data.Dataset):
         self.root_dir = root_dir
         self.train = train
         self.split = split
-        
+
         split_file_paths = self.root_dir + "splits/*_test_split" + str(split) + ".txt"
         split_files = glob.glob(split_file_paths)
 
         self.all_images = sorted(glob.glob(self.root_dir + "*/*"))
-        
+
         clips = []
         all_frames = []
         key = 1 if train else 2
@@ -87,8 +87,10 @@ class JHMDBDataset(data.Dataset):
             self.scales=np.array([0.7, 1.0, 1.3])
             self.channel_power_exponent = 0.01*np.array(range(90, 110+1, 2))
             self.flip_horizontal = np.array([0, 1])
-            self.trans_x=np.array(range(-10, 10+1, 5))
-            self.trans_y=np.array(range(-10, 10+1, 5))
+            self.trans_x=np.array([0., 0., 0.])
+            self.trans_y=np.array([0., 0., 0.])
+            #self.trans_x=np.array(range(-10, 10+1, 5))
+            #self.trans_y=np.array(range(-10, 10+1, 5))
             self.subsampling=[1, 2]
         else:
             self.angles=np.array([0, 0, 0])
@@ -311,7 +313,7 @@ class JHMDBDataset(data.Dataset):
         t_trans_matrices = torch.from_numpy(trans_matrices).float()
         t_sequence_length = torch.from_numpy(np.array([number_of_frames])).int()
         t_bbox = torch.from_numpy(self.bbox).float()
-        
+
         t_index = torch.zeros(1).float()
         t_index[0] = idx
 
