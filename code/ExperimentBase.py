@@ -15,6 +15,8 @@ from torch.utils.data.sampler import SubsetRandomSampler
 
 import csv
 import numpy as np
+import math
+import pdb
 
 from skimage import io
 
@@ -393,6 +395,11 @@ class Pose_JHMDB(ExperimentBase):
         vis_loss = binary_crossentropy(pred_vis, ground_vis)
 
         pose_loss = elastic_net_loss_paper(pred_pose, ground_pose)
+
+        if math.isnan(vis_loss * 0.01 + pose_loss):
+            print("is nan")
+            pdb.set_trace()
+
         loss = vis_loss * 0.01 + pose_loss
 
         loss.backward()
