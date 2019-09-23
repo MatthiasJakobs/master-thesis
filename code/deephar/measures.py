@@ -6,9 +6,11 @@ def elastic_net_loss_paper(y_pred, y_true):
     # note: not the one used in code but the one in the paper
 
     valid, nr_valid = get_valid_joints(y_true[:, 0, :, :])
+    valid_zero = torch.sum(nr_valid == 0)
     nr_valid[nr_valid == 0] = 1 # just to make sure to not divide by zero
-    for i in range(100):
-        print("WARNING: nr_valid had a zero in it")
+    if valid_zero > 0:
+        for i in range(100):
+            print("WARNING: nr_valid had a zero in it")
     valid = valid.unsqueeze(1)
     valid = valid.expand(-1, y_pred.size()[1], -1, -1)
     y_pred = y_pred * valid
