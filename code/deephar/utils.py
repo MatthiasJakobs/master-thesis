@@ -4,7 +4,6 @@ import numpy as np
 from numpy import linspace, empty
 from scipy.stats import multivariate_normal
 
-
 def spatial_softmax(x):
     maximum, _ = torch.max(x, 1, keepdim=True)
     maximum, _ = torch.max(maximum, 2, keepdim=True)
@@ -12,6 +11,23 @@ def spatial_softmax(x):
     e = torch.exp(x - maximum)
     s = torch.sum(e, (1,2), keepdim=True)
     return e / s
+
+def flip_lr_pose(pose):
+    switches = [
+        [0, 5],
+        [1, 4],
+        [2, 3],
+        [10, 15],
+        [11, 14],
+        [12, 13]
+    ]
+
+    for (src ,dst) in switches:
+        backup = pose[dst].copy()
+        pose[dst] = pose[src]
+        pose[src] = backup
+
+    return pose
 
 def linspace_2d(rows, cols, dim):
 

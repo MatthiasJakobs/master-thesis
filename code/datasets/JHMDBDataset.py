@@ -16,7 +16,7 @@ from skimage import io
 from skimage.transform import resize
 
 from deephar.image_processing import center_crop, rotate_and_crop, normalize_channels
-from deephar.utils import transform_2d_point, translate, scale, flip_h, superflatten, transform_pose, get_valid_joints
+from deephar.utils import transform_2d_point, translate, scale, flip_h, superflatten, transform_pose, get_valid_joints, flip_lr_pose
 
 actions = [
     "brush_hair",
@@ -202,15 +202,12 @@ class JHMDBDataset(data.Dataset):
         normalized_frames = []
         visibility = []
 
-        #TODO: transx, transy
         for frame, pose in zip(images, poses):
             trans_matrix, image = rotate_and_crop(frame, conf_angle, center, window_size)
             size_after_rotate = np.array([image.shape[1], image.shape[0]])
 
             image = resize(image, (self.final_size, self.final_size), preserve_range=True)
             trans_matrix = scale(trans_matrix, self.final_size / size_after_rotate[0], self.final_size / size_after_rotate[1])
-
-            #TODO: subsampling
 
             # randomly flip horizontal
             if conf_flip:
@@ -245,6 +242,9 @@ class JHMDBDataset(data.Dataset):
             valid_joints = get_valid_joints(final_pose, need_sum=False)[:, 0:2]
             visibility = np.apply_along_axis(np.all, 1, valid_joints)
             final_pose[:, 2] = visibility
+
+            if conf_flip:
+                final_pose = flip_lr_pose(final_pose)
 
             processed_poses.append(final_pose)
             processed_frames.append(image)
