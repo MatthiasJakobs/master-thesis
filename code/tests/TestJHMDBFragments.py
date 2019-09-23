@@ -38,8 +38,8 @@ if os.path.exists(output_folder):
 
 os.makedirs(output_folder)
 
-subfolders = ["train_norandom_saved", "train_random_saved", "test_norandom_saved", "test_random_saved", "val_norandom_saved", "val_random_saved"]
-scenarios = [[True, False, False, True], [True, False, True, True], [False, False, False, True], [False, False, True, True], [True, True, False, True], [True, True, True, True]] # train, val, random, saved
+subfolders = ["train_norandom_saved", "train_random_saved", "test_norandom_saved", "val_norandom_saved"]
+scenarios = [[True, False, False, True], [True, False, True, True], [False, False, False, True], [True, True, False, True]] # train, val, random, saved
 
 for path in subfolders:
     os.makedirs(output_folder + "/" + path)
@@ -83,7 +83,7 @@ for scenario_idx, scenario in enumerate(scenarios):
             x = (pose[:, 0] * 255.0 * vis).numpy()
             y = (pose[:, 1] * 255.0 * vis).numpy()
 
-            assert pose.max() <= 1 and pose.min() >= 0
+            assert pose.max() <= 1 and (pose.min() >= 0 or pose.min() == -1e9), print(pose)
             for o in range(16):
                 vis_int = vis.numpy().astype(np.int)
                 assert vis_int[o] == 1 or vis_int[o] == 0 

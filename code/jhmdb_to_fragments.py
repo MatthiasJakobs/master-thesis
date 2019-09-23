@@ -13,11 +13,11 @@ import skimage.io as io
 import os
 import glob
 
-def delete_and_create(root_dir, use_random=False, split=1):
+def delete_and_create(root_dir, use_random=False, split=1, subprefix="2"):
         base_list = []
 
         if use_random:
-            prefix = "rand_"
+            prefix = "rand{}_".format(subprefix)
         else:
             prefix = ""
 
@@ -123,7 +123,7 @@ def create_fragments_pennaction(train, val):
 
                 print("{} - {}: {} / {}".format(train_test_folder, split, counter+1, len(all_indices)))
 
-def create_fragments_jhmdb(train, val, split, use_random=False):
+def create_fragments_jhmdb(train, val, split, use_random=False, subprefix="1"):
         ds = JHMDBDataset("/data/mjakobs/data/jhmdb/", use_random_parameters=use_random, use_saved_tensors=True, train=train, split=split)
 
         print("-" * 50)
@@ -136,7 +136,7 @@ def create_fragments_jhmdb(train, val, split, use_random=False):
         root_dir = "/data/mjakobs/data/jhmdb_fragments/"
 
         if use_random:
-            prefix = "rand_"
+            prefix = "rand{}_".format(subprefix)
         else:
             prefix = ""
 
@@ -224,15 +224,19 @@ def create_fragments_jhmdb(train, val, split, use_random=False):
 
 split = 1
 
-# for use_random in [True, False]:
-#         delete_and_create("/data/mjakobs/data/jhmdb_fragments/", use_random=use_random)
-#         create_fragments_jhmdb(True, False, split, use_random=use_random)
+delete_and_create("/data/mjakobs/data/jhmdb_fragments/", use_random=True, subprefix="1")
+delete_and_create("/data/mjakobs/data/jhmdb_fragments/", use_random=True, subprefix="2")
+delete_and_create("/data/mjakobs/data/jhmdb_fragments/", use_random=True, subprefix="3")
+create_fragments_jhmdb(True, False, split, use_random=True, subprefix="1")
+create_fragments_jhmdb(True, False, split, use_random=True, subprefix="2")
+create_fragments_jhmdb(True, False, split, use_random=True, subprefix="3")
+create_fragments_jhmdb(True, False, split, use_random=False)
 
-# create_fragments_jhmdb(False, False, split)
-# create_fragments_jhmdb(True, True, split)
+create_fragments_jhmdb(False, False, split) # test
+create_fragments_jhmdb(True, True, split) # val
 
 
-delete_and_create("/data/mjakobs/data/pennaction_fragments/")
-create_fragments_pennaction(False, False)
-create_fragments_pennaction(True, True)
-create_fragments_pennaction(True, False)
+# delete_and_create("/data/mjakobs/data/pennaction_fragments/")
+# create_fragments_pennaction(False, False)
+# create_fragments_pennaction(True, True)
+# create_fragments_pennaction(True, False)
