@@ -23,7 +23,7 @@ def flip_lr_pose(pose):
     ]
 
     for (src ,dst) in switches:
-        backup = pose[dst].copy()
+        backup = pose[dst].clone()
         pose[dst] = pose[src]
         pose[src] = backup
 

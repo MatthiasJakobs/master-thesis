@@ -9,9 +9,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from matplotlib.patches import Rectangle
+from matplotlib.font_manager import FontProperties
 from datasets.JHMDBDataset import actions, JHMDBDataset
 from datasets.JHMDBFragmentsDataset import JHMDBFragmentsDataset
 from deephar.utils import transform_pose
+from datasets.MPIIDataset import mpii_joint_order
 
 joint_mapping = [
     [0, 1],
@@ -49,10 +51,10 @@ for scenario_idx, scenario in enumerate(scenarios):
     train = scenario[0]
     val = scenario[1]
     use_random_parameters = scenario[2]
-    use_saved_tensors = scenario[3]
+    #use_saved_tensors = scenario[3]
     
     ds = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=train, val=val, use_random_parameters=use_random_parameters)
-    ds_full = JHMDBDataset("/data/mjakobs/data/jhmdb/", train=train)
+    ds_full = JHMDBDataset("/data/mjakobs/data/jhmdb/", train=train, val=val)
 
     random.seed(1)
     np.random.seed(1)
@@ -68,7 +70,7 @@ for scenario_idx, scenario in enumerate(scenarios):
 
         for frame in range(16):
 
-            image = entry["frames"][frame].reshape(255, 255, 3)
+            image = entry["frames"][frame].permute(1, 2, 0)
             action_label = actions[entry["action_1h"].argmax().item()]
 
             assert image.max() <= 1 and image.min() >= -1
@@ -91,7 +93,12 @@ for scenario_idx, scenario in enumerate(scenarios):
             x[x == 0] = None
             y[y == 0] = None
 
-            plt.scatter(x=x, y=y, c="#FF00FF")
+            for i in range(16):
+                plt.scatter(x=x[i], y=y[i], label="{}".format(mpii_joint_order[i]))
+
+            fontP = FontProperties()
+            fontP.set_size('x-small')
+            plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.5), ncol=3, fancybox=True, prop=fontP)
 
             for i, (src, dst) in enumerate(joint_mapping):
                 if not vis[src]:
@@ -105,7 +112,7 @@ for scenario_idx, scenario in enumerate(scenarios):
 
             matrix = entry["trans_matrices"][frame]
             indices = entry["indices"].int()
-            item_path = ds_full.all_images[indices[2]]
+            item_path = ds_full.items[indices[2]]
             all_frames = sorted(glob.glob(item_path + "/*.png"))
 
             image_path = all_frames[indices[0] + frame]

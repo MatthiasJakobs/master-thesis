@@ -123,8 +123,8 @@ def create_fragments_pennaction(train, val):
 
                 print("{} - {}: {} / {}".format(train_test_folder, split, counter+1, len(all_indices)))
 
-def create_fragments_jhmdb(train, val, split, use_random=False, subprefix="1"):
-        ds = JHMDBDataset("/data/mjakobs/data/jhmdb/", use_random_parameters=use_random, use_saved_tensors=True, train=train, split=split)
+def create_fragments_jhmdb(train=False, val=False, split=1, use_random=False, subprefix="1"):
+        ds = JHMDBDataset("/data/mjakobs/data/jhmdb/", use_random_parameters=use_random, use_saved_tensors=False, train=train, val=val, split=split)
 
         print("-" * 50)
         print("Train: {}, Val: {}, Split: {}, Random: {}".format(train, val, split, use_random))
@@ -143,18 +143,10 @@ def create_fragments_jhmdb(train, val, split, use_random=False, subprefix="1"):
         all_indices = list(range(len(ds)))
 
         if train:
-                random.seed(1)
-                random.shuffle(all_indices)
-                ten_percent = int(0.1 * len(ds))
-                train_indices = all_indices[ten_percent:]
-                val_indices = all_indices[:ten_percent]
-
                 if val:
                         train_test_folder = "val"
-                        all_indices = val_indices
                 else:
                         train_test_folder = "train"
-                        all_indices = train_indices
 
         else:
                 train_test_folder = "test"
@@ -180,9 +172,6 @@ def create_fragments_jhmdb(train, val, split, use_random=False, subprefix="1"):
                 if num_frames_total < 16:
                         print("less than 16 frames")
                         continue
-
-                mini_batches = int(num_frames_total / num_frames) + 1
-                padded_image = str(idx).zfill(8)
 
                 original_image = ds.indices[idx]
                 padded_original_image = str(original_image).zfill(8)
@@ -223,17 +212,18 @@ def create_fragments_jhmdb(train, val, split, use_random=False, subprefix="1"):
                 print("{} - {}: {} / {}".format(train_test_folder, split, counter+1, len(all_indices)))
 
 split = 1
+amount_random = 1
 
-delete_and_create("/data/mjakobs/data/jhmdb_fragments/", use_random=True, subprefix="1")
-delete_and_create("/data/mjakobs/data/jhmdb_fragments/", use_random=True, subprefix="2")
-delete_and_create("/data/mjakobs/data/jhmdb_fragments/", use_random=True, subprefix="3")
-create_fragments_jhmdb(True, False, split, use_random=True, subprefix="1")
-create_fragments_jhmdb(True, False, split, use_random=True, subprefix="2")
-create_fragments_jhmdb(True, False, split, use_random=True, subprefix="3")
-create_fragments_jhmdb(True, False, split, use_random=False)
+for i in range(amount_random):
+        subprefix = "{}".format(i + 1)
 
-create_fragments_jhmdb(False, False, split) # test
-create_fragments_jhmdb(True, True, split) # val
+        delete_and_create("/data/mjakobs/data/jhmdb_fragments/", use_random=True, subprefix=subprefix)
+        create_fragments_jhmdb(train=True, val=False, split=split, use_random=True, subprefix=subprefix)
+
+delete_and_create("/data/mjakobs/data/jhmdb_fragments/", use_random=False, subprefix="1")
+create_fragments_jhmdb(train=True, val=False, split=split, use_random=False)
+create_fragments_jhmdb(train=False, val=False, split=split) # test
+create_fragments_jhmdb(train=True, val=True, split=split) # val
 
 
 # delete_and_create("/data/mjakobs/data/pennaction_fragments/")

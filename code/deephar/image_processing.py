@@ -58,9 +58,12 @@ def center_crop(image, center, size, trans_matrix):
 def rotate_and_crop(image, angle, center, window_size):
     image_width = image.shape[1]
     image_height = image.shape[0]
+
+    angle = angle.item()
+    #angle = 15
     
     #image = rotate(image, angle, resize=True, preserve_range=True)
-    image = rotate(image, angle, resize=True)
+    image = rotate(image.numpy(), angle, resize=True, preserve_range=True)
 
     # find new center points
     afmat = np.eye(3)
@@ -71,8 +74,8 @@ def rotate_and_crop(image, angle, center, window_size):
     # build rotation matrix
     rot_mat = np.eye(3)
     angle *= np.pi / 180
-    a = np.cos(angle)
-    b = np.sin(angle)
+    a = np.cos(float(angle))
+    b = np.sin(float(angle))
     rot_mat[0,0] = a
     rot_mat[0,1] = b
     rot_mat[1,1] = a
@@ -101,7 +104,7 @@ def rotate_and_crop(image, angle, center, window_size):
 
     return center_crop(image, rotated_center, window_size, afmat)
 
-def normalize_channels(input_image, power_factors=None):
+def normalize_channels(input_image):
     # power factors = vector of factors for each channel, i.e. (0.01, 0.001, 0.1)
     image = input_image.copy()    
     
@@ -112,4 +115,4 @@ def normalize_channels(input_image, power_factors=None):
             image[:,:,c] = np.power(image[:,:,c], power_factors[c])
     '''
     # equivalent to 1/127 * image - 1 from project group
-    return 2.0 * (image - 0.5)
+    return (image / 127.5) - 1
