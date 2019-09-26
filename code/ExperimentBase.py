@@ -435,7 +435,7 @@ class Pose_JHMDB(ExperimentBase):
 
 
             # save predictions
-            image = val_images[0].reshape(255, 255, 3)
+            image = val_images[0].permute(1, 2, 0)
             gt_poses = val_poses
 
             val_accuracy_02.append(eval_pcku_batch(predictions[:, :, 0:2], gt_poses[:, :, 0:2], trans_matrices))
