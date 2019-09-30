@@ -352,9 +352,10 @@ class HAR_Testing_Experiment(ExperimentBase):
 
 class Pose_JHMDB(ExperimentBase):
 
-    def __init__(self, conf, use_pretrained=False):
+    def __init__(self, conf, use_pretrained=False, nr_aug=3, use_flip=True):
         super().__init__(conf)
         self.use_pretrained = use_pretrained
+        self.nr_aug = nr_aug
 
     def preparation(self):
 
@@ -365,9 +366,10 @@ class Pose_JHMDB(ExperimentBase):
         self.model.train()
 
         if "use_random" in self.conf and self.conf["use_random"]:
-            self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False, augmentation_amount=1, use_random_parameters=True)
+            self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False, augmentation_amount=self.nr_aug, use_random_parameters=True)
         else:
-            self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False, augmentation_amount=3, use_random_parameters=False)
+            self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False, augmentation_amount=self.nr_aug, use_random_parameters=False)
+
 
         self.ds_val = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=True)
         self.ds_test = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=False)
