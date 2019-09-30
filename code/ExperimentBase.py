@@ -257,47 +257,49 @@ class HAR_Testing_Experiment(ExperimentBase):
 
     def evaluate(self):
         self.model.eval()
-        correct = 0
-        total = 0
-        for batch_idx, validation_objects in enumerate(self.val_loader):
-            frames = validation_objects["frames"].to(self.device)
-            actions = validation_objects["action_1h"].to(self.device)
 
-            ground_class = torch.argmax(actions, 1)
+        with torch.no_grad():
+            correct = 0
+            total = 0
+            for batch_idx, validation_objects in enumerate(self.val_loader):
+                frames = validation_objects["frames"].to(self.device)
+                actions = validation_objects["action_1h"].to(self.device)
 
-            predicted_poses, _, _, prediction = self.model(frames)
+                ground_class = torch.argmax(actions, 1)
 
-            if torch.cuda.is_available():
-                frames = frames.cpu()
-                actions = actions.cpu()
-                predicted_poses = predicted_poses.cpu()
+                predicted_poses, _, _, prediction = self.model(frames)
 
-            if batch_idx % 10 == 0:
-                self.create_dynamic_folders(heatmaps=False)
-                for i in range(len(frames)):
-                    for frame in range(len(frames[0])):
-                        path = 'experiments/{}/val_images/{}/{}_{}_{}.png'.format(self.experiment_name, self.iteration, batch_idx, i, frame)
-                        plt.imshow((frames[i, frame].reshape(255, 255, 3) + 1) / 2.0)
+                if torch.cuda.is_available():
+                    frames = frames.cpu()
+                    actions = actions.cpu()
+                    predicted_poses = predicted_poses.cpu()
 
-                        pred_x = predicted_poses[i, frame, :, 0]
-                        pred_y = predicted_poses[i, frame, :, 1]
+                if batch_idx % 10 == 0:
+                    self.create_dynamic_folders(heatmaps=False)
+                    for i in range(len(frames)):
+                        for frame in range(len(frames[0])):
+                            path = 'experiments/{}/val_images/{}/{}_{}_{}.png'.format(self.experiment_name, self.iteration, batch_idx, i, frame)
+                            plt.imshow((frames[i, frame].reshape(255, 255, 3) + 1) / 2.0)
 
-                        plt.scatter(x=pred_x * 255.0, y=pred_y * 255.0, c="#FF00FF")
-                        plt.savefig(path)
-                        plt.close()
+                            pred_x = predicted_poses[i, frame, :, 0]
+                            pred_y = predicted_poses[i, frame, :, 1]
 
-            pred_class = torch.argmax(prediction.squeeze(1), 1)
+                            plt.scatter(x=pred_x * 255.0, y=pred_y * 255.0, c="#FF00FF")
+                            plt.savefig(path)
+                            plt.close()
 
-            total = total + len(pred_class)
-            correct = correct + torch.sum(pred_class == ground_class).item()
+                pred_class = torch.argmax(prediction.squeeze(1), 1)
 
-        accuracy = correct / float(total)
+                total = total + len(pred_class)
+                correct = correct + torch.sum(pred_class == ground_class).item()
 
-        self.val_writer.write([self.iteration, accuracy])
+            accuracy = correct / float(total)
 
-        torch.save(self.model.state_dict(), "experiments/{}/weights/weights_{:08d}".format(self.experiment_name, self.iteration))
+            self.val_writer.write([self.iteration, accuracy])
 
-        return accuracy
+            torch.save(self.model.state_dict(), "experiments/{}/weights/weights_{:08d}".format(self.experiment_name, self.iteration))
+
+            return accuracy
 
     def test(self, pretrained_model=None):
         with torch.no_grad():
@@ -583,6 +585,9 @@ class MPIIExperiment(ExperimentBase):
         self.val_writer.write(["iteration", "pckh_0.5", "pckh_0.2"])
 
     def train(self, train_objects):
+
+        self.model.train()
+
         images = train_objects["normalized_image"].to(self.device)
         poses = train_objects["normalized_pose"].to(self.device)
 
@@ -621,36 +626,38 @@ class MPIIExperiment(ExperimentBase):
 
 
     def evaluate(self):
-        val_accuracy_05 = []
-        val_accuracy_02 = []
-        self.create_dynamic_folders()
+        self.model.eval()
+        with torch.no_grad():
+            val_accuracy_05 = []
+            val_accuracy_02 = []
+            self.create_dynamic_folders()
 
-        for batch_idx, val_data in enumerate(self.val_loader):
-            val_images = val_data["normalized_image"].to(self.device)
+            for batch_idx, val_data in enumerate(self.val_loader):
+                val_images = val_data["normalized_image"].to(self.device)
 
-            heatmaps, predictions = self.model(val_images)
-            predictions = predictions[-1, :, :, :].squeeze(dim=0)
+                heatmaps, predictions = self.model(val_images)
+                predictions = predictions[-1, :, :, :].squeeze(dim=0)
 
-            if predictions.dim() == 2:
-                predictions = predictions.unsqueeze(0)
+                if predictions.dim() == 2:
+                    predictions = predictions.unsqueeze(0)
 
-            image_number = "{}".format(int(val_data["image_path"][0].item()))
-            image_name = "{}.jpg".format(image_number.zfill(9))
-            image = io.imread("/data/mjakobs/data/mpii/images/{}".format(image_name))
+                image_number = "{}".format(int(val_data["image_path"][0].item()))
+                image_name = "{}.jpg".format(image_number.zfill(9))
+                image = io.imread("/data/mjakobs/data/mpii/images/{}".format(image_name))
 
-            if batch_idx % 10 == 0:
-                #visualize_heatmaps(heatmaps[0], val_images[0], 'experiments/{}/heatmaps/{}/{}_hm.png'.format(experiment_name, iteration, batch_idx), save=True)
-                show_predictions_ontop(val_data["normalized_pose"][0], image, predictions[0], 'experiments/{}/val_images/{}/{}.png'.format(self.experiment_name, self.iteration, batch_idx), val_data["trans_matrix"][0], bbox=val_data["bbox"][0], save=True)
+                if batch_idx % 10 == 0:
+                    #visualize_heatmaps(heatmaps[0], val_images[0], 'experiments/{}/heatmaps/{}/{}_hm.png'.format(experiment_name, iteration, batch_idx), save=True)
+                    show_predictions_ontop(val_data["normalized_pose"][0], image, predictions[0], 'experiments/{}/val_images/{}/{}.png'.format(self.experiment_name, self.iteration, batch_idx), val_data["trans_matrix"][0], bbox=val_data["bbox"][0], save=True)
 
-            scores_05, scores_02 = eval_pckh_batch(predictions, val_data["normalized_pose"], val_data["head_size"], val_data["trans_matrix"])
-            val_accuracy_05.extend(scores_05)
-            val_accuracy_02.extend(scores_02)
+                scores_05, scores_02 = eval_pckh_batch(predictions, val_data["normalized_pose"], val_data["head_size"], val_data["trans_matrix"])
+                val_accuracy_05.extend(scores_05)
+                val_accuracy_02.extend(scores_02)
 
 
-        mean_05 = np.mean(np.array(val_accuracy_05))
-        mean_02 = np.mean(np.array(val_accuracy_02))
+            mean_05 = np.mean(np.array(val_accuracy_05))
+            mean_02 = np.mean(np.array(val_accuracy_02))
 
-        torch.save(self.model.state_dict(), "experiments/{}/weights/weights_{:08d}".format(self.experiment_name, self.iteration))
+            torch.save(self.model.state_dict(), "experiments/{}/weights/weights_{:08d}".format(self.experiment_name, self.iteration))
 
-        self.val_writer.write([self.iteration, mean_05, mean_02])
-        return mean_05
+            self.val_writer.write([self.iteration, mean_05, mean_02])
+            return mean_05
