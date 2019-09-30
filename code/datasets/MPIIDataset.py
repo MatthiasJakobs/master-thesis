@@ -14,10 +14,12 @@ import pandas as pd
 from skimage import io
 from skimage.transform import resize
 
-from deephar.image_processing import center_crop, rotate_and_crop, normalize_channels
-from deephar.utils import transform_2d_point, translate, scale, flip_h, superflatten, transform_pose, get_valid_joints
+from datasets.BaseDataset import BaseDataset
 
-class MPIIDataset(data.Dataset):
+from deephar.image_processing import center_crop, rotate_and_crop, normalize_channels
+from deephar.utils import transform_2d_point, translate, scale, flip_h, superflatten, transform_pose, get_valid_joints, flip_lr_pose
+
+class MPIIDataset(BaseDataset):
 
     '''
     What is (probably) happening with the train / val split of luvizon:
@@ -26,9 +28,10 @@ class MPIIDataset(data.Dataset):
         - When I do it like below, almost exactly size(me) = size(train_luvizon) + size(val_luvizon)
     '''
 
-    def __init__(self, root_dir, transform=None, use_random_parameters=True, use_saved_tensors=False):
+    def __init__(self, root_dir, transform=None, use_random_parameters=True, train=True, val=False, use_saved_tensors=False):
+        super().__init__(root_dir, use_random_parameters=use_random_parameters, use_saved_tensors=use_saved_tensors, train=train, val=val)
 
-        self.root_dir = root_dir
+        assert train == True # no test set available
 
         assert "annotations.mat" in os.listdir(self.root_dir)
 
@@ -36,11 +39,6 @@ class MPIIDataset(data.Dataset):
 
         train_binary = annotations["img_train"][0][0][0]
         train_indeces = np.where(np.array(train_binary))[0]
-
-        self.final_size=256
-
-        self.use_saved_tensors = use_saved_tensors
-        self.use_random_parameters = use_random_parameters
 
         if self.use_random_parameters:
             self.prefix = "rand_"
@@ -53,13 +51,7 @@ class MPIIDataset(data.Dataset):
         if use_random_parameters:
             self.angles=np.array(range(-40, 40+1, 5))
             self.scales=np.array([0.7, 1., 1.3])
-            self.channel_power_exponent = 0.01*np.array(range(90, 110+1, 2))
             self.flip_horizontal = np.array([0, 1])
-        else:
-            self.angles=np.array([0, 0, 0])
-            self.scales=np.array([1., 1., 1.])
-            self.flip_horizontal = np.array([0, 0])
-            self.channel_power_exponent = None
 
         self.labels = []
         missing_annnotation_count = 0
@@ -131,187 +123,176 @@ class MPIIDataset(data.Dataset):
                 }
 
                 self.labels.append(final_label)
+        
+        self.items = self.labels
+
+        self.train_val_split()
+
+    def train_val_split(self):
+        np.random.seed(None)
+        st0 = np.random.get_state()
+        np.random.seed(1)
+
+        #np.random.shuffle(self.items)
+
+        val_limit = int(self.val_split_amount * len(self.items))
+
+        all_indices = list(range(len(self.items)))
+        random.shuffle(all_indices)
+
+        if self.train and self.val:
+            self.indices = all_indices[0:val_limit]
+        else:
+            self.indices = all_indices[val_limit:]
+
+        np.random.set_state(st0)
+
+        self.indices = sorted(self.indices)
 
     def __len__(self):
-        return len(self.labels)
+        return len(self.indices)
 
     def __getitem__(self, idx):
-        label = self.labels[idx]
+        label = self.items[self.indices[idx]]
         output = {}
 
         if self.use_saved_tensors:
-            name_path = self.root_dir + "{}tensors/{}".format(self.prefix, label["image_name"])
-            t_filepath = torch.load(name_path + ".image_path.pt")
-            t_normalized_image = torch.load(name_path + ".normalized_image.pt")
-            t_normalized_pose = torch.load(name_path + ".normalized_pose.pt")
-            t_original_pose = torch.load(name_path + ".original_pose.pt")
+
+            if self.val:
+                train_test_folder = "val/"
+            else:
+                train_test_folder = "train/"
+
+            if self.use_random_parameters:
+                prefix = "rand_1/"
+            else:
+                prefix = ""
+
+            original_image = self.indices[idx]
+            padded_original_image = str(original_image).zfill(8)
+
+            name_path = self.root_dir + train_test_folder + prefix + padded_original_image
+            
+            #t_filepath = torch.load(name_path + ".image_path.pt")
+            t_normalized_image = torch.load(name_path + ".frame.pt")
+            t_normalized_pose = torch.load(name_path + ".pose.pt")
+            #t_original_pose = torch.load(name_path + ".original_pose.pt")
             t_headsize = torch.load(name_path + ".headsize.pt")
-            t_trans_matrix = torch.load(name_path + ".trans_matrix.pt")
-            t_original_size = torch.load(name_path + ".original_size.pt")
+            t_trans_matrix = torch.load(name_path + ".matrix.pt")
+            #t_original_size = torch.load(name_path + ".original_size.pt")
             t_bbox = torch.load(name_path + ".bbox.pt")
             t_parameters = torch.load(name_path + ".parameters.pt")
 
-            output["image_path"] = t_filepath
+            #output["image_path"] = t_filepath
             output["normalized_image"] = t_normalized_image
             output["normalized_pose"] = t_normalized_pose
-            output["original_pose"] = t_original_pose
+            #output["original_pose"] = t_original_pose
             output["head_size"] = t_headsize
             output["trans_matrix"] = t_trans_matrix
-            output["original_size"] = t_original_size
+            #output["original_size"] = t_original_size
             output["bbox"] = t_bbox
-            output["parameters"] = t_parameters
-            
+            output["parameters"] = t_parameters         
 
             return output
 
         full_image_path = self.root_dir + "images/" + label["image_name"]
         image = io.imread(full_image_path)
-        original_image = image.copy()
 
-        conf_scale = self.scales[np.random.randint(0, len(self.scales))]
-        conf_angle = self.angles[np.random.randint(0, len(self.angles))]
-        conf_flip = self.flip_horizontal[np.random.randint(0, len(self.flip_horizontal))]
-        if self.channel_power_exponent is not None:
-            conf_exponents = np.array([
-                self.channel_power_exponent[np.random.randint(0, len(self.channel_power_exponent))],
-                self.channel_power_exponent[np.random.randint(0, len(self.channel_power_exponent))],
-                self.channel_power_exponent[np.random.randint(0, len(self.channel_power_exponent))]
-            ])
-        else:
-            conf_exponents = None
-
-        self.test = {}
-        self.test["scale"] = conf_scale
-        self.test["flip"] = conf_flip
-        self.test["angle"] = conf_angle
+        self.set_augmentation_parameters()
 
         new_scale = label["scale"] * 1.25 # magic value
         new_objpose = np.array([label["obj_pose"][0], label["obj_pose"][1] + 12 * new_scale]) # magic values, no idea where they are comming from
 
-        window_size = new_scale * conf_scale * 200
+        window_size = new_scale * self.aug_conf["scale"].item() * 200
 
-        image_width = image.shape[1]
-        image_height = image.shape[0]
-
-        bbox = np.array([
+        self.bbox = torch.IntTensor([
             new_objpose[0] - window_size / 2, # x1, upper left
             new_objpose[1] - window_size / 2, # y1, upper left
             new_objpose[0] + window_size / 2, # x2, lower right
             new_objpose[1] + window_size / 2  # y2, lower right
         ])
 
-        # rotate, then crop
-        trans_matrix, image = rotate_and_crop(image, conf_angle, new_objpose, (window_size, window_size))
-        size_after_rotate = np.array([image.shape[1], image.shape[0]])
+        self.center = torch.from_numpy(new_objpose).float()
+        self.window_size = [window_size, window_size]
 
-        image = resize(image, (self.final_size, self.final_size), preserve_range=True)
-        trans_matrix = scale(trans_matrix, self.final_size / size_after_rotate[0], self.final_size / size_after_rotate[1])
+        pose = torch.IntTensor([label["pose"]["x"], label["pose"]["y"]]).t()
+        frame = torch.from_numpy(image)
 
-        old_pose = np.array([label["pose"]["x"], label["pose"]["y"]]).T
-        old_objpos = np.array(label["obj_pose"])
+        # preprocess
+        trans_matrix, norm_frame, norm_pose = self.preprocess(frame, pose)
 
-        # randomly flip horizontal
-        if conf_flip:
-            image = np.fliplr(image)
-
-            trans_matrix = translate(trans_matrix, -image.shape[1] / 2, -image.shape[0] / 2)
-            trans_matrix = flip_h(trans_matrix)
-            trans_matrix = translate(trans_matrix, image.shape[1] / 2, image.shape[0] / 2)
-
-        trans_matrix = scale(trans_matrix, 1.0 / self.final_size, 1.0 / self.final_size)
-
-        output["center"] = transform_2d_point(trans_matrix, old_objpos)
-        t_original_size = torch.tensor([image_height, image_width], requires_grad=False)
-
-        new_x = []
-        new_y = []
-        for idx, (x, y) in enumerate(old_pose):
-            transformed_point = transform_2d_point(trans_matrix, np.array([x,y]))
-            new_x.append(transformed_point[0])
-            new_y.append(transformed_point[1])
-
-        original_pose = np.empty((16, 3))
-        original_pose[:] = np.nan
+        mapped_pose = torch.FloatTensor(16, 3)
+        mapped_pose[:, 0:2] = -1e9
 
         for it, joint_index in enumerate(label["pose"]["ids"]):
-            x = new_x[it]
-            y = new_y[it]
+            x = norm_pose[it, 0]
+            y = norm_pose[it, 1]
 
             if x < 0 or y < 0 or x > 1 or y > 1:
-                original_pose[joint_index, 0] = np.nan
-                original_pose[joint_index, 1] = np.nan
+                mapped_pose[joint_index, 0] = -1e9
+                mapped_pose[joint_index, 1] = -1e9
             else:
-                original_pose[joint_index, 0] = x
-                original_pose[joint_index, 1] = y
+                mapped_pose[joint_index, 0] = x
+                mapped_pose[joint_index, 1] = y
 
-            original_pose[joint_index, 2] = label["pose"]["visible"][it]
+            mapped_pose[joint_index, 2] = float(label["pose"]["visible"][it])
 
-        original_pose[np.isnan(original_pose)] = -1e9
+        norm_pose = mapped_pose
+        norm_pose = self.set_visibility(norm_pose)
 
-        normalized_pose = original_pose.copy()
+        if self.aug_conf["flip"]:
+            norm_pose = flip_lr_pose(norm_pose)
 
-        # According to paper:
-        lower_one = np.apply_along_axis(np.all, 1, normalized_pose[:,0:2] < 1.0)
-        bigger_zero = np.apply_along_axis(np.all, 1, normalized_pose[:,0:2] > 0.0)
-
-        in_interval = np.logical_and(lower_one, bigger_zero)
-        original_pose[:,2] = in_interval
-        normalized_pose[:,2] = in_interval
 
         # calculating head size for pckh (according to paper)
-        head_point_upper = np.array([label["head"][0], label["head"][1]])
-        head_point_lower = np.array([label["head"][2], label["head"][3]])
+        head_point_upper = torch.FloatTensor([label["head"][0], label["head"][1]])
+        head_point_lower = torch.FloatTensor([label["head"][2], label["head"][3]])
         head_size = 0.6 * np.linalg.norm(head_point_upper - head_point_lower)
 
-        image_normalized = normalize_channels(image, power_factors=conf_exponents)
+        headsize = torch.from_numpy(np.array([head_size])).float()
 
-        t_original_image = torch.from_numpy(original_image).float()
-        t_bbox = torch.from_numpy(bbox).float()
-        t_normalized_image = torch.from_numpy(image_normalized.reshape(3, 256, 256)).float()
-        t_normalized_pose = torch.from_numpy(normalized_pose).float()
-        t_original_pose = torch.from_numpy(original_pose).float()
-        t_headsize = torch.from_numpy(np.array([head_size])).float()
-        t_trans_matrix = torch.from_numpy(trans_matrix.copy()).float()
-
-        t_parameters = torch.zeros(3).float()
-        t_parameters[0] = self.test["scale"]
-        t_parameters[1] = float(self.test["angle"])
-        t_parameters[2] = float(self.test["flip"])
+        norm_frame = norm_frame.permute(2, 0, 1)
+        
+        t_parameters = torch.zeros(5).float()
+        t_parameters[0] = self.aug_conf["scale"]
+        t_parameters[1] = float(self.aug_conf["angle"])
+        t_parameters[2] = float(self.aug_conf["flip"])
+        t_parameters[3] = float(self.aug_conf["trans_x"])
+        t_parameters[4] = float(self.aug_conf["trans_y"])
 
         image_number = int(full_image_path[-13:-4])
         
         image_number_np = np.array([image_number])
         t_filepath = torch.from_numpy(image_number_np).int()
 
-        output["bbox"] = t_bbox
+        output["bbox"] = self.bbox
         output["image_path"] = t_filepath
-        output["normalized_image"] = t_normalized_image
-        output["normalized_pose"] = t_normalized_pose
-        output["original_pose"] = t_original_pose
-        output["head_size"] = t_headsize
-        output["trans_matrix"] = t_trans_matrix
-        output["original_size"] = t_original_size
+        output["normalized_image"] = norm_frame
+        output["normalized_pose"] = norm_pose
+        output["head_size"] = headsize
+        output["trans_matrix"] = trans_matrix
+        output["parameters"] = t_parameters
 
-        if not self.use_saved_tensors:
-            name_path = self.root_dir + "{}tensors/{}".format(self.prefix, label["image_name"])
-            if not os.path.exists(name_path + ".image_path.pt"):
-                torch.save(t_filepath, name_path + ".image_path.pt")
-            if not os.path.exists(name_path + ".normalized_image.pt"):
-                torch.save(t_normalized_image, name_path + ".normalized_image.pt")
-            if not os.path.exists(name_path + ".normalized_pose.pt"):
-                torch.save(t_normalized_pose, name_path + ".normalized_pose.pt")
-            if not os.path.exists(name_path + ".original_pose.pt"):
-                torch.save(t_original_pose, name_path + ".original_pose.pt")
-            if not os.path.exists(name_path + ".headsize.pt"):
-                torch.save(t_headsize, name_path + ".headsize.pt")
-            if not os.path.exists(name_path + ".trans_matrix.pt"):
-                torch.save(t_trans_matrix, name_path + ".trans_matrix.pt")
-            if not os.path.exists(name_path + ".original_size.pt"):
-                torch.save(t_original_size, name_path + ".original_size.pt")
-            if not os.path.exists(name_path + ".bbox.pt"):
-                torch.save(t_bbox, name_path + ".bbox.pt")            
-            if not os.path.exists(name_path + ".parameters.pt"):
-                torch.save(t_parameters, name_path + ".parameters.pt")
+        # if not self.use_saved_tensors:
+        #     name_path = self.root_dir + "{}tensors/{}".format(self.prefix, label["image_name"])
+        #     if not os.path.exists(name_path + ".image_path.pt"):
+        #         torch.save(t_filepath, name_path + ".image_path.pt")
+        #     if not os.path.exists(name_path + ".normalized_image.pt"):
+        #         torch.save(t_normalized_image, name_path + ".normalized_image.pt")
+        #     if not os.path.exists(name_path + ".normalized_pose.pt"):
+        #         torch.save(t_normalized_pose, name_path + ".normalized_pose.pt")
+        #     if not os.path.exists(name_path + ".original_pose.pt"):
+        #         torch.save(t_original_pose, name_path + ".original_pose.pt")
+        #     if not os.path.exists(name_path + ".headsize.pt"):
+        #         torch.save(t_headsize, name_path + ".headsize.pt")
+        #     if not os.path.exists(name_path + ".trans_matrix.pt"):
+        #         torch.save(t_trans_matrix, name_path + ".trans_matrix.pt")
+        #     # if not os.path.exists(name_path + ".original_size.pt"):
+        #     #     torch.save(t_original_size, name_path + ".original_size.pt")
+        #     if not os.path.exists(name_path + ".bbox.pt"):
+        #         torch.save(t_bbox, name_path + ".bbox.pt")            
+        #     if not os.path.exists(name_path + ".parameters.pt"):
+        #         torch.save(t_parameters, name_path + ".parameters.pt")
 
         return output
 
