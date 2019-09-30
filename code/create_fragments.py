@@ -1,5 +1,6 @@
 from datasets.JHMDBDataset import JHMDBDataset
 from datasets.PennActionDataset import PennActionDataset
+from datasets.MPIIDataset import MPIIDataset
 from visualization import show_predictions_ontop, show_pose_on_image
 import matplotlib.pyplot as plt
 
@@ -211,9 +212,65 @@ def create_fragments_jhmdb(train=False, val=False, split=1, use_random=False, su
 
                 print("{} - {}: {} / {}".format(train_test_folder, split, counter+1, len(all_indices)))
 
+def create_fragments_mpii(train=False, val=False, use_random=False, subprefix="1"):
+        ds = MPIIDataset("/data/mjakobs/data/mpii/", use_random_parameters=use_random, use_saved_tensors=False, train=train, val=val)
+
+        print("-" * 50)
+        print("Train: {}, Val: {}, Split: {}, Random: {}".format(train, val, split, use_random))
+        print("-" * 50)
+
+        length = len(ds)
+        current = 0
+
+        assert train == True
+
+        root_dir = "/data/mjakobs/data/mpii/"
+
+        if use_random:
+            prefix = "rand{}_".format(subprefix)
+        else:
+            prefix = ""
+
+        all_indices = list(range(len(ds)))
+
+        if val:
+                train_test_folder = "val/"
+        else:
+                train_test_folder = "train/"
+
+
+        for counter, idx in enumerate(all_indices):
+                entry = ds[idx]
+                frame = entry["normalized_image"]
+                pose = entry["normalized_pose"]
+                matrix = entry["trans_matrix"]
+                bbox = entry["bbox"]
+                headsize = entry["head_size"]
+                parameters = entry["parameters"]
+
+                original_image = ds.indices[idx]
+                padded_original_image = str(original_image).zfill(8)
+
+                #if not os.path.exists(root_dir + train_test_folder + prefix + "images/" + padded_original_image + ".frame.pt"):
+                torch.save(frame, root_dir + train_test_folder + prefix + "images/" + padded_original_image + ".frame.pt")
+                #if not os.path.exists(root_dir + train_test_folder + prefix + "annotations/" + padded_original_image + ".headsize.pt"):
+                torch.save(headsize, root_dir + train_test_folder + prefix + "annotations/" + padded_original_image + ".headsize.pt")
+                #if not os.path.exists(root_dir + train_test_folder + prefix + "annotations/" + padded_original_image + ".pose.pt"):
+                torch.save(pose, root_dir + train_test_folder + prefix + "annotations/" + padded_original_image + ".pose.pt")
+                #if not os.path.exists(root_dir + train_test_folder + prefix + "annotations/" + padded_original_image + ".matrix.pt"):
+                torch.save(matrix, root_dir + train_test_folder + prefix + "annotations/" + padded_original_image + ".matrix.pt")
+                #if not os.path.exists(root_dir + train_test_folder + prefix + "annotations/" + padded_original_image + ".bbox.pt"):
+                torch.save(bbox, root_dir + train_test_folder + prefix + "annotations/" + padded_original_image + ".bbox.pt")
+                #if not os.path.exists(root_dir + train_test_folder + prefix + "annotations/" + padded_original_image + ".parameters.pt"):
+                torch.save(parameters, root_dir + train_test_folder + prefix + "annotations/" + padded_original_image + ".parameters.pt")
+
+
 split = 1
 amount_random = 1
 
+######
+#  JHMDB
+#####
 for i in range(amount_random):
         subprefix = "{}".format(i + 1)
 
@@ -225,8 +282,17 @@ create_fragments_jhmdb(train=True, val=False, split=split, use_random=False)
 create_fragments_jhmdb(train=False, val=False, split=split) # test
 create_fragments_jhmdb(train=True, val=True, split=split) # val
 
+######
+#  MPII
+#####
+create_fragments_mpii(train=True, val=False, use_random=False) # Train nrandom
+create_fragments_mpii(train=True, val=False, use_random=True) # train random
+create_fragments_mpii(train=True, val=True, use_random=False) # val
 
-# delete_and_create("/data/mjakobs/data/pennaction_fragments/")
-# create_fragments_pennaction(False, False)
-# create_fragments_pennaction(True, True)
-# create_fragments_pennaction(True, False)
+######
+#  Penn Action
+#####
+delete_and_create("/data/mjakobs/data/pennaction_fragments/")
+create_fragments_pennaction(False, False)
+create_fragments_pennaction(True, True)
+create_fragments_pennaction(True, False)
