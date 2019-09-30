@@ -120,28 +120,48 @@ class ExperimentBase:
             else:
                 rmtree(path)
 
-    def split_indices(self, ds_length):
-        number_of_datapoints = int(ds_length * self.conf["limit_data_percent"])
-        indices = list(range(number_of_datapoints))
-        split = int((1 - self.conf["validation_amount"]) * number_of_datapoints)
+    def limit_dataset(self, include_test=False):
+        train_indices = []
+        val_indices = []
+        test_indices = []
 
-        np.random.shuffle(indices)
+        datasets = [self.ds_train, self.ds_val]
+        if include_test:
+            datasets.append(self.ds_test)
 
-        train_indices = indices[:split]
-        val_indices = indices[split:]
-        print("Using {} training and {} validation datapoints".format(len(train_indices), len(val_indices)))
-        return train_indices, val_indices
+        for i, ds in enumerate(datasets):
+            datapoints = int(len(ds) * self.conf["limit_data_percent"])
+            
+            indices = list(range(len(ds)))
+
+            np.random.shuffle(indices)
+
+            indices = indices[:datapoints]
+
+            if i == 0:
+                train_indices = indices
+            if i == 1:
+                val_indices = indices
+            if i == 2:
+                test_indices = indices
+
+        if include_test:
+            print("Using {} training, {} validation and {} test datapoints".format(len(train_indices), len(val_indices), len(test_indices)))
+            return train_indices, val_indices, test_indices
+        else:
+            print("Using {} training and {} validation datapoints".format(len(train_indices), len(val_indices)))
+            return train_indices, val_indices
 
     def train(self, train_objects):
-        Warning("this is an abstract class. Train needs to be implemented")
+        print("Train not implemented")
         return 0
 
     def evaluate(self):
-        Warning("this is an abstract class. Evaluate needs to be implemented")
+        print("Evaluation not implemented")
         return 0
 
     def test(self, pretrained_model=None):
-        Warning("this is an abstract class. Test needs to be implemented")
+        print("Test not implemented")
         return 0
 
     def run_experiment(self):
@@ -163,11 +183,13 @@ class ExperimentBase:
                         print("-----------------------------------")
 
                 if self.iteration >= self.conf["total_iterations"]:
-                    print("done")
+                    print("Done training")
                     running = False
                     break
 
-        self.test()
+        test_accuracy = self.test()
+        print("Test accuracy: " + str(test_accuracy))
+        return
 
 
 class HAR_Testing_Experiment(ExperimentBase):
@@ -342,11 +364,19 @@ class Pose_JHMDB(ExperimentBase):
             self.model.load_state_dict(torch.load("/data/mjakobs/data/pretrained_weights_4", map_location=self.device))
         self.model.train()
 
-        self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False, augmentation_amount=3, use_random_parameters=True)
-        self.ds_val = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=True)
+        if "use_random" in self.conf and self.conf["use_random"]:
+            self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False, augmentation_amount=1, use_random_parameters=True)
+        else:
+            self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False, augmentation_amount=3, use_random_parameters=False)
 
-        train_sampler = SubsetRandomSampler(list(range(len(self.ds_train))))
-        val_sampler = SubsetRandomSampler(list(range(len(self.ds_val))))
+        self.ds_val = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=True)
+        self.ds_test = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=False)
+
+        train_indices, val_indices, test_indices = self.limit_dataset(include_test=True)
+
+        train_sampler = SubsetRandomSampler(train_indices)
+        val_sampler = SubsetRandomSampler(val_indices)
+        test_sampler = SubsetRandomSampler(test_indices)
 
         self.train_loader = data.DataLoader(
             self.ds_train,
@@ -360,6 +390,12 @@ class Pose_JHMDB(ExperimentBase):
             sampler=val_sampler
         )
 
+        self.test_loader = data.DataLoader(
+            self.ds_test,
+            batch_size=self.conf["batch_size"],
+            sampler=test_sampler
+        )
+
         self.optimizer = optim.RMSprop(self.model.parameters(), lr=self.conf["learning_rate"])
 
         self.train_writer.write(["iteration", "loss"])
@@ -370,6 +406,7 @@ class Pose_JHMDB(ExperimentBase):
 
     def train(self, train_objects):
 
+        self.model.train()
         images = train_objects["frames"].to(self.device)
         train_poses = train_objects["poses"].to(self.device)
 
@@ -413,58 +450,60 @@ class Pose_JHMDB(ExperimentBase):
         print("iteration {} loss {}".format(self.iteration, loss.item()))
 
     def evaluate(self):
-        val_accuracy_02 = []
+        self.model.eval()
 
-        self.create_dynamic_folders()
+        with torch.no_grad():
+            val_accuracy_02 = []
 
-        for batch_idx, val_data in enumerate(self.val_loader):
-            val_images = val_data["frames"].to(self.device)
-            val_images = val_images.contiguous().view(val_data["frames"].size()[0] * val_data["frames"].size()[1], 3, 255, 255)
+            self.create_dynamic_folders()
 
-            val_poses = val_data["poses"].to(self.device)
-            val_poses = val_poses.contiguous().view(val_data["poses"].size()[0] * val_data["poses"].size()[1], 16, 3)
+            for batch_idx, val_data in enumerate(self.val_loader):
+                val_images = val_data["frames"].to(self.device)
+                val_images = val_images.contiguous().view(val_data["frames"].size()[0] * val_data["frames"].size()[1], 3, 255, 255)
 
-            trans_matrices = val_data["trans_matrices"].to(self.device)
-            trans_matrices = trans_matrices.contiguous().view(val_data["trans_matrices"].size()[0] * val_data["trans_matrices"].size()[1], 3, 3)
+                val_poses = val_data["poses"].to(self.device)
+                val_poses = val_poses.contiguous().view(val_data["poses"].size()[0] * val_data["poses"].size()[1], 16, 3)
 
-            heatmaps, predictions = self.model(val_images)
-            predictions = predictions[-1, :, :, :].squeeze(dim=0)
+                trans_matrices = val_data["trans_matrices"].to(self.device)
+                trans_matrices = trans_matrices.contiguous().view(val_data["trans_matrices"].size()[0] * val_data["trans_matrices"].size()[1], 3, 3)
 
-            if predictions.dim() == 2:
-                predictions = predictions.unsqueeze(0)
+                heatmaps, predictions = self.model(val_images)
+                predictions = predictions[-1, :, :, :].squeeze(dim=0)
+
+                if predictions.dim() == 2:
+                    predictions = predictions.unsqueeze(0)
 
 
-            # save predictions
-            image = val_images[0].permute(1, 2, 0)
-            gt_poses = val_poses
+                # save predictions
+                image = val_images[0].permute(1, 2, 0)
+                gt_poses = val_poses
 
-            val_accuracy_02.append(eval_pcku_batch(predictions[:, :, 0:2], gt_poses[:, :, 0:2], trans_matrices))
+                val_accuracy_02.append(eval_pcku_batch(predictions[:, :, 0:2], gt_poses[:, :, 0:2], trans_matrices))
 
-            if batch_idx % 10 == 0:
-                prediction = predictions[0, :, 0:2]
-                gt_pose = gt_poses[0]
-                matrix = trans_matrices[0]
+                if batch_idx % 10 == 0:
+                    prediction = predictions[0, :, 0:2]
+                    gt_pose = gt_poses[0]
+                    matrix = trans_matrices[0]
 
-                if torch.cuda.is_available():
-                    image = image.cpu()
-                    prediction = prediction.cpu()
-                    gt_pose = gt_pose.cpu()
+                    if torch.cuda.is_available():
+                        image = image.cpu()
+                        prediction = prediction.cpu()
+                        gt_pose = gt_pose.cpu()
 
-                path = 'experiments/{}/val_images/{}/{}.png'.format(self.experiment_name, self.iteration, batch_idx)
+                    path = 'experiments/{}/val_images/{}/{}.png'.format(self.experiment_name, self.iteration, batch_idx)
 
-                show_prediction_jhmbd(image, gt_pose, prediction, matrix, path=path)
+                    show_prediction_jhmbd(image, gt_pose, prediction, matrix, path=path)
 
-                # plt.imshow(image)
-                # pred_x = prediction[:, 0]
-                # pred_y = prediction[:, 1]
-                # gt_x = gt_pose[:, 0]
-                # gt_y = gt_pose[:, 1]
-                # plt.scatter(x=pred_x, y=pred_y, c="b")
-                # plt.scatter(x=gt_x, y=gt_y, c="r")
-                # path = 'experiments/{}/val_images/{}/{}.png'.format(self.experiment_name, self.iteration, batch_idx)
-                # plt.savefig(path)
-                # plt.close()
-
+                    # plt.imshow(image)
+                    # pred_x = prediction[:, 0]
+                    # pred_y = prediction[:, 1]
+                    # gt_x = gt_pose[:, 0]
+                    # gt_y = gt_pose[:, 1]
+                    # plt.scatter(x=pred_x, y=pred_y, c="b")
+                    # plt.scatter(x=gt_x, y=gt_y, c="r")
+                    # path = 'experiments/{}/val_images/{}/{}.png'.format(self.experiment_name, self.iteration, batch_idx)
+                    # plt.savefig(path)
+                    # plt.close()
 
         torch.save(self.model.state_dict(), "experiments/{}/weights/weights_{:08d}".format(self.experiment_name, self.iteration))
 
@@ -472,13 +511,43 @@ class Pose_JHMDB(ExperimentBase):
         self.val_writer.write([self.iteration, mean_02])
         return mean_02
 
+    def test(self, pretrained_model=None):
+        with torch.no_grad():
+            if pretrained_model is not None:
+                self.preparation()
+                self.model.load_state_dict(torch.load(pretrained_model, map_location=self.device))
+
+            accuracies = []
+
+            self.model.eval()
+            for batch_idx, test_data in enumerate(self.val_loader):
+                test_images = test_data["frames"].to(self.device)
+                test_images = test_images.contiguous().view(test_data["frames"].size()[0] * test_data["frames"].size()[1], 3, 255, 255)
+
+                val_poses = test_data["poses"].to(self.device)
+                val_poses = val_poses.contiguous().view(test_data["poses"].size()[0] * test_data["poses"].size()[1], 16, 3)
+
+                trans_matrices = test_data["trans_matrices"].to(self.device)
+                trans_matrices = trans_matrices.contiguous().view(test_data["trans_matrices"].size()[0] * test_data["trans_matrices"].size()[1], 3, 3)
+
+                _, predictions = self.model(test_images)
+                predictions = predictions[-1, :, :, :].squeeze(dim=0)
+
+                if predictions.dim() == 2:
+                    predictions = predictions.unsqueeze(0)
+
+                gt_poses = val_poses
+
+                accuracies.append(eval_pcku_batch(predictions[:, :, 0:2], gt_poses[:, :, 0:2], trans_matrices))
+
+            return torch.mean(torch.FloatTensor(accuracies)).item()
 
 
 class MPIIExperiment(ExperimentBase):
 
     def preparation(self):
-        self.ds_train = MPIIDataset("/data/mjakobs/data/mpii/", use_random_parameters=self.conf["use_random_parameters"], use_saved_tensors=self.conf["use_saved_tensors"])
-        self.ds_val = MPIIDataset("/data/mjakobs/data/mpii/", use_random_parameters=False, use_saved_tensors=self.conf["use_saved_tensors"])
+        self.ds_train = MPIIDataset("/data/mjakobs/data/mpii/", train=True, val=False, use_random_parameters=self.conf["use_random_parameters"], use_saved_tensors=self.conf["use_saved_tensors"])
+        self.ds_val = MPIIDataset("/data/mjakobs/data/mpii/", train=True, val=True, use_random_parameters=False, use_saved_tensors=self.conf["use_saved_tensors"])
 
         if self.conf["num_blocks"] == 1:
             self.model = Mpii_1(num_context=self.conf["nr_context"]).to(self.device)
@@ -489,7 +558,7 @@ class MPIIExperiment(ExperimentBase):
         if self.conf["num_blocks"] == 8:
             self.model = Mpii_8(num_context=self.conf["nr_context"]).to(self.device)
 
-        train_indices, val_indices = self.split_indices(len(self.ds_train))
+        train_indices, val_indices = self.limit_dataset(include_test=False)
 
         train_sampler = SubsetRandomSampler(train_indices)
         val_sampler = SubsetRandomSampler(val_indices)
