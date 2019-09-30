@@ -52,7 +52,6 @@ class JHMDBDataset(BaseDataset):
 
         self.split = split
         self.clip_length = 40
-        self.val_split_amount = 0.1
 
         split_file_paths = "{}splits/*_test_split{}.txt".format(self.root_dir, split)
         split_files = glob.glob(split_file_paths)

@@ -44,6 +44,8 @@ class BaseDataset(data.Dataset):
 
         self.final_size = 255
 
+        self.val_split_amount = 0.1
+
         self.indices = []
         self.items = []
 
