@@ -69,6 +69,15 @@ for scenario_idx, scenario in enumerate(scenarios):
         for frame in range(entry["sequence_length"].item()):
 
             image = entry["normalized_frames"][frame]
+            parameters = entry["parameters"][frame]
+
+            if val:
+                assert parameters[0] == 1.0 # scale
+                assert parameters[1] == 0.0 # angle
+                assert parameters[2] == 0.0 # flip
+                assert parameters[3] == 0.0 # trans x
+                assert parameters[4] == 0.0 # trans y
+
             image = image.permute(1, 2, 0)
             action_label = actions[entry["action_1h"].argmax().item()]
 

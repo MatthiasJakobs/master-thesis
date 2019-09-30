@@ -36,8 +36,8 @@ if os.path.exists(output_folder):
 
 os.makedirs(output_folder)
 
-subfolders = ["norandom_nosaved", "random_nosaved", "norandom_saved", "random_saved"]
-scenarios = [[False, False], [True, False], [False, True], [True, True]]
+subfolders = ["train_norandom_nosaved", "train_random_nosaved", "test_norandom_nosaved", "val_norandom_nosaved"]
+scenarios = [[True, False, False, False], [True, False, True, False], [False, False, False, False], [True, True, False, False]] # train, val, random, saved
 
 for path in subfolders:
     os.makedirs(output_folder + "/" + path)
@@ -46,24 +46,33 @@ random.seed(1)
 np.random.seed(1)
 torch.manual_seed(1)
 
-
-ds = MPIIDataset("/data/mjakobs/data/mpii/", use_random_parameters=False, use_saved_tensors=False)
-
-all_indices = list(range(len(ds)))
-random.shuffle(all_indices)
-test_indices = all_indices[:20]
-
 for scenario_idx, scenario in enumerate(scenarios):
-    use_random_parameters = scenario[0]
-    use_saved_tensors = scenario[1]
+   
+    train = scenario[0]
+    val = scenario[1]
+    random = scenario[2]
+    saved = scenario[3]
     
-    ds = MPIIDataset("/data/mjakobs/data/mpii/", use_random_parameters=use_random_parameters, use_saved_tensors=False)
+    ds = MPIIDataset("/data/mjakobs/data/mpii/", train=train, val=val, use_random_parameters=random, use_saved_tensors=False)
+
+    all_indices = list(range(len(ds)))
+    random.seed(1)
+    random.shuffle(all_indices)
+    test_indices = all_indices[:20]
 
     for idx in test_indices:
 
         entry = ds[idx]
 
-        image = entry["normalized_image"].reshape(256, 256, 3)
+        parameters = entry["parameters"]
+        if val:
+            assert parameters[0] == 1.0 # scale
+            assert parameters[1] == 0.0 # angle
+            assert parameters[2] == 0.0 # flip
+            assert parameters[3] == 0.0 # trans x
+            assert parameters[4] == 0.0 # trans y
+
+        image = entry["normalized_image"].permute(1, 2, 0)
 
         assert image.max() <= 1 and image.min() >= -1
 
@@ -76,8 +85,8 @@ for scenario_idx, scenario in enumerate(scenarios):
         vis = pose[:, 2]
         vis_int = vis.long()
 
-        x = (pose[:, 0] * 256.0 * vis).numpy()
-        y = (pose[:, 1] * 256.0 * vis).numpy()
+        x = (pose[:, 0] * 255.0 * vis).numpy()
+        y = (pose[:, 1] * 255.0 * vis).numpy()
 
         assert pose.max() <= 1 and (pose.min() >= 0 or pose.min() == -1e9), print(entry["normalized_pose"])
         for o in range(16):
@@ -125,12 +134,12 @@ for scenario_idx, scenario in enumerate(scenarios):
         ax = plt.gca()
         ax.add_patch(bbox_rect)
 
-        if use_random_parameters:
-            if use_saved_tensors:
+        if random:
+            if saved:
                 parameters = entry["parameters"]
                 parameter_text = "scale={}, angle={}, flip_lr={}".format(parameters[0], int(parameters[1]), int(parameters[2]))
             else:
-                parameter_text = "scale={}, angle={}, flip_lr={}".format(ds.test["scale"], ds.test["angle"], ds.test["flip"])
+                parameter_text = "scale={}, angle={}, flip_lr={}".format(ds.aug_conf["scale"], ds.aug_conf["angle"], ds.aug_conf["flip"])
             plt.figtext(0.15, 0.15, parameter_text, fontsize=14)
             plt.subplots_adjust(bottom=0.20)
 
