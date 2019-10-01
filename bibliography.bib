@@ -305,7 +305,7 @@ useful for improving the prediction accuracy.},
 	abstract = {Although action recognition in videos is widely studied, current methods often fail on real-world datasets. Many recent approaches improve accuracy and robustness to cope with challenging video sequences, but it is often unclear what affects the results most. This paper attempts to provide insights based on a systematic performance evaluation using thoroughly-annotated data of human actions. We annotate human Joints for the HMDB dataset (J-HMDB). This annotation can be used to derive ground truth optical ﬂow and segmentation. We evaluate current methods using this dataset and systematically replace the output of various algorithms with ground truth. This enables us to discover what is important – for example, should we work on improving ﬂow algorithms, estimating human bounding boxes, or enabling pose estimation? In summary, we ﬁnd that highlevel pose features greatly outperform low/mid level features; in particular, pose over time is critical. While current pose estimation algorithms are far from perfect, features extracted from estimated pose on a subset of J-HMDB, in which the full body is visible, outperform low/mid-level features. We also ﬁnd that the accuracy of the action recognition framework can be greatly increased by reﬁning the underlying low/mid level features; this suggests it is important to improve optical ﬂow and human detection algorithms. Our analysis and J-HMDB dataset should facilitate a deeper understanding of action recognition algorithms.},
 	language = {en},
 	booktitle = {Proceedings of the {IEEE} international conference on computer vision},
-	author = {Jhuang, Hueihan and Gall, Juergen and Zufﬁ, Silvia and Schmid, Cordelia and Black, Michael J},
+	author = {Jhuang, Hueihan and Gall, Juergen and Zuffi, Silvia and Schmid, Cordelia and Black, Michael J},
 	year = {2013},
 	pages = {3192--3199},
 	file = {Jhuang et al. - Towards understanding action recognition.pdf:/home/matthias/Zotero/storage/7J7C65KD/Jhuang et al. - Towards understanding action recognition.pdf:application/pdf}
@@ -922,7 +922,7 @@ Volume 2016, Issue 10},
 	author = {Ordóñez, Francisco Javier and Roggen, Daniel},
 	month = jan,
 	year = {2016},
-	keywords = {human activity recognition, deep learning, LSTM, machine learning, neural network, sensor fusion, wearable sensors},
+	keywords = {deep learning, human activity recognition, LSTM, machine learning, neural network, sensor fusion, wearable sensors},
 	pages = {115},
 	file = {Full Text PDF:/home/matthias/Zotero/storage/977BV59L/Ordóñez and Roggen - 2016 - Deep Convolutional and LSTM Recurrent Neural Netwo.pdf:application/pdf;Snapshot:/home/matthias/Zotero/storage/CSZEEVZF/htm.html:text/html}
 }
@@ -1701,7 +1701,7 @@ input feature for many computer vision algorithms.},
 	booktitle = {{IEEE} {Conference} on {Computer} {Vision} and {Pattern} {Recognition} ({CVPR})},
 	author = {Ferrari, Vittorio and Marin-Jimenez, Manuel and Zisserman, Andrew},
 	year = {2008},
-	keywords = {2D human pose, Arm, belief propagation, Biological system modeling, Clothing, Detectors, full-body action recognition, generic detector, Head, human pose estimation, Humans, Motion pictures, movie video shots, pose estimation, progressive search space reduction, Switches, Torso, TV, TV video shots, video material, video signal processing},
+	keywords = {pose estimation, video signal processing, human pose estimation, Humans, Motion pictures, Biological system modeling, Detectors, 2D human pose, Arm, belief propagation, Clothing, full-body action recognition, generic detector, Head, movie video shots, progressive search space reduction, Switches, Torso, TV, TV video shots, video material},
 	pages = {1--8},
 	file = {IEEE Xplore Abstract Record:/home/matthias/Zotero/storage/IVY5W4SQ/4587468.html:text/html;Submitted Version:/home/matthias/Zotero/storage/EWEQBWU2/Ferrari et al. - 2008 - Progressive search space reduction for human pose .pdf:application/pdf}
 }
@@ -1714,4 +1714,229 @@ input feature for many computer vision algorithms.},
 	author = {Ramanan, Deva},
 	year = {2007},
 	pages = {1129--1136}
+}
+
+@inproceedings{cheron_pcnn_2015,
+	title = {P-{CNN}: {Pose}-{Based} {CNN} {Features} for {Action} {Recognition}},
+	shorttitle = {{PCNN}},
+	url = {http://openaccess.thecvf.com/content_iccv_2015/html/Cheron_P-CNN_Pose-Based_CNN_ICCV_2015_paper.html},
+	urldate = {2019-09-06},
+	author = {Cheron, Guilhem and Laptev, Ivan and Schmid, Cordelia},
+	year = {2015},
+	pages = {3218--3226},
+	file = {Full Text PDF:/home/matthias/Zotero/storage/V9S5LRYV/Cheron et al. - 2015 - P-CNN Pose-Based CNN Features for Action Recognit.pdf:application/pdf;Snapshot:/home/matthias/Zotero/storage/M6JMDK7Y/Cheron_P-CNN_Pose-Based_CNN_ICCV_2015_paper.html:text/html}
+}
+
+@inproceedings{choutas_potion:_2018,
+	title = {{PoTion}: {Pose} {MoTion} {Representation} for {Action} {Recognition}},
+	shorttitle = {{PoTion}},
+	url = {http://openaccess.thecvf.com/content_cvpr_2018/html/Choutas_PoTion_Pose_MoTion_CVPR_2018_paper.html},
+	urldate = {2019-09-10},
+	author = {Choutas, Vasileios and Weinzaepfel, Philippe and Revaud, Jérôme and Schmid, Cordelia},
+	year = {2018},
+	pages = {7024--7033},
+	file = {Full Text PDF:/home/matthias/Zotero/storage/G6LBK4U6/Choutas et al. - 2018 - PoTion Pose MoTion Representation for Action Reco.pdf:application/pdf;Snapshot:/home/matthias/Zotero/storage/R6SG3DLN/Choutas_PoTion_Pose_MoTion_CVPR_2018_paper.html:text/html}
+}
+
+@inproceedings{tran_closer_2018,
+	title = {A {Closer} {Look} at {Spatiotemporal} {Convolutions} for {Action} {Recognition}},
+	url = {http://openaccess.thecvf.com/content_cvpr_2018/html/Tran_A_Closer_Look_CVPR_2018_paper.html},
+	urldate = {2019-09-10},
+	author = {Tran, Du and Wang, Heng and Torresani, Lorenzo and Ray, Jamie and LeCun, Yann and Paluri, Manohar},
+	year = {2018},
+	pages = {6450--6459},
+	file = {Full Text PDF:/home/matthias/Zotero/storage/KQDIFTQ4/Tran et al. - 2018 - A Closer Look at Spatiotemporal Convolutions for A.pdf:application/pdf;Snapshot:/home/matthias/Zotero/storage/AQG8AXCS/Tran_A_Closer_Look_CVPR_2018_paper.html:text/html}
+}
+
+@inproceedings{chin_ann_human_2015,
+	title = {Human activity recognition: {A} review},
+	shorttitle = {Human activity recognition},
+	doi = {10.1109/ICCSCE.2014.7072750},
+	abstract = {Human Activity Recognition is one of the active research areas in computer vision for various contexts like security surveillance, healthcare and human computer interaction. In this paper, a total of thirty-two recent research papers on sensing technologies used in HAR are reviewed. The review covers three area of sensing technologies namely RGB cameras, depth sensors and wearable devices. It also discusses on the pros and cons of the mentioned sensing technologies. The findings showed that RGB cameras have lower popularity when compared to depth sensors and wearable devices in HAR research.},
+	author = {Chin Ann, Ong and Lau, Bee},
+	month = mar,
+	year = {2015},
+	pages = {389--393},
+	file = {Full Text PDF:/home/matthias/Zotero/storage/RXHHTDFJ/Chin Ann and Lau - 2015 - Human activity recognition A review.pdf:application/pdf}
+}
+
+@article{carreira_quo_2017-1,
+	title = {Quo {Vadis}, {Action} {Recognition}? {A} {New} {Model} and the {Kinetics} {Dataset}},
+	shorttitle = {Quo {Vadis}, {Action} {Recognition}?},
+	url = {http://arxiv.org/abs/1705.07750},
+	abstract = {The paucity of videos in current action classification datasets (UCF-101 and HMDB-51) has made it difficult to identify good video architectures, as most methods obtain similar performance on existing small-scale benchmarks. This paper re-evaluates state-of-the-art architectures in light of the new Kinetics Human Action Video dataset. Kinetics has two orders of magnitude more data, with 400 human action classes and over 400 clips per class, and is collected from realistic, challenging YouTube videos. We provide an analysis on how current architectures fare on the task of action classification on this dataset and how much performance improves on the smaller benchmark datasets after pre-training on Kinetics. We also introduce a new Two-Stream Inflated 3D ConvNet (I3D) that is based on 2D ConvNet inflation: filters and pooling kernels of very deep image classification ConvNets are expanded into 3D, making it possible to learn seamless spatio-temporal feature extractors from video while leveraging successful ImageNet architecture designs and even their parameters. We show that, after pre-training on Kinetics, I3D models considerably improve upon the state-of-the-art in action classification, reaching 80.9\% on HMDB-51 and 98.0\% on UCF-101.},
+	urldate = {2019-09-10},
+	journal = {arXiv:1705.07750 [cs]},
+	author = {Carreira, Joao and Zisserman, Andrew},
+	month = may,
+	year = {2017},
+	note = {arXiv: 1705.07750},
+	keywords = {Computer Science - Computer Vision and Pattern Recognition, Computer Science - Machine Learning},
+	annote = {Comment: Removed references to mini-kinetics dataset that was never made publicly available and repeated all experiments on the full Kinetics dataset},
+	file = {arXiv\:1705.07750 PDF:/home/matthias/Zotero/storage/5MDZ5M8G/Carreira and Zisserman - 2017 - Quo Vadis, Action Recognition A New Model and the.pdf:application/pdf;arXiv.org Snapshot:/home/matthias/Zotero/storage/2YNM3X29/1705.html:text/html}
+}
+
+@incollection{simonyan_two-stream_2014-1,
+	title = {Two-{Stream} {Convolutional} {Networks} for {Action} {Recognition} in {Videos}},
+	url = {http://papers.nips.cc/paper/5353-two-stream-convolutional-networks-for-action-recognition-in-videos.pdf},
+	urldate = {2019-09-23},
+	booktitle = {Advances in {Neural} {Information} {Processing} {Systems} 27},
+	publisher = {Curran Associates, Inc.},
+	author = {Simonyan, Karen and Zisserman, Andrew},
+	year = {2014},
+	pages = {568--576},
+	file = {NIPS Full Text PDF:/home/matthias/Zotero/storage/85Z482HL/Simonyan and Zisserman - 2014 - Two-Stream Convolutional Networks for Action Recog.pdf:application/pdf;NIPS Snapshot:/home/matthias/Zotero/storage/2XMRV9RL/5353-two-stream-convolutional-networks-for-action-recognition-in-videos.html:text/html}
+}
+
+@inproceedings{wang_action_2013,
+	title = {Action {Recognition} with {Improved} {Trajectories}},
+	url = {https://www.cv-foundation.org/openaccess/content_iccv_2013/html/Wang_Action_Recognition_with_2013_ICCV_paper.html},
+	urldate = {2019-09-23},
+	author = {Wang, Heng and Schmid, Cordelia},
+	year = {2013},
+	pages = {3551--3558},
+	file = {Full Text PDF:/home/matthias/Zotero/storage/XLGPWF4J/Wang and Schmid - 2013 - Action Recognition with Improved Trajectories.pdf:application/pdf;Snapshot:/home/matthias/Zotero/storage/CH7XWDZ2/Wang_Action_Recognition_with_2013_ICCV_paper.html:text/html}
+}
+
+@article{wang_dense_2013,
+	title = {Dense {Trajectories} and {Motion} {Boundary} {Descriptors} for {Action} {Recognition}},
+	volume = {103},
+	issn = {1573-1405},
+	url = {https://doi.org/10.1007/s11263-012-0594-8},
+	doi = {10.1007/s11263-012-0594-8},
+	abstract = {This paper introduces a video representation based on dense trajectories and motion boundary descriptors. Trajectories capture the local motion information of the video. A dense representation guarantees a good coverage of foreground motion as well as of the surrounding context. A state-of-the-art optical flow algorithm enables a robust and efficient extraction of dense trajectories. As descriptors we extract features aligned with the trajectories to characterize shape (point coordinates), appearance (histograms of oriented gradients) and motion (histograms of optical flow). Additionally, we introduce a descriptor based on motion boundary histograms (MBH) which rely on differential optical flow. The MBH descriptor shows to consistently outperform other state-of-the-art descriptors, in particular on real-world videos that contain a significant amount of camera motion. We evaluate our video representation in the context of action classification on nine datasets, namely KTH, YouTube, Hollywood2, UCF sports, IXMAS, UIUC, Olympic Sports, UCF50 and HMDB51. On all datasets our approach outperforms current state-of-the-art results.},
+	language = {en},
+	number = {1},
+	urldate = {2019-09-23},
+	journal = {International Journal of Computer Vision},
+	author = {Wang, Heng and Kläser, Alexander and Schmid, Cordelia and Liu, Cheng-Lin},
+	month = may,
+	year = {2013},
+	keywords = {Action recognition, Dense trajectories, Motion boundary histograms},
+	pages = {60--79},
+	file = {Springer Full Text PDF:/home/matthias/Zotero/storage/33HI6VMH/Wang et al. - 2013 - Dense Trajectories and Motion Boundary Descriptors.pdf:application/pdf}
+}
+
+@article{tu_multi-stream_2018,
+	title = {Multi-stream {CNN}: {Learning} representations based on human-related regions for action recognition},
+	volume = {79},
+	issn = {0031-3203},
+	shorttitle = {Multi-stream {CNN}},
+	url = {http://www.sciencedirect.com/science/article/pii/S0031320318300359},
+	doi = {10.1016/j.patcog.2018.01.020},
+	abstract = {The most successful video-based human action recognition methods rely on feature representations extracted using Convolutional Neural Networks (CNNs). Inspired by the two-stream network (TS-Net), we propose a multi-stream Convolutional Neural Network (CNN) architecture to recognize human actions. We additionally consider human-related regions that contain the most informative features. First, by improving foreground detection, the region of interest corresponding to the appearance and the motion of an actor can be detected robustly under realistic circumstances. Based on the entire detected human body, we construct one appearance and one motion stream. In addition, we select a secondary region that contains the major moving part of an actor based on motion saliency. By combining the traditional streams with the novel human-related streams, we introduce a human-related multi-stream CNN (HR-MSCNN) architecture that encodes appearance, motion, and the captured tubes of the human-related regions. Comparative evaluation on the JHMDB, HMDB51, UCF Sports and UCF101 datasets demonstrates that the streams contain features that complement each other. The proposed multi-stream architecture achieves state-of-the-art results on these four datasets.},
+	urldate = {2019-09-23},
+	journal = {Pattern Recognition},
+	author = {Tu, Zhigang and Xie, Wei and Qin, Qianqing and Poppe, Ronald and Veltkamp, Remco C. and Li, Baoxin and Yuan, Junsong},
+	month = jul,
+	year = {2018},
+	keywords = {Action recognition, Convolutional Neural Network, Motion salient region, Multi-Stream},
+	pages = {32--43},
+	file = {ScienceDirect Snapshot:/home/matthias/Zotero/storage/P6VWIRAQ/S0031320318300359.html:text/html;Tu et al. - 2018 - Multi-stream CNN Learning representations based o.pdf:/home/matthias/Zotero/storage/JTYXLC8S/Tu et al. - 2018 - Multi-stream CNN Learning representations based o.pdf:application/pdf}
+}
+
+@inproceedings{khalid_multi-modal_2018-1,
+	title = {Multi-{Modal} {Three}-{Stream} {Network} for {Action} {Recognition}},
+	doi = {10.1109/ICPR.2018.8546131},
+	abstract = {Human action recognition in video is an active yet challenging research topic due to high variation and complexity of data. In this paper, a novel video based action recognition framework utilizing complementary cues is proposed to handle this complex problem. Inspired by the successful two stream networks for action classification, additional pose features are studied and fused to enhance understanding of human action in a more abstract and semantic way. Towards practices, not only ground truth poses but also noisy estimated poses are incorporated in the framework with our proposed pre-processing module. The whole framework and each cue are evaluated on varied benchmarking datasets as JHMDB, sub-JHMDB and Penn Action. Our results outperform state-of-the-art performance on these datasets and show the strength of complementary cues.},
+	booktitle = {2018 24th {International} {Conference} on {Pattern} {Recognition} ({ICPR})},
+	author = {Khalid, M. U. and Yu, J.},
+	month = aug,
+	year = {2018},
+	keywords = {action classification, active yet challenging research topic, complementary cues, complex problem, feature extraction, Feature extraction, ground truth poses, human action recognition, image classification, image motion analysis, image recognition, image sequences, Interpolation, multimodal three-stream network, noisy estimated poses, object detection, Pattern recognition, Penn Action, pose estimation, successful two stream networks, Tensile stress, Three-dimensional displays, Training, Two dimensional displays, video based action recognition framework, video signal processing},
+	pages = {3210--3215},
+	file = {IEEE Xplore Abstract Record:/home/matthias/Zotero/storage/32KNC5AT/8546131.html:text/html;Khalid and Yu - 2018 - Multi-Modal Three-Stream Network for Action Recogn.pdf:/home/matthias/Zotero/storage/HWTVC8VI/Khalid and Yu - 2018 - Multi-Modal Three-Stream Network for Action Recogn.pdf:application/pdf}
+}
+
+@inproceedings{xiaohan_nie_joint_2015,
+	title = {Joint {Action} {Recognition} and {Pose} {Estimation} {From} {Video}},
+	url = {http://openaccess.thecvf.com/content_cvpr_2015/html/Nie_Joint_Action_Recognition_2015_CVPR_paper.html},
+	urldate = {2019-09-23},
+	author = {Xiaohan Nie, Bruce and Xiong, Caiming and Zhu, Song-Chun},
+	year = {2015},
+	pages = {1293--1301},
+	file = {Full Text PDF:/home/matthias/Zotero/storage/QK7UL2MM/Xiaohan Nie et al. - 2015 - Joint Action Recognition and Pose Estimation From .pdf:application/pdf;Snapshot:/home/matthias/Zotero/storage/GWMNMEPI/Nie_Joint_Action_Recognition_2015_CVPR_paper.html:text/html}
+}
+
+@article{wang_pose-based_2018,
+	title = {Pose-{Based} {Two}-{Stream} {Relational} {Networks} for {Action} {Recognition} in {Videos}},
+	url = {http://arxiv.org/abs/1805.08484},
+	abstract = {Recently, pose-based action recognition has gained more and more attention due to the better performance compared with traditional appearance-based methods. However, there still exist two problems to be further solved. First, existing pose-based methods generally recognize human actions with captured 3D human poses which are very difficult to obtain in real scenarios. Second, few pose-based methods model the action-related objects in recognizing human-object interaction actions in which objects play an important role. To solve the problems above, we propose a pose-based two-stream relational network (PSRN) for action recognition. In PSRN, one stream models the temporal dynamics of the targeted 2D human pose sequences which are directly extracted from raw videos, and the other stream models the action-related objects from a randomly sampled video frame. Most importantly, instead of fusing two-streams in the class score layer as before, we propose a pose-object relational network to model the relationship between human poses and action-related objects. We evaluate the proposed PSRN on two challenging benchmarks, i.e., Sub-JHMDB and PennAction. Experimental results show that our PSRN obtains the state-the-of-art performance on Sub-JHMDB (80.2\%) and PennAction (98.1\%). Our work opens a new door to action recognition by combining 2D human pose extracted from raw video and image appearance.},
+	urldate = {2019-09-23},
+	journal = {arXiv:1805.08484 [cs]},
+	author = {Wang, Wei and Zhang, Jinjin and Si, Chenyang and Wang, Liang},
+	month = may,
+	year = {2018},
+	note = {arXiv: 1805.08484},
+	keywords = {Computer Science - Computer Vision and Pattern Recognition},
+	file = {arXiv\:1805.08484 PDF:/home/matthias/Zotero/storage/9Z3P44EV/Wang et al. - 2018 - Pose-Based Two-Stream Relational Networks for Acti.pdf:application/pdf;arXiv.org Snapshot:/home/matthias/Zotero/storage/2VEKXK6Q/1805.html:text/html}
+}
+
+@inproceedings{bourdev_detecting_2010,
+	series = {Lecture {Notes} in {Computer} {Science}},
+	title = {Detecting {People} {Using} {Mutually} {Consistent} {Poselet} {Activations}},
+	isbn = {978-3-642-15567-3},
+	abstract = {Bourdev and Malik (ICCV 09) introduced a new notion of parts, poselets, constructed to be tightly clustered both in the configuration space of keypoints, as well as in the appearance space of image patches. In this paper we develop a new algorithm for detecting people using poselets. Unlike that work which used 3D annotations of keypoints, we use only 2D annotations which are much easier for naive human annotators. The main algorithmic contribution is in how we use the pattern of poselet activations. Individual poselet activations are noisy, but considering the spatial context of each can provide vital disambiguating information, just as object detection can be improved by considering the detection scores of nearby objects in the scene. This can be done by training a two-layer feed-forward network with weights set using a max margin technique. The refined poselet activations are then clustered into mutually consistent hypotheses where consistency is based on empirically determined spatial keypoint distributions. Finally, bounding boxes are predicted for each person hypothesis and shape masks are aligned to edges in the image to provide a segmentation. To the best of our knowledge, the resulting system is the current best performer on the task of people detection and segmentation with an average precision of 47.8\% and 40.5\% respectively on PASCAL VOC 2009.},
+	language = {en},
+	booktitle = {Computer {Vision} – {ECCV} 2010},
+	publisher = {Springer Berlin Heidelberg},
+	author = {Bourdev, Lubomir and Maji, Subhransu and Brox, Thomas and Malik, Jitendra},
+	editor = {Daniilidis, Kostas and Maragos, Petros and Paragios, Nikos},
+	year = {2010},
+	keywords = {Human Torso, Image Patch, Object Detection, People Detection, Visible Bound},
+	pages = {168--181},
+	file = {Springer Full Text PDF:/home/matthias/Zotero/storage/9JS5R43R/Bourdev et al. - 2010 - Detecting People Using Mutually Consistent Poselet.pdf:application/pdf}
+}
+
+@inproceedings{deng_imagenet:_2009,
+	title = {{ImageNet}: a {Large}-{Scale} {Hierarchical} {Image} {Database}},
+	shorttitle = {{ImageNet}},
+	doi = {10.1109/CVPR.2009.5206848},
+	abstract = {The explosion of image data on the Internet has the potential to foster more sophisticated and robust models and algorithms to index, retrieve, organize and interact with images and multimedia data. But exactly how such data can be harnessed and organized remains a critical problem. We introduce here a new database called ldquoImageNetrdquo, a large-scale ontology of images built upon the backbone of the WordNet structure. ImageNet aims to populate the majority of the 80,000 synsets of WordNet with an average of 500-1000 clean and full resolution images. This will result in tens of millions of annotated images organized by the semantic hierarchy of WordNet. This paper offers a detailed analysis of ImageNet in its current state: 12 subtrees with 5247 synsets and 3.2 million images in total. We show that ImageNet is much larger in scale and diversity and much more accurate than the current image datasets. Constructing such a large-scale database is a challenging task. We describe the data collection scheme with Amazon Mechanical Turk. Lastly, we illustrate the usefulness of ImageNet through three simple applications in object recognition, image classification and automatic object clustering. We hope that the scale, accuracy, diversity and hierarchical structure of ImageNet can offer unparalleled opportunities to researchers in the computer vision community and beyond.},
+	author = {Deng, Jia and Dong, Wei and Socher, Richard and Li, Li-Jia and Li, Kai and Li, Fei Fei},
+	month = jun,
+	year = {2009},
+	pages = {248--255},
+	file = {Full Text PDF:/home/matthias/Zotero/storage/TH2ZJ9VZ/Deng et al. - 2009 - ImageNet a Large-Scale Hierarchical Image Databas.pdf:application/pdf}
+}
+
+@article{soomro_ucf101:_2012,
+	title = {{UCF}101: {A} {Dataset} of 101 {Human} {Actions} {Classes} {From} {Videos} in {The} {Wild}},
+	shorttitle = {{UCF}101},
+	url = {http://arxiv.org/abs/1212.0402},
+	abstract = {We introduce UCF101 which is currently the largest dataset of human actions. It consists of 101 action classes, over 13k clips and 27 hours of video data. The database consists of realistic user uploaded videos containing camera motion and cluttered background. Additionally, we provide baseline action recognition results on this new dataset using standard bag of words approach with overall performance of 44.5\%. To the best of our knowledge, UCF101 is currently the most challenging dataset of actions due to its large number of classes, large number of clips and also unconstrained nature of such clips.},
+	urldate = {2019-10-01},
+	journal = {arXiv:1212.0402 [cs]},
+	author = {Soomro, Khurram and Zamir, Amir Roshan and Shah, Mubarak},
+	month = dec,
+	year = {2012},
+	note = {arXiv: 1212.0402},
+	keywords = {Computer Science - Computer Vision and Pattern Recognition},
+	file = {arXiv\:1212.0402 PDF:/home/matthias/Zotero/storage/9FQPLJYS/Soomro et al. - 2012 - UCF101 A Dataset of 101 Human Actions Classes Fro.pdf:application/pdf;arXiv.org Snapshot:/home/matthias/Zotero/storage/FLJGZMH7/1212.html:text/html}
+}
+
+@inproceedings{brox_high_2004,
+	series = {Lecture {Notes} in {Computer} {Science}},
+	title = {High {Accuracy} {Optical} {Flow} {Estimation} {Based} on a {Theory} for {Warping}},
+	isbn = {978-3-540-24673-2},
+	abstract = {We study an energy functional for computing optical flow that combines three assumptions: a brightness constancy assumption, a gradient constancy assumption, and a discontinuity-preserving spatio-temporal smoothness constraint. In order to allow for large displacements, linearisations in the two data terms are strictly avoided. We present a consistent numerical scheme based on two nested fixed point iterations. By proving that this scheme implements a coarse-to-fine warping strategy, we give a theoretical foundation for warping which has been used on a mainly experimental basis so far. Our evaluation demonstrates that the novel method gives significantly smaller angular errors than previous techniques for optical flow estimation. We show that it is fairly insensitive to parameter variations, and we demonstrate its excellent robustness under noise.},
+	language = {en},
+	booktitle = {Computer {Vision} - {ECCV} 2004},
+	publisher = {Springer Berlin Heidelberg},
+	author = {Brox, Thomas and Bruhn, Andrés and Papenberg, Nils and Weickert, Joachim},
+	editor = {Pajdla, Tomás and Matas, Jiří},
+	year = {2004},
+	keywords = {Angular Error, IEEE Computer Society, Motion Estimation, Point Iteration, Smoothness Constraint},
+	pages = {25--36},
+	file = {Springer Full Text PDF:/home/matthias/Zotero/storage/8V6QH2Y9/Brox et al. - 2004 - High Accuracy Optical Flow Estimation Based on a T.pdf:application/pdf}
+}
+
+@inproceedings{cherian_mixing_2014,
+	title = {Mixing {Body}-{Part} {Sequences} for {Human} {Pose} {Estimation}},
+	url = {http://openaccess.thecvf.com/content_cvpr_2014/html/Cherian_Mixing_Body-Part_Sequences_2014_CVPR_paper.html},
+	urldate = {2019-10-01},
+	author = {Cherian, Anoop and Mairal, Julien and Alahari, Karteek and Schmid, Cordelia},
+	year = {2014},
+	pages = {2353--2360},
+	file = {Full Text PDF:/home/matthias/Zotero/storage/F4PEKPC6/Cherian et al. - 2014 - Mixing Body-Part Sequences for Human Pose Estimati.pdf:application/pdf;Snapshot:/home/matthias/Zotero/storage/4F8VR97H/Cherian_Mixing_Body-Part_Sequences_2014_CVPR_paper.html:text/html}
 }

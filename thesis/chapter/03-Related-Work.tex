@@ -324,7 +324,7 @@ This is illustrated by the accuracy achieved on the head part.
 The accuracy of the authors is higher than \cite{ramanan_learning_2007}, even when not using the pose prior information and just using the part detector.
 
 \subsubsection{Articulated pose estimation with flexible mixture-of-parts}
-
+\label{sec:yangramanan}
 Another approach building on the Pictoral Structure Framework was proposed by \cite{yang_articulated_2011}.
 
 The proposed model differs from the origninal framework by using parts which are not rotated or forshortened.
@@ -818,6 +818,7 @@ Also, they achieved significantly better results on each individual part, includ
 
 \section{Video-based Human Action Recognition}
 
+%TODO: Write introduction
 Different approaches.
 Some: frame-by-frame and just concatenate.
 Other: Use temporal information.
@@ -826,31 +827,106 @@ Here: Only those who use temporal information.
 \subsection{Shallow Methods}
 
 \subsection{HAR using pose information}
-- Towards Understanding Action Recognition
-	- Up to here: Action recognition on simple, often lab datasets, works fine but struggle in real life situations.
-	- The authors took the HMDB dataset, which is a challenging dataset and annotated the pose of a subset of the dataset. With annotated poses, ground truth optical flow and bounding boxes can be computed (need to define what optical flow is before). By substituting ground truth information into the pipeline of a state-of-the-art algorithm (Dense Trajectories, if already talked about refer back) the authors studied how much these individual features contribute to classification accuracy.
-	- The authors define a hierachie of features. First, low level features include optical flow as well as pixel gradients. These features can used to compute mid level featues such as image descriptors. Finally, pose is defined as a high level feature since they can be interpreted semantically (need citation since its a quote). 
-	- Find that Pose information is one of the most important feature for Action Recognition
-	- Baseline: Dense trajectories features with a RBF kernel SVM.
-	- TODO: Describe what puppet flow and puppet mask is
-	- TODO: Here, they combine trajectories (positional features) with image features (HOG etc.). This is similar to how Luvizon combines pose and image features!. Can reference back.
-	- Impact of flow:
-		- The highest accuracy gains (11 pp over baseline) were achieved by using the ground truth flow masked with the human segmentation (puppet mask) in combination with using the estimated flow around the puppet mask (put graphic from paper here). The authors argue that is most likely due to the fact that the separation between the background flow and subject flow is more distinct, resulting in a sharp motion boundary. Significant improvements on all descriptors besides HOG. Highest improvement in MBH (16pp) (which is logical)
-	- Impact of masking subject:
-		- Next, the authors investigate the impact of masking the subject. They use two types of masking. First, they use a bounding box around the subject. Second, they utilize the puppet mask from earlier. When applying the masking in such a way that the image is masked before computing the features (as opposed to densely computing features and then masking afterwards) they find that both bounding box masking and puppet flow masking improve significantly upon the baseline (5.6 and 8 pp respectively). They argue that puppet mask likely leads to a better accuracy because the optical flow algorithm is easier to compute on the subjects boundary. In addition, they utilize a person detector from (TODO: cite here) to compute the bounding box but find that the computed bounding box is not accurate enough to improve significantly upon the baseline.
-	- Impact of pose
-		- The authors generate two types of pose related feature. First, they use the joint positions over time as trajectories. Second, they compute additional features by calculating the distances and relative angles between all joint pairs. In addition, they iterate every triplet of joints and calucalte the angle spanned by the two relative vectors between joints anchored at the third joint. Besides this, they encode temporal information by computing the change in these values for consecutive frames. (TODO: put graphic from paper here).
-		- They find that the accuracy improves by 19pp over the baseline, suggesting that pose information is by far the best feature to use for action recognition (cite because quote). Also, adding the image features to the pose features does not significantly improve upon the accuracy. The authors thus argue that, once pose features are used, the image feature contribution is negligable.
-		- The authors additionaly evaluate the use of estimated poses using the approach presented by (cite yang and ramanan). They find that, while the estimated pose is of low quality, this approach still outperforms Dense trajectories baseline approach, suggesting that even low quality pose information is relevant for action recognition. 
+\label{sec:jhuang-towards}
+% Towards ...
+%TODO: Here, they combine trajectories (positional features) with image features (HOG etc.). This is similar to how Luvizon combines pose and image features!. Can reference back.
+\subsubsection{Towards understanding action recognition}
+In \cite{jhuang_towards_2013}, the authors evaluate the effect of different parts of a state-of-the-art action recognition pipeline \cite{wang_dense_2013} in order to gain a deeper understanding of the problem (see XXX for a detailed explanation of the algorithm). %TODO: Referenz nach hinten
+They argue that, up to that point, working action recognition approaches were mostly evaluated on simple datasets, often recorded in a laboratory environment.
+According to the authors, such datasets are not realisitic enough to decern whether an action recognition alogorithm would perform well in a real world application.
 
-- P-CNN
-	- The authors use Convolutional Neural Networks for feature extraction. Specifically, they use a Two-Stream approach (cite zissermann et al) where the network is split into two parallel parts. The first part processes the individual RGB frames, resulting in an appearance feature vector. The second part processes flow images and outputs another feature vector. These two vectors are then concatenated, which results in the final feature vector for the entire video clip. Each part consists of 5 convolutional layers, followed by 3 fully-connected layers. The RGB part is pretrained using ImageNet ILSVRC-2012 (cite) while the flow part is pretrained using the UCF101 dataset (cite). Once pretrained, the last fully-connected layer of both parts is removed, resulting in a output size of the previous layer of 4096, which they use as the extracted feature. (TODO: show image of network)
-	- First, the authors compute optical flow (cite High accuracy optical flow estimation based on a theory for warping) for consecutive frames in each video clip beforehand. They scale the x and y flow values to the interval [0, 255]. Then, they concatenate these two flow maps and add a third map with the flow magnitude values, resulting in a 3 channel flow image.
-	- They also preestimate the joint positions using the approach by (cite Yang ramanan). Additionally, they use a dynamic programming approach by (cite [8]) to refine the estimated pose by incorporating flow information as well as temporal information from previous and following poses.
-	- Afterwards, using the precomputed joint positions, they extract subimages around the right hand, left hand, upper body, full body and full image from the RGB frames as well as from the flow images.
-	- After passing all subimages through the network, the resulting feature vectors $f_t^p$ for time step $t$ and body part $p$ are aggregated by first computing minimum and maximum values $m_i, M_i$ for each descriptor dimension $i$. Then, the minimum values for each dimension are concatenated, followed by another concatenation of the maximum values. The authors refer to this vector as the static video descriptor since it is computed per frame without taking future or past frames into account. They compute another descriptor, called the dynamic video descriptor, where the original feature descpritor $f_t^p$ gets subtracted by $f_(t-4)^p$, thus encoding temporal information. The aggregation of minimum and maximum values following that is identical to the aggregation for the static video descriptor. Finally, both descriptors are again concatenated and normalized. See figure XX for a visualization.
-	- The resulting feature vector is then used as input for a linear Support Vector Machine, used for action classification.
-	- When training on the JHMDB dataset, the authors find that their approach does not outperform HLPF (CITE) when using ground truth pose annotations (74,6 vs 77,8 percent accuracy). However, when using estimated pose, their approach significantly outperforms HLPF (61,1 vs 25,3). While the authors give no explanation for why this might be the case, one possibility would be that the conclusion of (cite) that visual features and flow do not improve upon accuracy when also utilizing pose might be wrong. Also, since the authors use a different approach for estimating pose and do not evaluate the accuracy of the pose estimator individually it might be the case that the pose information itself is not sufficient for the pose features computed by HLPF to be accurate enough.
-	- Interestingly, the authors find that, while their approach does not outperform the state of the art presented in (cite improved DT), a combination of their descriptor with IDT significantly outperfomrs IDT on its own. The authors argue that, because IDT uses a larger time window for feature aggregation, actions like "kick_ball" achieve higher accuracy while on actions like "shoot_gun" and "wave" the image features extracted by their method provide more information and thus higher accuracy. A combination thus improves the accuracy in both scenarios simultaniously.
-	- TODO: Explain Fisher Vector (Improving the
-Fisher kernel for large-scale image classification)
+In order to evaluate the impact of different parts of an action recognition pipeline they needed a fully annotated dataset.
+They took a subset of the HMDB dataset \cite{kuehne_hmdb:_2011}, which they argue is a challenging dataset, and additionally annotated pose and created binary human segmentation maps, which they refer to as Puppet masks (see REF for more information on the dataset). %TODO: Referenz nach vorne
+
+In addition to the now annotated pose and Puppet mask they computed optical flow on consecutive frames for each video clip as well as annotate a rectangular bounding box around the subject.
+By substituting ground truth pose, optical flow and bounding boxes into the pipeline of \cite{wang_dense_2013} the authors studied how much these individual features contribute to classification accuracy.
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.6\textwidth]{puppet-flow-mask.png}
+    \caption{Three masked optical flow variations used in \cite{jhuang_towards_2013}. \textbf{Left}: The estimated optical flow of \cite{wang_dense_2013} masked using the ground truth Puppet mask annotation. \textbf{Middle}: Optical flow computed only on the masked subject. \textbf{Right}: Combination of both. Notice the sharp edges between the subject and the surrounding flow. Image taken from \cite{jhuang_towards_2013}. }
+    \label{fig:puppet-flow-mask}
+\end{figure}
+
+To establish a baseline, they extract features using \cite{wang_dense_2013} for each video clip and then train a Support Vector Machine for action classification.
+This resulted in an overall accuracy of $56.6$ percent.
+Afterwards, they evaluated different ways to substitute the ground truth optical flow into the algorithm.
+The highest accuracy gains over the baseline ($11$ percentage points) were achieved by using the ground truth flow computed on the masked subject in combination with using the optical flow from around the Puppet mask borders.
+See Fig. \ref{fig:puppet-flow-mask} for a visualization.
+The authors argue that is most likely due to the fact that the separation between the background flow and subject flow is more distinct, resulting in a sharp motion boundary. 
+
+Next, the authors investigate the impact of masking the subject. 
+They use two types of masking. First, they use a bounding box around the subject. Second, they utilize the Puppet mask for masking. 
+When applying the masking in such a way that the image is masked before computing the features (as opposed to densely computing features and then masking afterwards) they find that both bounding box masking and puppet flow masking improve significantly upon the baseline with $5.6$ and $8.0$ percentage points respectively.
+They argue that the Puppet mask likely leads to a better accuracy because the optical flow algorithm is easier to compute on the subjects boundary.
+In addition, they also utilize a state-of-the-art person detector from \cite{bourdev_detecting_2010} to compute the bounding box but find that the computed bounding box is not accurate enough to improve significantly upon the baseline.
+This suggests that future progress in person detection algorithm could improve upon current action recognition algorithms.
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.3\textwidth]{pose-angle-computation.png}
+    \caption{Visualization of computing the inner angle for each joint triplet. The vectors $\bm{u}$ and $\bm{v}$ are calculated from the first joint of each triplet to the other two. Then, the angle between these vectors is computed. Image taken from \cite{jhuang_towards_2013}. }
+    \label{fig:joint-angle-computation}
+\end{figure}
+
+Afterwards, the impact of using pose as a feature was evaluated.
+The authors generate two types of pose related features. 
+First, they use the joint positions over time as trajectories. 
+Second, they compute additional features related to pose.
+This includes calculating the distances and relative angles between all joint pairs. 
+In addition, they iterate every triplet of joints and calucalte the inner angle spanned by two relative vectors anchored at the third joint.
+See Fig. \ref{fig:joint-angle-computation} for a visualization of this procedure.
+Besides this, they encode temporal information by computing the change in the previously mentioned values for consecutive frames.
+They find that the accuracy improves by $19$ percentage points over the baseline, suggesting that pose information is by far the most discriminative feature to use for action recognition \cite{jhuang_towards_2013}. 
+Also, adding the image features to the pose features does not significantly improve upon the accuracy. 
+The authors thus argue that, once pose features are used, the image feature contribution is negligable.
+Additionaly, they evaluate the use of estimated poses using the approach presented by \cite{yang_articulated_2011} (see Section \ref{sec:yangramanan} for a detailed explanation). 
+They find that, while the estimated pose is of low quality compared to the ground truth, this approach still outperforms the baseline approach, suggesting that even low quality pose information is highly relevant as a feature for action recognition.
+
+\subsubsection{Pose-CNN}
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.99\textwidth]{p-cnn-architecture.png}
+    \caption{Visualization of the network architecture used to extract the video descriptor in \cite{cheron_pcnn_2015}. \textbf{In blue}: The part of the Two-Stream network which extracts the visual feature vector $\bm{v_app}$. \textbf{In red}: The flow feature extraction network part. Image taken from \cite{cheron_pcnn_2015}. }
+    \label{fig:p-cnn-architecture}
+\end{figure}
+
+After the findings of \cite{jhuang_towards_2013} discussed previously, \cite{cheron_pcnn_2015} build on their work by proposing a new action descriptor extracted using a Convolutional Neural network.
+Specifically, they use a Two-Stream network approach similar to \cite{simonyan_two-stream_2014} where the network is split into two parallel parts.
+The first part processes the individual RGB frames, resulting in an appearance feature vector. 
+The second part processes flow images and outputs another feature vector. 
+These two vectors are then concatenated, which results in the final feature vector for the entire video clip. 
+Each part consists of 5 convolutional layers, followed by 3 fully-connected layers. The RGB part is pretrained using the ImageNet dataset \cite{deng_imagenet:_2009} while the flow part is pretrained using the UCF101 dataset \cite{soomro_ucf101:_2012}. 
+Once pretrained, the last fully-connected layer of both parts is removed, resulting in a output size of the previous layer of $4096$, which they use as the extracted feature.
+See Fig. \ref{fig:p-cnn-architecture} for a network visualization.
+
+The authors compute optical flow using \cite{brox_high_2004} for consecutive frames in each video clip beforehand.
+They also scale the $x$ and $y$ flow values to the interval $[0, 255]$.
+Then, they concatenate these two flow maps and add a third map with the flow magnitude values, resulting in a $3$ channel flow image.
+They also preestimate the joint positions using the approach by \cite{yang_articulated_2011}.
+Additionally, they use a dynamic programming approach by \cite{cherian_mixing_2014} to refine the estimated pose by incorporating flow information as well as temporal information from previous and following poses.
+Afterwards, using the precomputed joint positions, they extract subimages around the right hand, left hand, upper body, full body and full image from the RGB frames as well as from the flow images.
+
+After passing all subimages through the network, the resulting feature vectors $f_t^p$ for time step $t$ and body part $p$ are aggregated by first computing minimum and maximum values $m_i, M_i$ for each descriptor dimension $i$.
+Then, the minimum values for each dimension are concatenated, followed by another concatenation of the maximum values.
+The authors refer to this vector as the static video descriptor since it is computed per frame without taking future or past frames into account.
+They compute another descriptor, called the dynamic video descriptor, where the original feature descpritors $f_t^p$ get subtracted by $f_(t-4)^p$, thus encoding temporal information.
+The aggregation of minimum and maximum values following that is identical to the aggregation for the static video descriptor.
+Finally, both descriptors are normalized and again concatenated, yielding the final video descriptor.
+The resulting feature vector is then used as input for a linear Support Vector Machine, used for action classification.
+See Fig. \ref{fig:p-cnn-architecture} for a visualization.
+
+The authors compare their results to the descriptor presented in Section \ref{sec:jhuang-towards} (from now on referred to as \textit{HLPF} for High Level Pose Features) as well as to the Improved Dense Trajectories (\textit{IDT}) descriptor presented in Section XX, which was the state-of-the-art approach at that time. %TODO: Backreferenz
+
+When training on the JHMDB dataset, the authors find that their approach does not outperform \textit{HLPF} when using ground truth pose annotations ($74.6$ and $77.8$ percent accuracy respectively).
+However, when using estimated pose, their approach significantly outperforms \textit{HLPF} by almost $35$ percentage points ($61.1$ as opposed to $25.3$).
+While the authors give no explanation for why this might be the case, one possibility would be that the conclusion of \cite{jhuang_towards_2013} that visual features and flow do not significantly improve upon accuracy when also utilizing pose might not hold in all situations.
+For example, consider two actions like \textit{military salute} and \textit{talking on the phone}, which have similar poses.
+When also considering image features, the distinction between an empty hand (\textit{military salute}) and a hand containing an object (\textit{talking on the phone}) can aid in the decision process.
+Also, since the authors use a different approach for estimating pose as opossed to \cite{jhuang_towards_2013}  do not evaluate the accuracy of the pose estimator individually it might be the case that the pose information itself is not of sufficient quality for the pose features computed by \textit{HLPF} to be discriminative enough.
+
+Interestingly, the authors find that, while their approach does not outperform \textit{IDT}, a combination of their descriptor with \textit{IDT} significantly outperforms \textit{IDT} on its own.
+The authors argue that, because \textit{IDT} uses a larger time window for feature aggregation, actions like \textit{kick ball} achieve higher accuracy while on actions like \textit{shoot gun} and \textit{waving} the image features extracted by their method provide more information and thus higher accuracy.
+A combination thus improves the accuracy in both scenarios simultaniously.
+%- TODO: Explain Fisher Vector (Improving the Fisher kernel for large-scale image classification)
