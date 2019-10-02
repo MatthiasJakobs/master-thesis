@@ -403,7 +403,7 @@ class Pose_JHMDB(ExperimentBase):
         self.optimizer = optim.RMSprop(self.model.parameters(), lr=self.conf["learning_rate"])
 
         self.train_writer.write(["iteration", "loss"])
-        self.val_writer.write(["iteration", "pckh_0.2"])
+        self.val_writer.write(["iteration", "pck_bb_0.2", "pck_upper_0.2"])
 
         self.create_experiment_folders()
 
@@ -457,7 +457,8 @@ class Pose_JHMDB(ExperimentBase):
         self.model.eval()
 
         with torch.no_grad():
-            val_accuracy_02 = []
+            pck_bb_02 = []
+            pck_upper_02 = []
 
             self.create_dynamic_folders()
 
@@ -482,7 +483,20 @@ class Pose_JHMDB(ExperimentBase):
                 image = val_images[0].permute(1, 2, 0)
                 gt_poses = val_poses
 
-                val_accuracy_02.append(eval_pcku_batch(predictions[:, :, 0:2], gt_poses[:, :, 0:2], trans_matrices))
+                # get distance meassures
+                bboxes = val_data["bbox"]
+                bboxes = bboxes.contiguous().view(val_data["bbox"].size()[0] * val_data["bbox"].size()[1], 4)
+
+                distance_meassures = torch.FloatTensor(len(bboxes))
+
+                for i in range(len(bboxes)):
+                    width = torch.abs(bboxes[i, 0] - bboxes[i, 2])
+                    height = torch.abs(bboxes[i, 1] - bboxes[i, 3])
+
+                    distance_meassures[i] = torch.max(width, height).item()
+
+                pck_bb_02.append(eval_pck_batch(predictions[:, :, 0:2], gt_poses[:, :, 0:2], trans_matrices, distance_meassures))
+                pck_upper_02.append(eval_pcku_batch(predictions[:, :, 0:2], gt_poses[:, :, 0:2], trans_matrices))
 
                 if batch_idx % 10 == 0:
                     prediction = predictions[0, :, 0:2]
@@ -511,9 +525,10 @@ class Pose_JHMDB(ExperimentBase):
 
         torch.save(self.model.state_dict(), "experiments/{}/weights/weights_{:08d}".format(self.experiment_name, self.iteration))
 
-        mean_02 = torch.mean(torch.FloatTensor(val_accuracy_02)).item()
-        self.val_writer.write([self.iteration, mean_02])
-        return mean_02
+        mean_bb_02 = torch.mean(torch.FloatTensor(pck_bb_02)).item()
+        mean_upper_02 = torch.mean(torch.FloatTensor(pck_upper_02)).item()
+        self.val_writer.write([self.iteration, mean_bb_02, mean_upper_02])
+        return mean_bb_02
 
     def test(self, pretrained_model=None):
         with torch.no_grad():
@@ -528,8 +543,8 @@ class Pose_JHMDB(ExperimentBase):
                 test_images = test_data["frames"].to(self.device)
                 test_images = test_images.contiguous().view(test_data["frames"].size()[0] * test_data["frames"].size()[1], 3, 255, 255)
 
-                val_poses = test_data["poses"].to(self.device)
-                val_poses = val_poses.contiguous().view(test_data["poses"].size()[0] * test_data["poses"].size()[1], 16, 3)
+                test_poses = test_data["poses"].to(self.device)
+                test_poses = test_poses.contiguous().view(test_data["poses"].size()[0] * test_data["poses"].size()[1], 16, 3)
 
                 trans_matrices = test_data["trans_matrices"].to(self.device)
                 trans_matrices = trans_matrices.contiguous().view(test_data["trans_matrices"].size()[0] * test_data["trans_matrices"].size()[1], 3, 3)
@@ -540,9 +555,18 @@ class Pose_JHMDB(ExperimentBase):
                 if predictions.dim() == 2:
                     predictions = predictions.unsqueeze(0)
 
-                gt_poses = val_poses
+                bboxes = test_data["bbox"]
+                bboxes = bboxes.contiguous().view(test_data["bbox"].size()[0] * test_data["bbox"].size()[1], 4)
 
-                accuracies.append(eval_pcku_batch(predictions[:, :, 0:2], gt_poses[:, :, 0:2], trans_matrices))
+                distance_meassures = torch.FloatTensor(len(bboxes))
+
+                for i in range(len(bboxes)):
+                    width = torch.abs(bboxes[i, 0] - bboxes[i, 2])
+                    height = torch.abs(bboxes[i, 1] - bboxes[i, 3])
+
+                    distance_meassures[i] = torch.max(width, height).item()
+
+                accuracies.append(eval_pck_batch(predictions[:, :, 0:2], test_poses[:, :, 0:2], trans_matrices, distance_meassures))
 
             return torch.mean(torch.FloatTensor(accuracies)).item()
 

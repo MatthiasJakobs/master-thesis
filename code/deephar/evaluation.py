@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-from deephar.utils import transform_pose, get_valid_joints
+from deephar.utils import transform_pose, get_valid_joints, get_bbox_from_pose
 
 def pckh(y_true, y_pred, head_size, distance_threshold=0.5):
     # from paper: only use joints which are valid, i.e. have a minimum value
@@ -17,6 +17,27 @@ def pckh(y_true, y_pred, head_size, distance_threshold=0.5):
     matches = (distances <= distance_threshold) * valid
 
     return np.sum(matches) / np.sum(valid)
+
+def pck_bounding_box(y_true, y_pred, distance_meassure, distance_threshold=0.2):
+    assert distance_meassure != 0
+
+    valid = get_valid_joints(y_true, need_sum=False)
+
+    initial_distances = y_true - y_pred
+
+    squares = torch.mul(initial_distances, initial_distances)
+    sums = torch.sum(squares, (1,))
+    distances = torch.sqrt(sums) / distance_meassure
+
+    if torch.cuda.is_available():
+        valid = torch.from_numpy(np.apply_along_axis(np.all, axis=1, arr=valid.cpu()).astype(float)).float().to("cuda")
+        matches = (distances <= distance_threshold).float().to("cuda") * valid
+    else:
+        valid = torch.from_numpy(np.apply_along_axis(np.all, axis=1, arr=valid).astype(float)).float()
+        matches = (distances <= distance_threshold).float() * valid
+
+
+    return torch.sum(matches) / torch.sum(valid)
 
 def pck_upperbody(y_true, y_pred, distance_threshold=0.5):
     upper_body_size_difference = y_true[8] - y_true[6] # distance between neck and belly, because there is no head size given by the dataset
@@ -55,6 +76,21 @@ def eval_pcku_batch(predictions, poses, matrices):
         #pck_upperbody(poses, predictions, distance_threshold=0.2)
 
     return scores_02
+
+def eval_pck_batch(predictions, poses, matrices, distance_meassures):
+    scores_02 = []
+
+    for i, prediction in enumerate(predictions):
+
+        # transform coordinates back to original
+        pred_pose = torch.from_numpy(transform_pose(matrices[i], predictions[i], inverse=True))
+        ground_pose = torch.from_numpy(transform_pose(matrices[i], poses[i], inverse=True))
+
+        scores_02.append(pck_bounding_box(ground_pose, pred_pose, distance_meassures[i], distance_threshold=0.2))
+        #pck_upperbody(poses, predictions, distance_threshold=0.2)
+
+    return scores_02
+
 
 def eval_pckh_batch(predictions, poses, headsizes, matrices):
     scores_05 = []

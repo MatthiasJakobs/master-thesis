@@ -177,20 +177,13 @@ def create_fragments_jhmdb(train=False, val=False, split=1, use_random=False, su
                 original_image = ds.indices[idx]
                 padded_original_image = str(original_image).zfill(8)
 
-                if not os.path.exists(root_dir + prefix + "images/" + padded_original_image + ".frames.pt"):
-                        torch.save(frames, root_dir + prefix + "images/" + padded_original_image + ".frames.pt")
-                if not os.path.exists(root_dir + prefix + "annotations/" + padded_original_image + ".action_1h.pt"):
-                        torch.save(actions, root_dir + prefix + "annotations/" + padded_original_image + ".action_1h.pt")
-                if not os.path.exists(root_dir + prefix + "annotations/" + padded_original_image + ".poses.pt"):
-                        torch.save(poses, root_dir + prefix + "annotations/" + padded_original_image + ".poses.pt")
-                if not os.path.exists(root_dir + prefix + "annotations/" + padded_original_image + ".matrices.pt"):
-                        torch.save(matrices, root_dir + prefix + "annotations/" + padded_original_image + ".matrices.pt")
-                if not os.path.exists(root_dir + prefix + "annotations/" + padded_original_image + ".index.pt"):
-                        torch.save(index, root_dir + prefix + "annotations/" + padded_original_image + ".index.pt")
-                if not os.path.exists(root_dir + prefix + "annotations/" + padded_original_image + ".bbox.pt"):
-                        torch.save(bbox, root_dir + prefix + "annotations/" + padded_original_image + ".bbox.pt")
-                if not os.path.exists(root_dir + prefix + "annotations/" + padded_original_image + ".parameters.pt"):
-                        torch.save(parameters, root_dir + prefix + "annotations/" + padded_original_image + ".parameters.pt")
+                torch.save(frames, root_dir + prefix + "images/" + padded_original_image + ".frames.pt")
+                torch.save(actions, root_dir + prefix + "annotations/" + padded_original_image + ".action_1h.pt")
+                torch.save(poses, root_dir + prefix + "annotations/" + padded_original_image + ".poses.pt")
+                torch.save(matrices, root_dir + prefix + "annotations/" + padded_original_image + ".matrices.pt")
+                torch.save(index, root_dir + prefix + "annotations/" + padded_original_image + ".index.pt")
+                torch.save(bbox, root_dir + prefix + "annotations/" + padded_original_image + ".bbox.pt")
+                torch.save(parameters, root_dir + prefix + "annotations/" + padded_original_image + ".parameters.pt")
 
 
                 indices = torch.zeros((num_frames_total - num_frames), 2)

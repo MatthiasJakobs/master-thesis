@@ -58,6 +58,7 @@ class JHMDBDataset(BaseDataset):
 
         self.items = glob.glob(self.root_dir + "*/*")
         self.items = [item for item in self.items if not "/splits/" in item]
+        self.items = [item for item in self.items if not "/puppet_mask/" in item]
 
         key = 1 if train else 2
 
@@ -191,7 +192,7 @@ class JHMDBDataset(BaseDataset):
 
         return final_pose
 
-    def apply_padding(self, trans_matrices, frames, poses):
+    def apply_padding(self, trans_matrices, frames, poses, bboxes):
         number_of_frames = len(frames)
         if number_of_frames < self.clip_length:
 
@@ -210,12 +211,59 @@ class JHMDBDataset(BaseDataset):
             blanks = torch.zeros((self.clip_length - number_of_frames, 3, 3)).float()
             trans_matrices = torch.cat((trans_matrices, blanks))
 
-        return trans_matrices, frames, poses
+            # padding for bboxes
+            assert bboxes.shape[1] == 4, print(bboxes.shape)
+            blanks = torch.zeros((self.clip_length - number_of_frames, 4)).int()
+            bboxes = torch.cat((bboxes, blanks))
+        
+        return trans_matrices, frames, poses, bboxes
+
+    def create_puppet_mask(self, idx):
+        item_path = self.items[self.indices[idx]]
+        relative_path_split = item_path[len(self.root_dir):].split("/")
+        action = relative_path_split[0]
+
+        puppet_mask_file = self.root_dir + "puppet_mask/" + relative_path_split[0] + "/" + relative_path_split[1] + "/puppet_mask" 
+        puppet_mask = sio.loadmat(puppet_mask_file)
+        binary_masks = torch.from_numpy(puppet_mask["part_mask"]).int()
+        binary_masks = binary_masks.permute(2, 1, 0)
+        puppet_corners = torch.IntTensor(len(binary_masks), 4)
+
+        puppet_width = binary_masks.size()[1]
+        puppet_height = binary_masks.size()[2]
+
+        for i in range(len(binary_masks)):
+            min_y = puppet_height
+            max_y = 0
+            min_x = puppet_width
+            max_x = 0
+            for y in range(puppet_height):
+                for x in range(puppet_width):
+                    if binary_masks[i, x, y] == 1:
+                        if x < min_x:
+                            min_x = x
+                        if x > max_x:
+                            max_x = x
+                        if y < min_y:
+                            min_y = y
+                        if y > max_y:
+                            max_y = y
+            
+            puppet_corners[i][0] = min_x
+            puppet_corners[i][1] = max_x
+            puppet_corners[i][2] = min_y
+            puppet_corners[i][3] = max_y
+
+        out_file = self.root_dir + "puppet_mask/" + relative_path_split[0] + "/" + relative_path_split[1] + "/puppet_tensor.pt"
+        torch.save(puppet_corners, out_file)
 
     def __getitem__(self, idx):
         item_path = self.items[self.indices[idx]]
         relative_path_split = item_path[len(self.root_dir):].split("/")
         action = relative_path_split[0]
+
+        puppet_mask_file = self.root_dir + "puppet_mask/" + relative_path_split[0] + "/" + relative_path_split[1] + "/puppet_tensor.pt"
+        puppet_corners = torch.load(puppet_mask_file)
 
         label = sio.loadmat(item_path + "/joint_positions")
         poses = torch.from_numpy(label["pos_img"].T).float()
@@ -230,13 +278,25 @@ class JHMDBDataset(BaseDataset):
 
         self.set_augmentation_parameters()
 
-        self.calc_bbox_and_center(image_width, image_height)
+        #self.calc_bbox_and_center(image_width, image_height)
 
         processed_frames = []
         processed_poses = []
         trans_matrices = []
+        bounding_boxes = []
 
+        current_frame = 0
         for frame, pose in zip(images, poses):
+
+            bbox = torch.IntTensor(4)
+            bbox[0] = puppet_corners[current_frame, 0]
+            bbox[1] = puppet_corners[current_frame, 2]
+            bbox[2] = puppet_corners[current_frame, 1]
+            bbox[3] = puppet_corners[current_frame, 3]
+
+            self.calc_bbox_and_center(image_width, image_height, pre_bb=bbox, offset=30)
+
+            current_frame = current_frame + 1
 
             trans_matrix, norm_frame, norm_pose = self.preprocess(frame, pose)
 
@@ -246,6 +306,7 @@ class JHMDBDataset(BaseDataset):
             if self.aug_conf["flip"]:
                 norm_pose = flip_lr_pose(norm_pose)
 
+            bounding_boxes.append(self.bbox.clone().unsqueeze(0))
             processed_poses.append(norm_pose.unsqueeze(0))
             processed_frames.append(norm_frame.unsqueeze(0))
             trans_matrices.append(trans_matrix.clone().unsqueeze(0))
@@ -255,8 +316,9 @@ class JHMDBDataset(BaseDataset):
         frames = torch.cat(processed_frames)
         poses = torch.cat(processed_poses)
         trans_matrices = torch.cat(trans_matrices)
+        t_bounding_boxes = torch.cat(bounding_boxes)
 
-        trans_matrices, frames, poses = self.apply_padding(trans_matrices, frames, poses)
+        trans_matrices, frames, poses, t_bounding_boxes = self.apply_padding(trans_matrices, frames, poses, t_bounding_boxes)
 
         frames = frames.permute(0, 3, 1, 2)
 
@@ -284,5 +346,5 @@ class JHMDBDataset(BaseDataset):
             "trans_matrices": trans_matrices,
             "parameters": t_parameters,
             "index": t_index,
-            "bbox": self.bbox
+            "bbox": t_bounding_boxes
         }

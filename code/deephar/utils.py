@@ -144,4 +144,10 @@ def create_heatmap(x, y, covariance, width=255, height=255):
 
     img = zz.reshape((yres,xres))
     return img
+
+def get_bbox_from_pose(pose):
+    print(pose.shape)
+
+    valid = get_valid_joints(pose, need_sum=False)
+
     

@@ -68,21 +68,29 @@ class BaseDataset(data.Dataset):
         self.aug_conf["trans_y"] = self.trans_y[np.random.randint(0, len(self.trans_y))]
 
 
-    def calc_bbox_and_center(self, width, height):
+    def calc_bbox_and_center(self, width, height, pre_bb=None, offset=None):
         window_size =  self.aug_conf["scale"] * max(height, width)
 
-        bbox = torch.IntTensor([
-            int(width / 2) - (window_size / 2), # x1, upper left
-            int(height / 2) - (window_size / 2), # y1, upper left
-            int(width / 2) + (window_size / 2), # x2, lower right
-            int(height / 2) + (window_size / 2)  # y2, lower right
-        ])
+        if pre_bb is not None:
+            bbox = pre_bb
+        else:
+            bbox = torch.IntTensor([
+                int(width / 2) - (window_size / 2), # x1, upper left
+                int(height / 2) - (window_size / 2), # y1, upper left
+                int(width / 2) + (window_size / 2), # x2, lower right
+                int(height / 2) + (window_size / 2)  # y2, lower right
+            ])
 
         self.bbox = bbox
 
         bbox_width = torch.abs(bbox[0] - bbox[2]).item()
         bbox_height = torch.abs(bbox[1] - bbox[3]).item()
-        window_size = torch.IntTensor([bbox_width, bbox_height])
+
+        if offset is not None:
+            window_size = torch.IntTensor([max(bbox_height, bbox_width) + offset, max(bbox_height, bbox_width) + offset])
+        else:
+            window_size = torch.IntTensor([max(bbox_height, bbox_width), max(bbox_height, bbox_width)])
+
 
         self.window_size = window_size
         center = torch.IntTensor([
@@ -90,7 +98,7 @@ class BaseDataset(data.Dataset):
             bbox[3] - bbox_height / 2
         ])
 
-        assert bbox_width >= 32 and bbox_height >= 32
+        #assert bbox_width >= 32 and bbox_height >= 32
 
         center += torch.IntTensor(self.aug_conf["scale"] * torch.IntTensor([self.aug_conf["trans_x"], self.aug_conf["trans_y"]]))
 

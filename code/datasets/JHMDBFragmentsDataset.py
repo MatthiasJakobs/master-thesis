@@ -69,6 +69,7 @@ class JHMDBFragmentsDataset(data.Dataset):
         t_frames = t_frames[start:end]
         t_poses = t_poses[start:end]
         t_matrices = t_matrices[start:end]
+        t_bboxes = t_bbox[start:end]
 
         return {
             "frames": t_frames,
@@ -76,6 +77,6 @@ class JHMDBFragmentsDataset(data.Dataset):
             "action_1h": t_action,
             "trans_matrices": t_matrices,
             "indices": t_indices,
-            "bbox": t_bbox,
+            "bbox": t_bboxes,
             "parameters": t_parameters
         }

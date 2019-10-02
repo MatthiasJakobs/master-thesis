@@ -164,24 +164,24 @@ class MPIIDataset(BaseDataset):
                 train_test_folder = "train/"
 
             if self.use_random_parameters:
-                prefix = "rand_1/"
+                prefix = "rand1_"
             else:
                 prefix = ""
 
             original_image = self.indices[idx]
             padded_original_image = str(original_image).zfill(8)
 
-            name_path = self.root_dir + train_test_folder + prefix + padded_original_image
+            name_path = self.root_dir + train_test_folder + prefix
             
             #t_filepath = torch.load(name_path + ".image_path.pt")
-            t_normalized_image = torch.load(name_path + ".frame.pt")
-            t_normalized_pose = torch.load(name_path + ".pose.pt")
-            #t_original_pose = torch.load(name_path + ".original_pose.pt")
-            t_headsize = torch.load(name_path + ".headsize.pt")
-            t_trans_matrix = torch.load(name_path + ".matrix.pt")
-            #t_original_size = torch.load(name_path + ".original_size.pt")
-            t_bbox = torch.load(name_path + ".bbox.pt")
-            t_parameters = torch.load(name_path + ".parameters.pt")
+            t_normalized_image = torch.load(name_path + "images/" + padded_original_image + ".frame.pt")
+            t_normalized_pose = torch.load(name_path + "annotations/" + padded_original_image + ".pose.pt")
+            #t_original_pose = torch.load(name_path + "images" + padded_original_image + ".original_pose.pt")
+            t_headsize = torch.load(name_path + "annotations/" + padded_original_image + ".headsize.pt")
+            t_trans_matrix = torch.load(name_path + "annotations/" + padded_original_image + ".matrix.pt")
+            #t_original_size = torch.load(name_path + "annotations/" + padded_original_image + ".original_size.pt")
+            t_bbox = torch.load(name_path + "annotations/" + padded_original_image + ".bbox.pt")
+            t_parameters = torch.load(name_path + "annotations/" + padded_original_image + ".parameters.pt")
 
             #output["image_path"] = t_filepath
             output["normalized_image"] = t_normalized_image

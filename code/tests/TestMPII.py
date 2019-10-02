@@ -6,9 +6,10 @@ import torch
 import skimage.io as io
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.font_manager import FontProperties
 
 from matplotlib.patches import Rectangle
-from datasets.MPIIDataset import MPIIDataset
+from datasets.MPIIDataset import MPIIDataset, mpii_joint_order
 from deephar.utils import transform_pose
 
 joint_mapping = [
@@ -36,8 +37,8 @@ if os.path.exists(output_folder):
 
 os.makedirs(output_folder)
 
-subfolders = ["train_norandom_nosaved", "train_random_nosaved", "test_norandom_nosaved", "val_norandom_nosaved"]
-scenarios = [[True, False, False, False], [True, False, True, False], [False, False, False, False], [True, True, False, False]] # train, val, random, saved
+subfolders = ["train_norandom_nosaved", "train_random_nosaved", "val_norandom_nosaved", "train_norandom_saved", "train_random_saved", "val_norandom_saved"]
+scenarios = [[True, False, False, False], [True, False, True, False], [True, True, False, False], [True, False, False, True], [True, False, True, True], [True, True, False, True]] # train, val, random, saved
 
 for path in subfolders:
     os.makedirs(output_folder + "/" + path)
@@ -50,15 +51,17 @@ for scenario_idx, scenario in enumerate(scenarios):
    
     train = scenario[0]
     val = scenario[1]
-    random = scenario[2]
+    use_random = scenario[2]
     saved = scenario[3]
     
-    ds = MPIIDataset("/data/mjakobs/data/mpii/", train=train, val=val, use_random_parameters=random, use_saved_tensors=False)
+    ds = MPIIDataset("/data/mjakobs/data/mpii/", train=train, val=val, use_random_parameters=use_random, use_saved_tensors=saved)
 
     all_indices = list(range(len(ds)))
     random.seed(1)
     random.shuffle(all_indices)
-    test_indices = all_indices[:20]
+    test_indices = all_indices[:2]
+
+    print("train {} val {} random {} saved {}".format(train, val, use_random, saved))
 
     for idx in test_indices:
 
@@ -95,7 +98,12 @@ for scenario_idx, scenario in enumerate(scenarios):
         x[x == 0] = None
         y[y == 0] = None
 
-        plt.scatter(x=x, y=y, c="#FF00FF")
+        for i in range(16):
+            plt.scatter(x=x[i], y=y[i], label="{}".format(mpii_joint_order[i]))
+
+        fontP = FontProperties()
+        fontP.set_size('x-small')
+        plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.5), ncol=3, fancybox=True, prop=fontP)
 
         for i, (src, dst) in enumerate(joint_mapping):
             if not vis[src]:
@@ -120,7 +128,8 @@ for scenario_idx, scenario in enumerate(scenarios):
         x[x == 0] = None
         y[y == 0] = None
 
-        plt.scatter(x=x, y=y, c="#FF00FF", s=10)
+        for i in range(16):
+            plt.scatter(x=x[i], y=y[i], label="{}".format(mpii_joint_order[i]))
 
         for i, (src, dst) in enumerate(joint_mapping):
             if not vis[src]:
@@ -134,7 +143,7 @@ for scenario_idx, scenario in enumerate(scenarios):
         ax = plt.gca()
         ax.add_patch(bbox_rect)
 
-        if random:
+        if use_random:
             if saved:
                 parameters = entry["parameters"]
                 parameter_text = "scale={}, angle={}, flip_lr={}".format(parameters[0], int(parameters[1]), int(parameters[2]))
