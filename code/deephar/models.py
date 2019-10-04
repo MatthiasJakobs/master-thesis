@@ -86,11 +86,16 @@ class Mpii_8(nn.Module):
 
 
 class DeepHar(nn.Module):
-    def __init__(self, num_frames=16, num_joints=16, num_actions=10, use_gt=True, model_path=None):
+    def __init__(self, num_frames=16, num_joints=16, num_actions=10, use_gt=True, model_path=None, end_to_end=False):
         super(DeepHar, self).__init__()
 
         self.use_gt = use_gt
-        self.pose_estimator = Mpii_4(num_context=0, standalone=False)
+        self.end_to_end = end_to_end
+
+        if self.end_to_end:
+            assert not self.use_gt
+
+        self.pose_estimator = Mpii_4(num_context=0, standalone=end_to_end)
 
         if use_gt:
             if torch.cuda.is_available():
@@ -118,9 +123,18 @@ class DeepHar(nn.Module):
         td_poste_estimator = TimeDistributedPoseEstimation(self.pose_estimator)
 
         batch_size = len(x)
+
+        if self.end_to_end:
+            assert train_pose
         
         if train_pose:
-            poses, heatmaps, features = td_poste_estimator(x)
+            if self.end_to_end:
+                train_heatmaps, train_poses = td_poste_estimator(x)
+
+                heatmaps = train_heatmaps[-1]
+                poses = train_poses[-1]
+            else:
+                poses, heatmaps, features = td_poste_estimator(x)
         else:
             with torch.no_grad():
                 poses, heatmaps, features = td_poste_estimator(x)
@@ -179,5 +193,7 @@ class DeepHar(nn.Module):
         final_output = self.max_min_pooling(final_output)
         final_output = self.softmax(final_output).squeeze(-1).squeeze(-1).unsqueeze(1)
 
-
-        return poses, torch.cat(pose_action_predictions, 1), torch.cat(vis_action_predictions, 1), final_output
+        if self.end_to_end:
+            return train_pose, torch.cat(pose_action_predictions, 1), torch.cat(vis_action_predictions, 1), final_output
+        else:
+            return poses, torch.cat(pose_action_predictions, 1), torch.cat(vis_action_predictions, 1), final_output

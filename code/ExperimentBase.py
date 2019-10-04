@@ -197,6 +197,10 @@ class ExperimentBase:
 
 class HAR_Testing_Experiment(ExperimentBase):
     def preparation(self):
+        if "fine_tune" in self.conf:
+            self.fine_tune = self.conf["fine_tune"]
+        else:
+            self.fine_tune = False
 
         self.model = DeepHar(num_actions=21, use_gt=True, model_path="/data/mjakobs/data/pretrained_jhmdb").to(self.device)
         self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False)
@@ -241,7 +245,7 @@ class HAR_Testing_Experiment(ExperimentBase):
         actions = actions.unsqueeze(1)
         actions = actions.expand(-1, 4, -1)
 
-        _, pose_predicted_actions, vis_predicted_actions, _ = self.model(frames)
+        _, pose_predicted_actions, vis_predicted_actions, _ = self.model(frames, train_pose=self.fine_tune)
 
         partial_loss_pose = torch.sum(categorical_cross_entropy(pose_predicted_actions, actions))
         partial_loss_action = torch.sum(categorical_cross_entropy(vis_predicted_actions, actions))
@@ -346,14 +350,63 @@ class HAR_Testing_Experiment(ExperimentBase):
                 #correct_multi = correct_multi + torch.mean((pred_class_multi == ground_class).float()).item()
                 total = total + 1
 
+                accuracy_single = correct_single / float(total)
+
                 print("test {} / {}".format(current, length))
-                print(correct_single / float(total), correct_multi / float(total))
+                print(accuracy_single, correct_multi / float(total))
                 current = current + 1
 
-            return correct_single / float(total), correct_multi / float(total)
+            return accuracy_single, correct_multi / float(total)
 
+class HAR_E2E(HAR_Testing_Experiment):
+    def train(self, train_objects):
+        self.model.train()
+        frames = train_objects["frames"].to(self.device)
+        actions = train_objects["action_1h"].to(self.device)
 
+        ground_poses = train_objects["normalized_pose"].to(self.device)
 
+        actions = actions.unsqueeze(1)
+        actions = actions.expand(-1, 4, -1)
+
+        predicted_poses, pose_predicted_actions, vis_predicted_actions, _ = self.model(frames, train_pose=True)
+
+        partial_loss_pose = torch.sum(categorical_cross_entropy(pose_predicted_actions, actions))
+        partial_loss_action = torch.sum(categorical_cross_entropy(vis_predicted_actions, actions))
+        
+        har_loss = partial_loss_pose + partial_loss_action
+
+        predicted_poses = predicted_poses.permute(1, 0, 2, 3)
+
+        pred_pose = predicted_poses[:, :, :, 0:2]
+        ground_pose = ground_poses[:, :, 0:2]
+        ground_pose = ground_pose.unsqueeze(1)
+        ground_pose = ground_pose.expand(-1, self.conf["num_blocks"], -1, -1)
+
+        pred_vis = predicted_poses[:, :, :, 2]
+        ground_vis = ground_poses[:, :, 2]
+        ground_vis = ground_vis.unsqueeze(1)
+        ground_vis = ground_vis.expand(-1, self.conf["num_blocks"], -1)
+
+        binary_crossentropy = nn.BCELoss()
+
+        vis_loss = binary_crossentropy(pred_vis, ground_vis)
+
+        pose_loss = elastic_net_loss_paper(pred_pose, ground_pose)
+        pose_loss = vis_loss * 0.01 + pose_loss
+
+        loss = pose_loss + har_loss
+
+        losses.backward()
+
+        self.train_writer.write([self.iteration, losses.item()])
+
+        self.optimizer.step()
+        self.optimizer.zero_grad()
+
+        self.iteration = self.iteration + 1
+
+        print("iteration {} train-loss {}".format(self.iteration, losses.item()))
 
 class Pose_JHMDB(ExperimentBase):
 
