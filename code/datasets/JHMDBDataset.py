@@ -294,7 +294,10 @@ class JHMDBDataset(BaseDataset):
             bbox[2] = puppet_corners[current_frame, 1]
             bbox[3] = puppet_corners[current_frame, 3]
 
-            self.calc_bbox_and_center(image_width, image_height, pre_bb=bbox, offset=30)
+            if not self.train:
+                self.calc_bbox_and_center(image_width, image_height)
+            else:
+                self.calc_bbox_and_center(image_width, image_height, pre_bb=bbox, offset=30)
 
             current_frame = current_frame + 1
 

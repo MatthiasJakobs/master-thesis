@@ -536,7 +536,8 @@ class Pose_JHMDB(ExperimentBase):
                 self.preparation()
                 self.model.load_state_dict(torch.load(pretrained_model, map_location=self.device))
 
-            accuracies = []
+            pck_bb_02 = []
+            pck_upper_02 = []
 
             self.model.eval()
             for batch_idx, test_data in enumerate(self.val_loader):
@@ -566,9 +567,12 @@ class Pose_JHMDB(ExperimentBase):
 
                     distance_meassures[i] = torch.max(width, height).item()
 
-                accuracies.append(eval_pck_batch(predictions[:, :, 0:2], test_poses[:, :, 0:2], trans_matrices, distance_meassures))
+                pck_bb_02.append(eval_pck_batch(predictions[:, :, 0:2], test_poses[:, :, 0:2], trans_matrices, distance_meassures))
+                pck_upper_02.append(eval_pcku_batch(predictions[:, :, 0:2], test_poses[:, :, 0:2], trans_matrices))
 
-            return torch.mean(torch.FloatTensor(accuracies)).item()
+            bb_mean = torch.mean(torch.FloatTensor(pck_bb_02)).item()
+            upper_mean = torch.mean(torch.FloatTensor(pck_upper_02)).item()
+            return [bb_mean, upper_mean]
 
 
 class MPIIExperiment(ExperimentBase):
