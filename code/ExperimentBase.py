@@ -325,7 +325,7 @@ class HAR_Testing_Experiment(ExperimentBase):
             correct_multi = 0
             total = 0
             for batch_idx, test_objects in enumerate(self.test_loader):
-                frames = test_objects["normalized_frames"].to(self.device)
+                frames = test_objects["frames"].to(self.device)
                 actions = test_objects["action_1h"].to(self.device)
                 sequence_length = test_objects["sequence_length"].to(self.device).item()
                 padding = int((sequence_length - 16) / 2.0)
@@ -354,8 +354,8 @@ class HAR_Testing_Experiment(ExperimentBase):
 
                 accuracy_single = correct_single / float(total)
 
-                print("test {} / {}".format(current, length))
-                print(accuracy_single, correct_multi / float(total))
+                #print("test {} / {}".format(current, length))
+                #print(accuracy_single, correct_multi / float(total))
                 current = current + 1
 
             return accuracy_single, correct_multi / float(total)
