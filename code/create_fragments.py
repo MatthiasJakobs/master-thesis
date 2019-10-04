@@ -28,7 +28,7 @@ def delete_and_create(root_dir, use_random=False, split=1, subprefix="2"):
         if not use_random:
                 base_list.append(prefix + "indices/val/" + str(split))
                 base_list.append(prefix + "indices/test/" + str(split))
-        
+
         base_list.append(prefix + "indices/train/" + str(split))
 
         for i in base_list:
@@ -126,6 +126,9 @@ def create_fragments_pennaction(train, val):
 
 def create_fragments_jhmdb(train=False, val=False, split=1, use_random=False, subprefix="1"):
         ds = JHMDBDataset("/data/mjakobs/data/jhmdb/", use_random_parameters=use_random, use_saved_tensors=False, train=train, val=val, split=split)
+
+        if use_random:
+            assert train
 
         print("-" * 50)
         print("Train: {}, Val: {}, Split: {}, Random: {}".format(train, val, split, use_random))

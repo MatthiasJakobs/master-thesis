@@ -288,15 +288,15 @@ class JHMDBDataset(BaseDataset):
         current_frame = 0
         for frame, pose in zip(images, poses):
 
-            bbox = torch.IntTensor(4)
-            bbox[0] = puppet_corners[current_frame, 0]
-            bbox[1] = puppet_corners[current_frame, 2]
-            bbox[2] = puppet_corners[current_frame, 1]
-            bbox[3] = puppet_corners[current_frame, 3]
 
             if not self.train:
                 self.calc_bbox_and_center(image_width, image_height)
             else:
+                bbox = torch.IntTensor(4)
+                bbox[0] = puppet_corners[current_frame, 0]
+                bbox[1] = puppet_corners[current_frame, 2]
+                bbox[2] = puppet_corners[current_frame, 1]
+                bbox[3] = puppet_corners[current_frame, 3]
                 self.calc_bbox_and_center(image_width, image_height, pre_bb=bbox, offset=30)
 
             current_frame = current_frame + 1
