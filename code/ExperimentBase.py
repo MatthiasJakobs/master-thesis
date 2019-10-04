@@ -205,7 +205,7 @@ class HAR_Testing_Experiment(ExperimentBase):
         self.model = DeepHar(num_actions=21, use_gt=True, model_path="/data/mjakobs/data/pretrained_jhmdb").to(self.device)
         self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False)
         self.ds_val = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=True)
-        self.ds_test = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=False)
+        self.ds_test = JHMDBDataset("/data/mjakobs/data/jhmdb/", train=False)
 
         train_indices, val_indices, test_indices = self.limit_dataset(include_test=True)
 
@@ -325,7 +325,7 @@ class HAR_Testing_Experiment(ExperimentBase):
             correct_multi = 0
             total = 0
             for batch_idx, test_objects in enumerate(self.test_loader):
-                frames = test_objects["frames"].to(self.device)
+                frames = test_objects["normalized_frames"].to(self.device)
                 actions = test_objects["action_1h"].to(self.device)
                 sequence_length = test_objects["sequence_length"].to(self.device).item()
                 padding = int((sequence_length - 16) / 2.0)
