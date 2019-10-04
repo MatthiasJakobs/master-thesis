@@ -134,7 +134,7 @@ class ExperimentBase:
 
         for i, ds in enumerate(datasets):
             datapoints = int(len(ds) * self.conf["limit_data_percent"])
-            
+
             indices = list(range(len(ds)))
 
             np.random.shuffle(indices)
@@ -543,7 +543,7 @@ class Pose_JHMDB(ExperimentBase):
             pck_upper_02 = []
 
             self.model.eval()
-            for batch_idx, test_data in enumerate(self.val_loader):
+            for batch_idx, test_data in enumerate(self.test_loader):
                 test_images = test_data["frames"].to(self.device)
                 test_images = test_images.contiguous().view(test_data["frames"].size()[0] * test_data["frames"].size()[1], 3, 255, 255)
 
@@ -570,11 +570,30 @@ class Pose_JHMDB(ExperimentBase):
 
                     distance_meassures[i] = torch.max(width, height).item()
 
-                pck_bb_02.append(eval_pck_batch(predictions[:, :, 0:2], test_poses[:, :, 0:2], trans_matrices, distance_meassures))
-                pck_upper_02.append(eval_pcku_batch(predictions[:, :, 0:2], test_poses[:, :, 0:2], trans_matrices))
+                pck_bb_02.extend(eval_pck_batch(predictions[:, :, 0:2], test_poses[:, :, 0:2], trans_matrices, distance_meassures))
+                pck_upper_02.extend(eval_pcku_batch(predictions[:, :, 0:2], test_poses[:, :, 0:2], trans_matrices))
+
+                if batch_idx % 10 == 0:
+                    image = test_images[0].permute(1, 2, 0)
+                    prediction = predictions[0, :, 0:2]
+                    test_poses = test_poses[0]
+                    matrix = trans_matrices[0]
+
+                    if torch.cuda.is_available():
+                        image = image.cpu()
+                        prediction = prediction.cpu()
+                        test_poses = test_poses.cpu()
+
+                    folder_path = 'experiments/{}/test_images/{}'.format(self.experiment_name, self.iteration)
+                    if not exists(folder_path):
+                        makedirs(folder_path)
+                    path = 'experiments/{}/test_images/{}/{}.png'.format(self.experiment_name, self.iteration, batch_idx)
+
+                    show_prediction_jhmbd(image, test_poses, prediction, matrix, path=path)
 
             bb_mean = torch.mean(torch.FloatTensor(pck_bb_02)).item()
             upper_mean = torch.mean(torch.FloatTensor(pck_upper_02)).item()
+            print("bb, upper")
             return [bb_mean, upper_mean]
 
 
