@@ -207,9 +207,11 @@ class HAR_Testing_Experiment(ExperimentBase):
         self.ds_val = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=True)
         self.ds_test = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=False)
 
-        train_sampler = SubsetRandomSampler(list(range(len(self.ds_train))))
-        val_sampler = SubsetRandomSampler(list(range(len(self.ds_val))))
-        test_sampler = SubsetRandomSampler(list(range(len(self.ds_test))))
+        train_indices, val_indices, test_indices = self.limit_dataset(include_test=True)
+
+        train_sampler = SubsetRandomSampler(train_indices)
+        val_sampler = SubsetRandomSampler(val_indices)
+        test_sampler = SubsetRandomSampler(test_indices)
 
         self.train_loader = data.DataLoader(
             self.ds_train,
