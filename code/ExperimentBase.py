@@ -205,7 +205,7 @@ class HAR_Testing_Experiment(ExperimentBase):
         self.model = DeepHar(num_actions=21, use_gt=True, model_path="/data/mjakobs/data/pretrained_jhmdb").to(self.device)
         self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False)
         self.ds_val = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=True)
-        self.ds_test = JHMDBDataset("/data/mjakobs/data/jhmdb/", train=False)
+        self.ds_test = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=False)
 
         train_sampler = SubsetRandomSampler(list(range(len(self.ds_train))))
         val_sampler = SubsetRandomSampler(list(range(len(self.ds_val))))
