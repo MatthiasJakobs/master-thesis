@@ -43,7 +43,7 @@ class CSVWriter:
             csv_file.flush()
 
 class ExperimentBase:
-    def __init__(self, conf):
+    def __init__(self, conf, validate=False):
         self.conf = conf
 
         if torch.cuda.is_available():
@@ -55,19 +55,22 @@ class ExperimentBase:
 
         self.compute_experiment_name()
 
-        self.create_experiment_folders()
+        if not validate:
+            self.create_experiment_folders()
 
         self.iteration = 0
         self.train_loader = None
         self.val_loader = None
 
-        self.remove_if_exists("experiments/{}/{}.csv".format(self.experiment_name, "loss"), file=True)
+        if not validate:
+            self.remove_if_exists("experiments/{}/{}.csv".format(self.experiment_name, "loss"), file=True)
+            self.remove_if_exists("experiments/{}/{}.csv".format(self.experiment_name, "validation"), file=True)
+            self.remove_if_exists("experiments/{}/{}.csv".format(self.experiment_name, "parameters"), file=True)
+
         self.train_writer = CSVWriter(self.experiment_name, "loss")
 
-        self.remove_if_exists("experiments/{}/{}.csv".format(self.experiment_name, "validation"), file=True)
         self.val_writer = CSVWriter(self.experiment_name, "validation")
 
-        self.remove_if_exists("experiments/{}/{}.csv".format(self.experiment_name, "parameters"), file=True)
         self.parameter_writer = CSVWriter(self.experiment_name, "parameters")
 
         for key in self.conf:
@@ -354,8 +357,8 @@ class HAR_Testing_Experiment(ExperimentBase):
 
 class Pose_JHMDB(ExperimentBase):
 
-    def __init__(self, conf, use_pretrained=False, nr_aug=3, use_flip=True):
-        super().__init__(conf)
+    def __init__(self, conf, validate=False, use_pretrained=False, nr_aug=3, use_flip=True):
+        super().__init__(conf, validate=validate)
         self.use_pretrained = use_pretrained
         self.nr_aug = nr_aug
 
