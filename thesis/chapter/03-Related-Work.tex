@@ -849,7 +849,7 @@ Afterwards, image descriptors are computed along the dense trajectories.
 They start by sampling the initial interest points in a $5$ pixel grid.
 Afterwads, they decide to prune the grid to reduce the amount of computation necessary.
 This is achieved by removing sample points which are located inside homogenous areas, e.g., walls in the background or other flat surfaces.
-Also, optical flow is computed on all consecutive frame pairs using the optical flow algorithm provided by the OpenCV library (cite).
+Also, optical flow is computed on all consecutive frame pairs using the optical flow algorithm provided by the OpenCV library \cite{bradski_opencv_2000}.
 Then, they procede to track each interest point using the optical flow field for $15$ frames, which results in a trajectory $(P_1, P_2, \dots, P_t)$ with $t \in {1, 15}$.
 This process is repeated for different scales of the image in order to extract local and global image features.
 See \fref{fig:dense-trajectories-overview} for visualization of the process.
