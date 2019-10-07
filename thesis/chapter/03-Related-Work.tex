@@ -36,7 +36,7 @@ Minimizing the energy function is computationally expensive since the space of p
 According to \cite{felzenszwalb_pictorial_2005}, there are methods using heuristics to make the computation more efficient but they do not find optimal solutions.
 They proposed to transform the problem into a statstical framework and solve it by estimating a posterior distribution.
 
-One advantage of this statistical model is that the parameters can then be estimated using training examples, similar to the principles of learning presented in \ref{sec:neural_networks}.
+One advantage of this statistical model is that the parameters can then be estimated using training examples, similar to the principles of learning presented in \sref{sec:neural_networks}.
 Also, it is trivial to get multiple solutions to the minimization problem by sampling the posterior distribution as opposed to a single solution with the energy minimization approach.
 
 The authors model the problem as follows.
@@ -143,9 +143,9 @@ $\theta_i$ is then estimated using mean values from annotated training data poin
 
 Next, the authors model the prior $p(L \mid \theta)$.
 Each spatial relation $p(l_i, l_j \mid \theta)$ between two parts is modelled in the following way:
-First, each part is placed inside its own coordinate system with the origin being the center point of the part (see Figure \ref{fig:limb-connection}a).
+First, each part is placed inside its own coordinate system with the origin being the center point of the part (see \fref{fig:limb-connection}a).
 The connection point (joint) between parts $i$ and $j$ is defined as $(x_{ij}, y_{ij})$ in the coordinate system of part $i$ and as $(x_{ji}, y_{ji})$ in the coordinate system of part $j$.
-When transformed to the image coordinate system, these points should be as close together as possible (see Figure \ref{fig:limb-connection}b).
+When transformed to the image coordinate system, these points should be as close together as possible (see \fref{fig:limb-connection}b).
 The authors express this using Gaussian distributions:
 
 \begin{equation}
@@ -392,13 +392,13 @@ During training, a supervised approach is used where the score for an annotated 
 
 % Evaluation
 
-To evaluate their model, the authors use \textit{Percentage of Correct Parts (PCP)}, presented in Section \ref{sec:andriluka-eval}, to be able to compare it to earlier work.
+To evaluate their model, the authors use \textit{Percentage of Correct Parts (PCP)}, presented in \sref{sec:andriluka-eval}, to be able to compare it to earlier work.
 In addition, they define a new metric, \textit{Probability of Correct Keypoints (PCK))}.
 In terms of datasets, they use Buffy and Iterative Image Parsing. 
 
 PCK was designed to improve upon two disadvantages of PCP.
 First, the toolkit provided with the Buffy dataset \cite{ferrari_progressive_2008} used a definition of PCP different from the one proposed in the paper, which makes the comparison of PCP values in literature hard because it is unclear which definition was used.
-The paper definition was provided in Section \ref{sec:andriluka-eval}.
+The paper definition was provided in \sref{sec:andriluka-eval}.
 The Buffy toolkit defines a part as detected if the distance of the average point of both endpoints is within the threshold to the average of the ground truth endpoints.
 Second, foreshortening changes the length of the part, which means that the threshold is dependent upon the amount of foreshortening.
 This means that foreshortened parts require more accurate predictions to be considered detected.
@@ -415,7 +415,7 @@ First, they use definition presented in the paper, where the distance of both ke
 This is referred to as the strict definition.
 Second, they use the definition provided by the Buffy toolkit, which is more loose since the averages of the keypoints are more likely to be close to each other than both endpoints of the parts.
 
-Even when considering the strictest definition, the model outperforms the previous approaches, including \cite{andriluka_pictorial_2009} (see Sec. \ref{sec:andriluka-eval}), on the Iterative dataset.
+Even when considering the strictest definition, the model outperforms the previous approaches, including \cite{andriluka_pictorial_2009} (see \sref{sec:andriluka-eval}), on the Iterative dataset.
 The authors achieve an overall PCP score of $61.5\%$, which is significantly larger than the $55.2\%$ achieved by \cite{andriluka_pictorial_2009}.
 Most notably, the detection rate of the legs is about $10$ percentage points higher when compared to \cite{andriluka_pictorial_2009}.
 Since they also propose a new metric, they provide the PCK metric results as well.
@@ -423,7 +423,7 @@ Overall, the accuracy achieved is $72.9\%$, which is higher than the overall PCP
 The authors argue that this might be due to the fact that foreshortened limbs are not penalized unfairly by PCK. 
 
 When evaluating the upper-body Buffy dataset, the authors model outperforms the previous methods, when considering the loose definition, on overall accuracy.
-However, when considering the strict definition, they outperform \cite{andriluka_pictorial_2009} with $83.5\%$ (compared to $73.5\%$, see Section \ref{sec:andriluka-eval}), but are themselves outperformed by other competitors.
+However, when considering the strict definition, they outperform \cite{andriluka_pictorial_2009} with $83.5\%$ (compared to $73.5\%$, see \sref{sec:andriluka-eval}), but are themselves outperformed by other competitors.
 When using PCK, the model achieves an overall accuracy of $72.9\%$, which is also higher than the corresponding PCP score.
 
 The authors also evaluate the effect of the number of mixtures defined as well as the number of parts to detect.
@@ -451,7 +451,7 @@ In contrast to the Pictoral Structure framework discussed earlier, the approach 
 
 % Architecture
 The authors define their network in terms of multiple connected \textit{stages}.
-Each \textit{stage} is comprised of the neural network architecture provied in Table \ref{tab:deeppose-architecture}.
+Each \textit{stage} is comprised of the neural network architecture provied in \tref{tab:deeppose-architecture}.
 The only change the authors made from the architecture originally proposed in \cite{krizhevsky_imagenet_2012} was to use the output of the last fully connected layer to regress the joint coordinates as opposed using the softmax activation function.
 This means that, assuming $k$ joints should be detected, the output of each stage is of size $2 * k$, because each joint position is given by image coordinates $(x, y)$.
 Stage $s_0$ is trained using the full images of size $220 x 220$ as its input.
@@ -502,7 +502,7 @@ Leeds Sports Pose (LSP) is a dataset of $2000$ annotated images of subjects in a
 LSP contains $14$ different joint positions of the entire body.
 
 The authors use two different metrics to evaluate their model.
-First, they use PCP (see Section \ref{sec:andriluka-eval}) for comparison with the literature.
+First, they use PCP (see \sref{sec:andriluka-eval}) for comparison with the literature.
 
 Also, they define a new metric, \textit{Percentage of Detected Joints (PDJ)}.
 They argue, similar to \cite{yang_articulated_2013}, that PCP unfairly penalizes shorter limbs.
@@ -515,7 +515,7 @@ However, like mentioned before, PCP accuracies are hard to compare since there a
 Thus, the authors reevaluate previous approaches using PDJ and compare their model against these new meassurements.
 Again, they outperform the previous state-of-the-art models on both LSP and FLIC.
 
-The authors additionally evaluated their model on the Buffy and Iterative Image Parse datasets, presented in Section \ref{sec:andriluka-eval}.
+The authors additionally evaluated their model on the Buffy and Iterative Image Parse datasets, presented in \sref{sec:andriluka-eval}.
 This allows a comparison to \cite{yang_articulated_2013}.
 Specifically, they trained their model on LSP and evaluated it on Iterative Image Parse for evaluating full-body poses.
 Analogously, they train their model on FLIC and evaluate it on the Buffy dataset when considering upper-body poses.
@@ -547,7 +547,7 @@ Their findings show the same behaviour observed in \fref{fig:deeppose-qualitativ
 Another approach for pose estimation was proposed by \cite{wei_convolutional_2016}.
 The authors base their work on \textit{traditional} Pose machines proposed by \cite{ramakrishna_pose_2014}.
 In comparison to \cite{toshev_deeppose:_2014}, they do not regress the joint coordinates directly using fully-connected layers but use a fully convolutional architecture to compute \textit{belief maps}.
-These maps are very similar to the part evidence maps discussed in Section \ref{sec:pose-andriluka}, since they indicate the belief of a joint being present at a certain pixel position.
+These maps are very similar to the part evidence maps discussed in \sref{sec:pose-andriluka}, since they indicate the belief of a joint being present at a certain pixel position.
 
 % "Classical" Pose Machine Concepts
 Pose machines are a general framework for estimating pose, focusing on refining initial pose predictions based on context from previous decisions.
@@ -592,7 +592,7 @@ See \fref{fig:pose-machines-context} for a visualization of $\varphi_1$ and $\va
 % Implementation Convolutional and Differences
 In \cite{wei_convolutional_2016}, the authors used convolutional neural networks for their predictors $g_i$.
 In fact, the complete architecture is a fully convolutional neural network, allowing end-to-end training of both the decoder and predictor.
-Each stage consists of a feature extraction network, of which the architecture is presented in Table \ref{tab:pose-machine-feature-extraction-architecture} (layers $1$ to $7$).
+Each stage consists of a feature extraction network, of which the architecture is presented in \tref{tab:pose-machine-feature-extraction-architecture} (layers $1$ to $7$).
 This leads to the following formulation for the output belief maps $\bm{b}_1$:
 
 \begin{equation}
@@ -609,7 +609,7 @@ This leads to
 
 as the output belief maps of stage $t$ with $t > 1$.
 
-The layers in Table \ref{tab:pose-machine-feature-extraction-architecture} denoted with $a_1$ to $a_3$ refer to the layers after the feature extraction network in the first stage $s_1$.
+The layers in \tref{tab:pose-machine-feature-extraction-architecture} denoted with $a_1$ to $a_3$ refer to the layers after the feature extraction network in the first stage $s_1$.
 Analogously, $b_1$ to $b_5$ refer to the layers after the feature extraction network in all subsequent stages $s_i, i > 1$.
 The architecture of the first stage, compared to all subsequent stages, differs because the authors want the first stage to have a lower receptive field in order for a more precise extraction of local features.
 In fact, the design was chosen so that, after the second stage, the receptive field of the network is roughly the size of the input image.
@@ -671,7 +671,7 @@ These are LSP and FLIC \sref{sec:flic-lsp} as well as \textit{MPII Human Pose}.
 MPII Human Pose is a benchmark, which consists of $40,000$ annotated images of people.
 These images are also often referred to as \textit{in-the-wild} images since they were downloaded from YouTube videos and are thus representative of every day activaties and situations.
 In addition, since most YouTube videos are uploaded by private individuals, the image quality varies, making the benchmark more realisitic.
-For a complete overview of the MPII dataset, please refer to Section \ref{sec:exp-mpii}.
+For a complete overview of the MPII dataset, please refer to \sref{sec:exp-mpii}.
 
 For evaluating their model, the authors use both PCK \sref{sec:andriluka-eval} and PCKh metrics.
 \textit{PCKh} is used as the metric for the MPII dataset, which is very similar to both PCK and PDJ \sref{sec:flic-lsp}.
@@ -868,7 +868,7 @@ This vector is further normalized by the sum over all relative displacements, re
     T = \frac{(\Delta P_t, \dots, \Delta P_{t + L -1})}{\sum_t^{t+L-1} \lVert \Delta P_t \rVert}
 \end{equation}
 
-The authors use \textit{Histogram of Oriented Gradients (HoG)} \cite{dalal_histograms_2005}, \textit{Histogram of Optical Flow (HoF)} \cite{laptev_learning_2008} (see Sec. \ref{sec:laptev-shallow} for more information) as well as \textit{Motion Boundary Histograms (MBH)} \cite{dalal_human_2006} to extract features along the trajectoties.
+The authors use \textit{Histogram of Oriented Gradients (HoG)} \cite{dalal_histograms_2005}, \textit{Histogram of Optical Flow (HoF)} \cite{laptev_learning_2008} (see \sref{sec:laptev-shallow} for more information) as well as \textit{Motion Boundary Histograms (MBH)} \cite{dalal_human_2006} to extract features along the trajectoties.
 Centered at each interest point along a trajectory, a $N \times N$ pixel area is defined with $N = 32$.
 These areas are then again subdivided into $n_\sigma \times n_\sigma$ subareas with $n_\sigma = 2$.
 The descriptors are then computed on each of these subareas and descriptors over $n_\tau = 3$ timesteps are then summed to form a single descriptor for each $n_\sigma \times n_\sigma \times n_\tau$ subvolume.
@@ -893,7 +893,7 @@ Additionally, the authors find that MBH outperforms all other descriptors on mos
 Especially in videos which are recorded by private individuals using cheap cameras or mobile phones MBH gains an advantage over other descriptors because it suppresses camera motion.
 In general, according to the authors, using all descriptors for classification yields higher accuracies than only using a subset, suggesting that both flow and RBG information are necessary for high accuracy.
 
-In addition, they compared their findings against \cite{laptev_learning_2008}, discussed in Sec. \ref{sec:laptev-shallow}.
+In addition, they compared their findings against \cite{laptev_learning_2008}, discussed in \sref{sec:laptev-shallow}.
 To accurately compare both approaches, they utilize the interest points computed by \cite{laptev_learning_2008} to compute the HoG and HoF descriptors.
 In a direct comparison, both HoG and HoF descriptors on their own lead to the same accuracy regardless of whether the trajectory is used or the interest points computed by \cite{laptev_learning_2008}.
 However, the MBH descriptor consistently outperforms both HoG and HoF, and by combining MBH with HoG and HoF the authors achieve a significant accuracy gain over \cite{laptev_learning_2008} ($7.0$ percentage points on the YouTube dataset and $4.2$ percentage points on the Hollywood2 dataset).
@@ -903,7 +903,7 @@ However, the MBH descriptor consistently outperforms both HoG and HoF, and by co
 % Towards ...
 %TODO: Here, they combine trajectories (positional features) with image features (HOG etc.). This is similar to how Luvizon combines pose and image features!. Can reference back.
 \subsubsection{Towards understanding action recognition}
-In \cite{jhuang_towards_2013}, the authors evaluate the effect of different parts of a state-of-the-art action recognition pipeline \cite{wang_dense_2013} in order to gain a deeper understanding of the problem (see Section \ref{sec:dense-trajectories} for a detailed explanation of the algorithm).
+In \cite{jhuang_towards_2013}, the authors evaluate the effect of different parts of a state-of-the-art action recognition pipeline \cite{wang_dense_2013} in order to gain a deeper understanding of the problem (see \sref{sec:dense-trajectories} for a detailed explanation of the algorithm).
 They argue that, up to that point, working action recognition approaches were mostly evaluated on simple datasets, often recorded in a laboratory environment.
 According to the authors, such datasets are not realisitic enough to decern whether an action recognition alogorithm would perform well in a real world application.
 
@@ -924,7 +924,7 @@ To establish a baseline, they extract features using \cite{wang_dense_2013} for 
 This resulted in an overall accuracy of $56.6$ percent.
 Afterwards, they evaluated different ways to substitute the ground truth optical flow into the algorithm.
 The highest accuracy gains over the baseline ($11$ percentage points) were achieved by using the ground truth flow computed on the masked subject in combination with using the optical flow from around the Puppet mask borders.
-See Fig. \ref{fig:puppet-flow-mask} for a visualization.
+See \fref{fig:puppet-flow-mask} for a visualization.
 The authors argue that is most likely due to the fact that the separation between the background flow and subject flow is more distinct, resulting in a sharp motion boundary. 
 
 Next, the authors investigate the impact of masking the subject. 
@@ -947,12 +947,12 @@ First, they use the joint positions over time as trajectories.
 Second, they compute additional features related to pose.
 This includes calculating the distances and relative angles between all joint pairs. 
 In addition, they iterate every triplet of joints and calucalte the inner angle spanned by two relative vectors anchored at the third joint.
-See Fig. \ref{fig:joint-angle-computation} for a visualization of this procedure.
+See \fref{fig:joint-angle-computation} for a visualization of this procedure.
 Besides this, they encode temporal information by computing the change in the previously mentioned values for consecutive frames.
 They find that the accuracy improves by $19$ percentage points over the baseline, suggesting that pose information is by far the most discriminative feature to use for action recognition \cite{jhuang_towards_2013}. 
 Also, adding the image features to the pose features does not significantly improve upon the accuracy. 
 The authors thus argue that, once pose features are used, the image feature contribution is negligable.
-Additionaly, they evaluate the use of estimated poses using the approach presented by \cite{yang_articulated_2011} (see Section \ref{sec:yangramanan} for a detailed explanation). 
+Additionaly, they evaluate the use of estimated poses using the approach presented by \cite{yang_articulated_2011} (see \sref{sec:yangramanan} for a detailed explanation). 
 They find that, while the estimated pose is of low quality compared to the ground truth, this approach still outperforms the baseline approach, suggesting that even low quality pose information is highly relevant as a feature for action recognition.
 
 \subsubsection{Pose-CNN}
@@ -971,7 +971,7 @@ The second part processes flow images and outputs another feature vector.
 These two vectors are then concatenated, which results in the final feature vector for the entire video clip. 
 Each part consists of 5 convolutional layers, followed by 3 fully-connected layers. The RGB part is pretrained using the ImageNet dataset \cite{deng_imagenet:_2009} while the flow part is pretrained using the UCF101 dataset \cite{soomro_ucf101:_2012}. 
 Once pretrained, the last fully-connected layer of both parts is removed, resulting in a output size of the previous layer of $4096$, which they use as the extracted feature.
-See Fig. \ref{fig:p-cnn-architecture} for a network visualization.
+See \fref{fig:p-cnn-architecture} for a network visualization.
 
 The authors compute optical flow using \cite{brox_high_2004} for consecutive frames in each video clip beforehand.
 They also scale the $x$ and $y$ flow values to the interval $[0, 255]$.
@@ -987,9 +987,9 @@ They compute another descriptor, called the dynamic video descriptor, where the 
 The aggregation of minimum and maximum values following that is identical to the aggregation for the static video descriptor.
 Finally, both descriptors are normalized and again concatenated, yielding the final video descriptor.
 The resulting feature vector is then used as input for a linear Support Vector Machine, used for action classification.
-See Fig. \ref{fig:p-cnn-architecture} for a visualization.
+See \fref{fig:p-cnn-architecture} for a visualization.
 
-The authors compare their results to the descriptor presented in Section \ref{sec:jhuang-towards} (from now on referred to as \textit{HLPF} for High Level Pose Features) as well as to the Improved Dense Trajectories (\textit{IDT}) descriptor presented in Section XX, which was the state-of-the-art approach at that time. %TODO: Backreferenz
+The authors compare their results to the descriptor presented in \sref{sec:jhuang-towards} (from now on referred to as \textit{HLPF} for High Level Pose Features) as well as to the Improved Dense Trajectories (\textit{IDT}) descriptor presented in Section XX, which was the state-of-the-art approach at that time. %TODO: Backreferenz
 
 When training on the JHMDB dataset, the authors find that their approach does not outperform \textit{HLPF} when using ground truth pose annotations ($74.6$ and $77.8$ percent accuracy respectively).
 However, when using estimated pose, their approach significantly outperforms \textit{HLPF} by almost $35$ percentage points ($61.1$ as opposed to $25.3$).
