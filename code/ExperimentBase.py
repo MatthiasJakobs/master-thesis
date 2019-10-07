@@ -205,7 +205,7 @@ class HAR_Testing_Experiment(ExperimentBase):
         print("Fine Tuning: " + str(self.fine_tune))
 
         self.model = DeepHar(num_actions=21, use_gt=True, model_path="/data/mjakobs/data/pretrained_jhmdb").to(self.device)
-        self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False)
+        self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False, use_random_parameters=True)
         self.ds_val = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=True)
         self.ds_test = JHMDBDataset("/data/mjakobs/data/jhmdb/", train=False)
 
@@ -229,7 +229,7 @@ class HAR_Testing_Experiment(ExperimentBase):
 
         self.test_loader = data.DataLoader(
             self.ds_test,
-            batch_size=1,
+            batch_size=self.conf["batch_size"],
             sampler=test_sampler
         )
 
