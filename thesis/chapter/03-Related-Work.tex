@@ -384,7 +384,7 @@ The authors provide the following score function to evaluate a predicted pose:
 
 In \eref{eq:yang-score}, $I$ refers to the image that is evaluated.
 $l = (l_1, \cdots, l_k)$ is the configuration containing all part positions while $t = (t_1, \dots, t_k)$ corresponds to the types of parts.
-$\phi(I, l_i)$ is a HOG feature vector \cite{dalal_histograms_2005} computed around the part position $l_i$.
+$\phi(I, l_i)$ is a Histogram of Oriented Gradients (HoG) feature vector \cite{dalal_histograms_2005} computed around the part position $l_i$.
 $\psi(l_i - l_j) = [(x_i - x_j), (x_i - x_j)^2, (y_i - y_j), (y_i - y_j)^2]^T$ encodes the relative location of part $l_i$ to $l_j$.
 
 $w_i^{t_i}$, $w_{ij}^{t_i, t_j}$ as well as $b_i^{t_i}$ and $b_{ij}^{t_i, t_j}$ are parameters estimated from annotated training data, which encode learned relationships between parts as well as type assignments for each part.
@@ -570,7 +570,7 @@ See \fref{fig:pose-machines-architecture} for a visualization of the pipeline.
 
 % Concrete Implementation Original
 In \cite{ramakrishna_pose_2014}, the authors use boosted random forests for their stage predictors $g_i$.
-To extract features, they utilize \textit{Histogram of Oriented Gradients (HOG)} descriptors.
+To extract features, they utilize \textit{Histogram of Oriented Gradients (HoG)} descriptors \cite{dalal_histograms_2005}.
 Their encoder $\varphi$ is made up of two parts.
 The first part is referred to by the authors as \textit{context patch features}.
 For a given pixel coordinate $z = (x, y)$ for each belief map, the authors concatenate the belief scores in a $5 x 5$ grid around $z$.
@@ -825,13 +825,85 @@ Other: Use temporal information.
 Here: Only those who use temporal information.
 
 \subsection{Shallow Methods}
+\subsubsection{Laptev paper}
+\label{sec:laptev-shallow}
+
+%TODO: describe datasets
+
+\subsubsection{Dense Trajectories}
+\label{sec:dense-trajectories}
+
+Similar to \cite{laptev_learning_2008}, many approaches in the action recognition literature focused on creating spatio-temporal descriptors, often based on known 2D descriptors like 3D-SIFT (cite) and HOG3D (cite).
+However, the authors of \cite{wang_dense_2013} argue that, due to the different characteristics of the spatial and temporal domain, tracking 2D descriptors over time should lead to a higher accuracy in action recognition.
+They propose to densely sample points on the first frame of a video clip and then tracking them on trajectories throughout the clip.
+Afterwards, image descriptors are computed along the dense trajectories.
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.9\textwidth]{dense_trajectories_overview.png}
+    \caption{Overview of the Dense Trajectories method proposed by \cite{wang_dense_2013}. First, dense interest points are sampled at different scales of the first frame of the video clip. Then, using precomputed optical flow, these points are tracked through the video, resulting in a trajectory. Afterwards, image descriptors are computed along the trajectory. Image taken from \cite{wang_dense_2013}. }
+    \label{fig:dense-trajectories-overview}
+\end{figure}
+
+% Trajectory
+They start by sampling the initial interest points in a $5$ pixel grid.
+Afterwads, they decide to prune the grid to reduce the amount of computation necessary.
+This is achieved by removing sample points which are located inside homogenous areas, e.g., walls in the background or other flat surfaces.
+Also, optical flow is computed on all consecutive frame pairs using the optical flow algorithm provided by the OpenCV library (cite).
+Then, they procede to track each interest point using the optical flow field for $15$ frames, which results in a trajectory $(P_1, P_2, \dots, P_t)$ with $t \in {1, 15}$.
+This process is repeated for different scales of the image in order to extract local and global image features.
+See \fref{fig:dense-trajectories-overview} for visualization of the process.
+The authors argue that limiting the length of a trajectory is necessary in order to avoid the trajectory from drifting away from the initial interest point too much.
+In the case where a trajectory is too stationary the authors prune it afterwards because they argue that such a trajectory does not contain sufficient motion information to be useful.
+Analogously, in the case where a trajectory contains a jump which is higher than $70$ percent of the overall displacement since the initial interest point the trajectory is also pruned, since, according to the authors, such a large displacement is usually present due to errors.
+Also, in the case where an interest point vanishes from one frame to another or a displacement larger than a certain threshold is occuring they decide to start a new trajectory by sampling a new initial in the area where the last point was.
+The authors do not, however, specify how large this threshold is.
+
+% Descriptors
+Along each trajectory, the authors compute four different descriptors.
+The first descriptor contains the relative motion between consecutive trajectory points $\Delta P_t = (P_{t+1} - P_t) = (x_{t+1} - x_t, y_{t+1} - y_t)$.
+This vector is further normalized by the sum over all relative displacements, resulting in the following descriptor $T$ given the length of the trajectory $L$:
+
+\begin{equation}
+    T = \frac{(\Delta P_t, \dots, \Delta P_{t + L -1})}{\sum_t^{t+L-1} \lVert \Delta P_t \rVert}
+\end{equation}
+
+The authors use \textit{Histogram of Oriented Gradients (HoG)} \cite{dalal_histograms_2005}, \textit{Histogram of Optical Flow (HoF)} \cite{laptev_learning_2008} (see Sec. \ref{sec:laptev-shallow} for more information) as well as \textit{Motion Boundary Histograms (MBH)} \cite{dalal_human_2006} to extract features along the trajectoties.
+Centered at each interest point along a trajectory, a $N \times N$ pixel area is defined with $N = 32$.
+These areas are then again subdivided into $n_\sigma \times n_\sigma$ subareas with $n_\sigma = 2$.
+The descriptors are then computed on each of these subareas and descriptors over $n_\tau = 3$ timesteps are then summed to form a single descriptor for each $n_\sigma \times n_\sigma \times n_\tau$ subvolume.
+Afterwards, these subvolume descriptors are aggregated, resulting in a single descriptor for each type (HoG, HoF, MBH) and each subvolume $N \times N \times n_\tau$.
+See \fref{fig:dense-trajectories-overview} (right) for a visualization of this process.
+
+Motion Boundary Histograms, originally proposed by \cite{dalal_human_2006}, are computed using optical flow between consecutive frames.
+First, optical flow for both $x$ and $y$ direction is computed.
+Afterwards, gradients are computed on both flow fields.
+On these gradient images, a histogram is computed analogously to HoG using 8 bins.
+It is argued that MBH is highly robust to camera motion since this kind of motion is mostly constant in a movie context and thus results in the gradient of the optical flow being close to zero. 
+The authors decide to compute separate descriptors, resulting in MBHx and MBHy.
+For HoG and HoF, they also chose to use eight bins for quanization.
+Additionally, for HoF, a ninth bin is added in cases where the flow magnitude is lower than a not specified threshold.
+
+The authors evaluate the contribution of each of the four descriptor types to the overall accuracay on multiple datasets.
+First, they find that the trajectory descriptor using the relative displacement vectors outperforms HoG on datasets where the background is not complex, i.e., in a laboratory environment.
+They argue that this is because tracking is significantly easier in such a environment.
+On datasets which focus on sport acitivies, HoG consistently outperforms HoF.
+The authors argue that this is due to the importance of spatial context in sports actions since they often involve objects, i.e., a ball or a javelin, and specific environmental scenarios, such as arenas.
+Additionally, the authors find that MBH outperforms all other descriptors on most datasets.
+Especially in videos which are recorded by private individuals using cheap cameras or mobile phones MBH gains an advantage over other descriptors because it suppresses camera motion.
+In general, according to the authors, using all descriptors for classification yields higher accuracies than only using a subset, suggesting that both flow and RBG information are necessary for high accuracy.
+
+In addition, they compared their findings against \cite{laptev_learning_2008}, discussed in Sec. \ref{sec:laptev-shallow}.
+To accurately compare both approaches, they utilize the interest points computed by \cite{laptev_learning_2008} to compute the HoG and HoF descriptors.
+In a direct comparison, both HoG and HoF descriptors on their own lead to the same accuracy regardless of whether the trajectory is used or the interest points computed by \cite{laptev_learning_2008}.
+However, the MBH descriptor consistently outperforms both HoG and HoF, and by combining MBH with HoG and HoF the authors achieve a significant accuracy gain over \cite{laptev_learning_2008} ($7.0$ percentage points on the YouTube dataset and $4.2$ percentage points on the Hollywood2 dataset).
 
 \subsection{HAR using pose information}
 \label{sec:jhuang-towards}
 % Towards ...
 %TODO: Here, they combine trajectories (positional features) with image features (HOG etc.). This is similar to how Luvizon combines pose and image features!. Can reference back.
 \subsubsection{Towards understanding action recognition}
-In \cite{jhuang_towards_2013}, the authors evaluate the effect of different parts of a state-of-the-art action recognition pipeline \cite{wang_dense_2013} in order to gain a deeper understanding of the problem (see XXX for a detailed explanation of the algorithm). %TODO: Referenz nach hinten
+In \cite{jhuang_towards_2013}, the authors evaluate the effect of different parts of a state-of-the-art action recognition pipeline \cite{wang_dense_2013} in order to gain a deeper understanding of the problem (see Section \ref{sec:dense-trajectories} for a detailed explanation of the algorithm).
 They argue that, up to that point, working action recognition approaches were mostly evaluated on simple datasets, often recorded in a laboratory environment.
 According to the authors, such datasets are not realisitic enough to decern whether an action recognition alogorithm would perform well in a real world application.
 
