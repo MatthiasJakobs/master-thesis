@@ -828,6 +828,7 @@ Here: Only those who use temporal information.
 \subsubsection{Laptev paper}
 \label{sec:laptev-shallow}
 
+%TODO: Explain HoF (or dont and explain in Dense Trajectories)
 %TODO: describe datasets
 
 \subsubsection{Dense Trajectories}
@@ -849,6 +850,7 @@ Afterwards, image descriptors are computed along the dense trajectories.
 They start by sampling the initial interest points in a $5$ pixel grid.
 Afterwads, they decide to prune the grid to reduce the amount of computation necessary.
 This is achieved by removing sample points which are located inside homogenous areas, e.g., walls in the background or other flat surfaces.
+This is necessary because reliably tracking points over homogenous areas using optical flow is impossible \cite{wang_action_2013}.
 Also, optical flow is computed on all consecutive frame pairs using the optical flow algorithm provided by the OpenCV library \cite{bradski_opencv_2000}.
 Then, they procede to track each interest point using the optical flow field for $15$ frames, which results in a trajectory $(P_1, P_2, \dots, P_t)$ with $t \in {1, 15}$.
 This process is repeated for different scales of the image in order to extract local and global image features.
@@ -897,6 +899,75 @@ In addition, they compared their findings against \cite{laptev_learning_2008}, d
 To accurately compare both approaches, they utilize the interest points computed by \cite{laptev_learning_2008} to compute the HoG and HoF descriptors.
 In a direct comparison, both HoG and HoF descriptors on their own lead to the same accuracy regardless of whether the trajectory is used or the interest points computed by \cite{laptev_learning_2008}.
 However, the MBH descriptor consistently outperforms both HoG and HoF, and by combining MBH with HoG and HoF the authors achieve a significant accuracy gain over \cite{laptev_learning_2008} ($7.0$ percentage points on the YouTube dataset and $4.2$ percentage points on the Hollywood2 dataset).
+
+\subsubsection{Improved Dense Trajectories}
+
+% Intro
+After their work in \cite{wang_dense_2013}, some of the same authors improved upon their work in \cite{wang_action_2013}.
+The new approach is named \textit{Improved Dense Trajectories (IDT)}.
+The core idea is to remove the camera motion before computing the dense trajectories, resulting in a optical flow field which contains less background information.
+To achieve this, the authors assume that two consecutive frames can be related to each other using a homography.
+
+% Homography
+In general, a homography $H$ relates two points $x$ and $x^\prime$ in the same plane by $x^\prime = Hx$ \cite{vincent_detecting_2001}.
+$H$ is defined as a $3 \times 3$ matrix since the image points $x = (x_x, x_y, 1)$ are projections of three dimensional points onto the camera plain.
+Also, a homography can express the relationship between the same point but viewed by two different cameras, or, as shown later, a single camera before and after displacement.
+Let $F_1, F_2$ be two images, taken by the same camera, but at different world positions.
+Using matching points $F_1$ and $F_2$, $H$ can be computed.
+With $H$, the camera movement in $F_2$ can be removed, resulting in a reduction of background movement.
+This procedure is further referred to as warping.
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.99\textwidth]{idt-stages.png}
+    \caption{Overview over the different stages of the Improved Dense Trajectories algorithm. \textbf{Outer left}: Two consecutive frames displayed over another. Notice the blurry background. \textbf{Middle left}: Computed optical flow without warping. \textbf{Middle right}: Optical flow computed where the second frame was warped according to the computed homography. Notice that the background motion has vanished and the motion of the subject is much more pronounced. \textbf{Outer right}: Trajectories computed on the warped flow. Background trajectories, which are removed, are displayed in white .Image taken from \cite{wang_action_2013} and modified from vertical stack to horizontal stack. }
+    \label{fig:idt-stages}
+\end{figure}
+
+The authors argue that the homography assumption holds in their scenarios most of the times since the movement by independent subjects in the frame, such as actors, is small enough to be negligable.
+To compute $H$, the authors first compute SURF detectors \cite{bay_surf:_2006}, which are then used to compute point correspondenses in consecutive frames by using the nearest neighbour algorithm.
+%TODO: Maybe short thing about surf detectors?
+They argue that SURF detectors robust to motion blur and are thus more useful for this task than other descriptors.
+Additionally, they track points using the optical flow by sampling points and tracking them in the consecutive frame.
+Finally, they use the matched points to compute $H$ using the RANSAC algorithm by \cite{fischler_random_1981}.
+This algorithm randomly samples a subset of the input point pairs and computes $H$ by solving the following equation \cite{vincent_detecting_2001}:
+
+\begin{equation}
+    x^\prime \times Hx = 0 
+\end{equation}
+
+The points pairs, which were not used for estimation, are then used to evaluate the accuracy of $H$.
+If the accuracy is above a certain threshold, the point pair is considered an \textit{inlier}, and an \textit{outlier} otherwise.
+This procedure is repeated a fixed number of times and the parameters of $H$ that produced the most inliers are chosen. 
+
+Estimation of $H$ can be problematic when a subject is very dominant in the frame since the homography assumption does not hold for independently moving objects in the scene \cite{wang_action_2013}.
+Thus, the authors suggest to use a human detector in order to remove point pairs which lie inside a human bounding box.
+They use the, at that time, state-of-the-art human detector proposed by \cite{prest_weakly_2012}.
+
+% Changes to the original Dense trajectories
+After estimating $H$, the authors warp the second image in each consecutive frame pair using $H$ and recompute optical flow between the frames.
+Then, on the now new optical flow images, they compute the HoF, trajectory and MBH descriptors identically to \cite{wang_dense_2013}.
+The HoG descriptors, on the other hand, are created on the original frames without warping applied.
+As another improvement, they remove background trajectories based on the computed trajectory descriptors.
+This is achieved by computing the maximum magnitude of each trajectory and removing the trajectory if the magnitude is less than $1$ pixel, since this means that the trajectory is consistent with the camera motion \cite{wang_action_2013}.
+See \fref{fig:idt-stages} for a visualization of these processing steps.
+
+% Evaluation
+In their evaluation, the authors first evaluate the difference between the Improved Dense Trajectories approach to their baseline from \cite{wang_dense_2013}.
+They find that by using the warped optical flow alone the accuracy increases by $3$ to $4$ percentage points over the baseline, depending on the dataset.
+Also, if they remove background trajectories, they gain an additional $1$ percentage points over the baseline.
+
+When investigating the individual contributions of the descriptors, the first thing the authors notices was that the HoG descriptors do not significantly increase over the baseline.
+However, this is to be expected, since HoG is a static descriptor.
+The authors attribute the small accuracy increase in HoG to the removal of background trajectories.
+Also, they notice that the HoF descriptor is comparable to MBH if the warped flow field is used, whereas MBH in the original Dense Trajectories approach significantly outperfomred HoF.
+
+The authors additionaly investigated the contribution of the human detector.
+For the experiment, they annotated a subset of the datasets with ground truth human bounding boxes and compared the accuracy gain over the baseline, which does not use human bounding boxes, and the bounding boxes computed by \cite{prest_weakly_2012}.
+They found that, using the computed bounding box, increases uppon the baseline by $1.8$ percentage points.
+Using the ground truth, an additional increase in accuracy of $1.2$ percentage points was observed.
+The authors argue that the accuracy increases because the homography $H$ is more accurate when using a human bounding box, which then leads to a better approximation of the camera motion and in turn to better motion descriptors like HoF and MBH.
+
 
 \subsection{HAR using pose information}
 \label{sec:jhuang-towards}
