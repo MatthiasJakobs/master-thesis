@@ -164,7 +164,11 @@ class MPIIDataset(BaseDataset):
                 train_test_folder = "train/"
 
             if self.use_random_parameters:
-                prefix = "rand1_"
+                dice_roll = random.randint(0, 1)
+                if dice_roll == 0:
+                    prefix = "rand1_"
+                else:
+                    prefix = ""
             else:
                 prefix = ""
 
