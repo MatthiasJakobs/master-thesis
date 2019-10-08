@@ -2054,3 +2054,117 @@ input feature for many computer vision algorithms.},
 	keywords = {automated cartography, camera calibration, image matching, location determination, model fitting, scene analysis},
 	pages = {381--395}
 }
+
+@article{marszalek_actions_2009,
+	title = {Actions in {Context}},
+	url = {https://hal.inria.fr/inria-00548645},
+	abstract = {This paper exploits the context of natural dynamic scenes for human action recognition in video. Human actions are frequently constrained by the purpose and the physical properties of scenes and demonstrate high correlation with particular scene classes. For example, eating often happens in a kitchen while running is more common outdoors. The contribution of this paper is three-fold: (a) we automatically discover relevant scene classes and their correlation with human actions, (b) we show how to learn selected scene classes from video without manual supervision and (c) we develop a joint framework for action and scene recognition and demonstrate improved recognition of both in natural video. We use movie scripts as a means of automatic supervision for training. For selected action classes we identify correlated scene classes in text and then retrieve video samples of actions and scenes for training using script-to-video alignment. Our visual models for scenes and actions are formulated within the bag-of-features framework and are combined in a joint scene-action SVM-based classifier. We report experimental results and validate the method on a new large dataset with twelve action classes and ten scene classes acquired from 69 movies.},
+	language = {en},
+	urldate = {2019-10-08},
+	author = {Marszałek, Marcin and Laptev, Ivan and Schmid, Cordelia},
+	month = jun,
+	year = {2009},
+	file = {Full Text PDF:/home/matthias/Zotero/storage/7LWWAMKL/Marszałek et al. - 2009 - Actions in Context.pdf:application/pdf;Snapshot:/home/matthias/Zotero/storage/8ABW8AUH/inria-00548645.html:text/html}
+}
+
+@inproceedings{schuldt_recognizing_2004,
+	title = {Recognizing human actions: a local {SVM} approach},
+	volume = {3},
+	shorttitle = {Recognizing human actions},
+	doi = {10.1109/ICPR.2004.1334462},
+	abstract = {Local space-time features capture local events in video and can be adapted to the size, the frequency and the velocity of moving patterns. In this paper, we demonstrate how such features can be used for recognizing complex motion patterns. We construct video representations in terms of local space-time features and integrate such representations with SVM classification schemes for recognition. For the purpose of evaluation we introduce a new video database containing 2391 sequences of six human actions performed by 25 people in four different scenarios. The presented results of action recognition justify the proposed method and demonstrate its advantage compared to other relative approaches for action recognition.},
+	booktitle = {Proceedings of the 17th {International} {Conference} on {Pattern} {Recognition}, 2004. {ICPR} 2004.},
+	author = {Schuldt, C. and Laptev, I. and Caputo, B.},
+	month = aug,
+	year = {2004},
+	keywords = {Cameras, Computer vision, feature extraction, Frequency, human action recognition, Humans, Image recognition, local space time features, motion pattern recognition, pattern classification, Pattern recognition, Performance evaluation, Spatial databases, Support vector machine classification, support vector machines, Support vector machines, SVM classification, video database, video databases, video representations, video signal processing},
+	pages = {32--36 Vol.3},
+	file = {IEEE Xplore Abstract Record:/home/matthias/Zotero/storage/EKD88EH7/1334462.html:text/html}
+}
+
+@misc{noauthor_recognizing_nodate,
+	title = {Recognizing realistic actions from videos “in the wild” - {IEEE} {Conference} {Publication}},
+	url = {https://ieeexplore.ieee.org/document/5206744},
+	urldate = {2019-10-08},
+	file = {Recognizing realistic actions from videos “in the wild” - IEEE Conference Publication:/home/matthias/Zotero/storage/7P96GH92/5206744.html:text/html}
+}
+
+@inproceedings{liu_recognizing_2009,
+	title = {Recognizing realistic actions from videos “in the wild”},
+	doi = {10.1109/CVPR.2009.5206744},
+	abstract = {In this paper, we present a systematic framework for recognizing realistic actions from videos “in the wild”. Such unconstrained videos are abundant in personal collections as well as on the Web. Recognizing action from such videos has not been addressed extensively, primarily due to the tremendous variations that result from camera motion, background clutter, changes in object appearance, and scale, etc. The main challenge is how to extract reliable and informative features from the unconstrained videos. We extract both motion and static features from the videos. Since the raw features of both types are dense yet noisy, we propose strategies to prune these features. We use motion statistics to acquire stable motion features and clean static features. Furthermore, PageRank is used to mine the most informative static features. In order to further construct compact yet discriminative visual vocabularies, a divisive information-theoretic algorithm is employed to group semantically related features. Finally, AdaBoost is chosen to integrate all the heterogeneous yet complementary features for recognition. We have tested the framework on the KTH dataset and our own dataset consisting of 11 categories of actions collected from YouTube and personal videos, and have obtained impressive results for action recognition and action localization.},
+	booktitle = {2009 {IEEE} {Conference} on {Computer} {Vision} and {Pattern} {Recognition}},
+	author = {Liu, J. and {Jiebo Luo} and Shah, M.},
+	month = jun,
+	year = {2009},
+	keywords = {action localization, AdaBoost, Cameras, Computer vision, feature extraction, Feature extraction, Humans, image motion analysis, information-theoretic algorithm, informative static features, KTH dataset, motion features, Motion pictures, motion statistics, PageRank, personal videos, realistic action recognition, Shape, Spatiotemporal phenomena, unconstrained videos, video signal processing, Videos, visual vocabularies, Vocabulary, YouTube},
+	pages = {1996--2003},
+	file = {IEEE Xplore Abstract Record:/home/matthias/Zotero/storage/84DZK2UW/5206744.html:text/html}
+}
+
+@article{laptev_harris3d,
+	title = {On {Space}-{Time} {Interest} {Points}},
+	volume = {64},
+	issn = {1573-1405},
+	url = {https://doi.org/10.1007/s11263-005-1838-7},
+	doi = {10.1007/s11263-005-1838-7},
+	abstract = {Local image features or interest points provide compact and abstract representations of patterns in an image. In this paper, we extend the notion of spatial interest points into the spatio-temporal domain and show how the resulting features often reflect interesting events that can be used for a compact representation of video data as well as for interpretation of spatio-temporal events.To detect spatio-temporal events, we build on the idea of the Harris and Förstner interest point operators and detect local structures in space-time where the image values have significant local variations in both space and time. We estimate the spatio-temporal extents of the detected events by maximizing a normalized spatio-temporal Laplacian operator over spatial and temporal scales. To represent the detected events, we then compute local, spatio-temporal, scale-invariant N-jets and classify each event with respect to its jet descriptor. For the problem of human motion analysis, we illustrate how a video representation in terms of local space-time features allows for detection of walking people in scenes with occlusions and dynamic cluttered backgrounds.},
+	language = {en},
+	number = {2},
+	urldate = {2019-10-08},
+	journal = {International Journal of Computer Vision},
+	author = {Laptev, Ivan},
+	month = sep,
+	year = {2005},
+	keywords = {interest points, matching, scale selection, scale-space, video interpretation},
+	pages = {107--123},
+	file = {Springer Full Text PDF:/home/matthias/Zotero/storage/RR7CTLWT/Laptev - 2005 - On Space-Time Interest Points.pdf:application/pdf}
+}
+
+@inproceedings{harris_combined_1988,
+	title = {A combined corner and edge detector.},
+	volume = {15},
+	booktitle = {Alvey vision conference},
+	publisher = {Citeseer},
+	author = {Harris, Christopher G and Stephens, Mike},
+	year = {1988},
+	pages = {10--5244}
+}
+
+@inproceedings{macqueen_methods_1967,
+	title = {Some methods for classification and analysis of multivariate observations},
+	url = {https://projecteuclid.org/euclid.bsmsp/1200512992},
+	abstract = {Project Euclid - mathematics and statistics online},
+	language = {EN},
+	urldate = {2019-10-08},
+	publisher = {The Regents of the University of California},
+	author = {MacQueen, James},
+	year = {1967},
+	file = {Full Text PDF:/home/matthias/Zotero/storage/8QTG77Y3/MacQueen - 1967 - Some methods for classification and analysis of mu.pdf:application/pdf;Snapshot:/home/matthias/Zotero/storage/GQHZWSYN/1200512992.html:text/html}
+}
+
+@article{lloyd_least_1982,
+	title = {Least squares quantization in {PCM}},
+	volume = {28},
+	doi = {10.1109/TIT.1982.1056489},
+	abstract = {It has long been realized that in pulse-code modulation (PCM), with a given ensemble of signals to handle, the quantum values should be spaced more closely in the voltage regions where the signal amplitude is more likely to fall. It has been shown by Panter and Dite that, in the limit as the number of quanta becomes infinite, the asymptotic fractional density of quanta per unit voltage should vary as the one-third power of the probability density per unit voltage of signal amplitudes. In this paper the corresponding result for any finite number of quanta is derived; that is, necessary conditions are found that the quanta and associated quantization intervals of an optimum finite quantization scheme must satisfy. The optimization criterion used is that the average quantization noise power be a minimum. It is shown that the result obtained here goes over into the Panter and Dite result as the number of quanta become large. The optimum quautization schemes for2{\textasciicircum}bquanta,b=1,2, {\textbackslash}cdots, 7, are given numerically for Gaussian and for Laplacian distribution of signal amplitudes.},
+	number = {2},
+	journal = {IEEE Transactions on Information Theory},
+	author = {Lloyd, Stuart},
+	month = mar,
+	year = {1982},
+	keywords = {Least-squares approximation, PCM communication, Quantization (signal), Signal quantization},
+	pages = {129--137},
+	file = {IEEE Xplore Abstract Record:/home/matthias/Zotero/storage/FRNY98FK/1056489.html:text/html;Submitted Version:/home/matthias/Zotero/storage/H6ZYCCV7/Lloyd - 1982 - Least squares quantization in PCM.pdf:application/pdf}
+}
+
+@inproceedings{wong_extracting_2007,
+	title = {Extracting {Spatiotemporal} {Interest} {Points} using {Global} {Information}},
+	isbn = {978-1-4244-1631-8},
+	doi = {10.1109/ICCV.2007.4408923},
+	abstract = {Local spatiotemporal features or interest points provide compact but descriptive representations for efficient video analysis and motion recognition. Current local feature extraction approaches involve either local filtering or entropy computation which ignore global information (e.g. large blobs of moving pixels) in video inputs. This paper presents a novel extraction method which utilises global information from each video input so that moving parts such as a moving hand can be identified and are used to select relevant interest points for a condensed representation. The proposed method involves obtaining a small set of subspace images, which can synthesise frames in the video input from their corresponding coefficient vectors, and then detecting interest points from the subspaces and the coefficient vectors. Experimental results indicate that the proposed method can yield a sparser set of interest points for motion recognition than existing methods.},
+	author = {Wong, Shu-Fai and Cipolla, Roberto},
+	month = nov,
+	year = {2007},
+	pages = {1--8}
+}

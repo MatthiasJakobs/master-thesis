@@ -564,7 +564,7 @@ See \fref{fig:pose-machines-architecture} for a visualization of the pipeline.
 \begin{figure}[htb!]
     \centering
     \includegraphics[width=0.9\textwidth]{pose-machine-architecture.png}
-    \caption{Todo. Image taken from \cite{wei_convolutional_2016}.}
+    \caption{Cascading stages of the Convolutional Pose Machine. Image taken from \cite{wei_convolutional_2016}.}
     \label{fig:pose-machines-architecture}
 \end{figure}
 
@@ -825,11 +825,114 @@ Other: Use temporal information.
 Here: Only those who use temporal information.
 
 \subsection{Shallow Methods}
-\subsubsection{Laptev paper}
+\subsubsection{Learning realistic human actions from movies}
 \label{sec:laptev-shallow}
 
-%TODO: Explain HoF (or dont and explain in Dense Trajectories)
-%TODO: describe datasets
+% Intro
+For a long time, action recognition research focused simple video datasets such as KTH \cite{schuldt_recognizing_2004}, which feature a small number of different actions, recorded in simple environments like laboratories.
+While important for the initial research into the methodology, such datasets do not represent real world scenarios and are thus not ideal when deciding whether an algorithm performs well in the real world.
+
+The authors of \cite{laptev_learning_2008} thus gathered a novel dataset, which will be referred to as the \textit{Hollywood1} dataset.
+This dataset was gathered from movie scenes, which are close to real world scenarios in the sense that they have diverse backgrounds, feature occlusion in the subject by other items in the scene as well as many differences in clothing, overall making the action recognition process more challenging than in previous datasets.
+
+The dataset contains eight different actions, \textit{AnswerPhone, GetOutOfCar, HandShake, HugPerson, Kiss, SitDown, SitUp} and \textit{StandUp}, which were gathered from $12$ movies for the training and from $21$ different videos for the test set, resulting in $219$ and $211$ clips respectively.
+
+% 2D Harris Corner
+In addition to the new dataset, the authors also propose a novel approach for action recognition, building on the work of \cite{laptev_harris3d}, where the Harris corner detector is expanded to also detect interest points in the temporal dimension, making it suitable for action recognition in videos.
+
+The Harris corner detector \cite{harris_combined_1988} finds corners, also referred to as interest points, by finding locations where the image expresses significant changes in both $x$ and $y$ direction \cite{laptev_harris3d}.
+By using a small window $W$, which is moved over the image $I$, and displacing the content of the window, an error term can be computed to the original using the following formula:
+
+\begin{equation}
+    f(\Delta x, \Delta y) = \sum_{x_i, y_i \in W} (I(x_i,y_i) - I(x_i + \Delta x, y_i + \Delta y))^2.
+\end{equation}
+
+By using the Taylor series to approximate the second term of the subtraction, the error formular simplifies to
+
+\begin{equation}
+    \begin{split}
+        f(\Delta x, \Delta y) 
+        &\approx \sum_{x_i, y_i \in W} (I_x(x_i, y_i) \Delta x + I_y(x_i, y_i) \Delta y)^2 \\
+        &\approx (\Delta x, \Delta y) M \binom{\Delta x}{\Delta y}.
+    \end{split}
+\end{equation}
+
+$
+M = \sum_{x_i, y_i \in W} 
+\begin{bmatrix}
+    I_x^2 & I_x I_y \\
+    I_x I_y & I_y^2
+\end{bmatrix}
+$ is the second-moment matrix, with $I_x, I_y$ being the partial derivatives of $I$ in $x$ and $y$ direction, respectively.
+According to \cite{laptev_harris3d}, $M$ can be interpreted to describe the the covariances around the window center.
+Using the eigenvalues $\lambda_1, \lambda_2$ of $M$, edges and corners can be detected in the following way.
+If $\lambda_1 >>\lambda_2$ or $\lambda_1 << \lambda_2$, then an edge has been detected, since change is only detected to be in one direction.
+Similarly, if both eigenvalues are small, then very little change is detected in both directions, meaning that the patch does neither contain an edge nor a corner.
+However, if both eigenvalues are sufficiently large, a corner is detected, since significant change in both directions was observed.
+
+% Extension to 3D
+To detect these interest points in a spatio-temporal context, \cite{laptev_harris3d} extended the Harris corner detector to three dimensions.
+This means that the image sequence needs to express high changes in $x$, $y$ and the temporal direction $t$.
+The first change is the dimension of $M$, which is now a $3 \times 3$ matrix, given by the following formula:
+
+\begin{equation}
+    M_3 = \sum_{x_i, y_i, t_i \in W} 
+    \begin{bmatrix}
+        I_x^2 & I_x I_y & I_x I_t \\
+        I_x I_y & I_y^2 & I_y I_t \\
+        I_x I_t & I_y I_t & I_t^2
+    \end{bmatrix}.
+\end{equation}
+
+This in turn results in three eigenvalues $\lambda_1, \lambda_2$ and $\lambda_3$, which can then be used analogously to \cite{harris_combined_1988} to detect interest points.
+An example of detected spatio-temporal interest points are shown in \fref{fig:spatio-temporal-interestpoints}.
+
+% Method
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.7\textwidth]{spacetimeinterestpoints.png}
+    \caption{Two examples of spatio-temporal interest points calculated on move frames. \textbf{Left}: Scene of two people shaking hands. Notice the cluster of interest points around the subjects hands. \textbf{Right}: A person gets out of the car. Again, notice the cluster forming around the car door as well as the person performing the action. Image taken from \cite{laptev_learning_2008}. }
+    \label{fig:spatio-temporal-interestpoints}
+\end{figure}
+
+Using the computed spatio-temporal interest points, the authors proceed to extract image descriptors around them.
+First, they define a volume around each interest point, the size of which is dependend upon the image scale since they compute features for multiple scales of the original image.
+Each of those volumes is then further partitioned into subvolumes of size $3 \times 3 \times 2$, where $2$ referres to the number of consecutive frames.
+On each of those subvolumes, the authors compute \textit{Histogram of Oriented Gradients (HoG)} as well as \textit{Histogram of Oriented Flow (HoF)} descriptors.
+Similar to HoG, Histogram of Oriented Flow discretizes and clusters the values of a optical flow image into bins.
+The authors, however, do not mention which algorithm was used to compute the optical flow.
+Then, a histogram is created, containing the number of items for each bin.
+The histograms of all subvolumes are first normalized and then concatenated, resulting in a single HoG and HoF descriptor per volume.
+
+Before classification, the authors utilize the bag-of-features approach to cluster the computed image descriptors.
+They take $100,000$ random features computed earlier and cluster them into $4,000$ clusters using the k-Means algorithm \cite{macqueen_methods_1967}\cite{lloyd_least_1982}.
+The number of clusters was chosen because the authors claim that, empirically, this leads to good results.
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.7\textwidth]{spatio-temporal-grid.png}
+    \caption{Four examples of spatio-temporal grid evaluated by the authors. \textbf{From left to right}: \textbf{(1)} Using the whole clip to compute the histogram. , \textbf{(2)} Split the number of frames in half, compute separate histograms and concatenate afterwads, \textbf{(3)} Split the clip horizontally into three subvolumes, spanning the whole temporal dimension, \textbf{(4)} Choose overlapping subvolumes in the spatial dimensions. The authors found \textbf{(3)} to achieve the best results. Image taken from \cite{laptev_learning_2008}. }
+    \label{fig:spatio-temporal-grid}
+\end{figure}
+
+To compute the descriptor for a video clip, the authors divide the whole volume of the clip into three horizontal subvolumes.
+They refer to this as the spatio-temporal grid.
+For each subvolume, the descriptors computed are assigned to the nearest of the $4,000$ cluster centers and a histogram is computed over the cluster centers.
+Finally, the histograms of all subvolumes are concatenated and normalized, resulting in the final descriptor of the video clip.
+The authors evaluated different methods of subdiving the video clip and found the approach using three horizontal subvolumes to perform the best.
+They argue that this is due to the nature of the dataset, where (mostly upright) subjects perform actions, and thus distinctions in horizontal direction are more important than in vertical direction.
+See \fref{fig:spatio-temporal-grid} for a visualization of some spatio-temporal grids evaluated by the authors.
+The grid described above is shown at position \textbf{(3)}.
+% TODO: ? Done on multiple scales $\sigma$, $\tau$. ?
+
+% Evaluation
+First, the authors compare their approach to the state-of-the-art approaches on the KTH benchmark \cite{schuldt_recognizing_2004}.
+This dataset contains the classes \textit{walking, jogging, running, boxing, waving} and \textit{clapping}.
+The video sequences are recorded in front of mostly uniform backgrounds such as white walls or on grass.
+The authors achieve an increase in accuracy of $5.1$ percentage points over the previous best approach by \cite{wong_extracting_2007}.
+The classes which the authors approach wrongly classified the most were \textit{jogging} and \textit{running}, which are very similar actions.
+When evaluating their approach on the \textit{Hollywood1} dataset gathered by the authors, they report average precision values of $18.2$ percent for the worst class (\textit{SitUp}) and $53.3$ percent for the most accurate class (\textit{Kiss}).
+Overall, their approach achieves a mean average precision of $38.38$ percent.
 
 \subsubsection{Dense Trajectories}
 \label{sec:dense-trajectories}
@@ -870,7 +973,7 @@ This vector is further normalized by the sum over all relative displacements, re
     T = \frac{(\Delta P_t, \dots, \Delta P_{t + L -1})}{\sum_t^{t+L-1} \lVert \Delta P_t \rVert}
 \end{equation}
 
-The authors use \textit{Histogram of Oriented Gradients (HoG)} \cite{dalal_histograms_2005}, \textit{Histogram of Optical Flow (HoF)} \cite{laptev_learning_2008} (see \sref{sec:laptev-shallow} for more information) as well as \textit{Motion Boundary Histograms (MBH)} \cite{dalal_human_2006} to extract features along the trajectoties.
+The authors use \textit{Histogram of Oriented Gradients (HoG)} \cite{dalal_histograms_2005}, \textit{Histogram of Optical Flow (HoF)} \cite{laptev_learning_2008} (see \sref{sec:laptev-shallow} for more information) as well as \textit{Motion Boundary Histograms (MBH)} \cite{dalal_human_2006} to extract features along the trajectoties, similar to the approach of \cite{laptev_learning_2008} \sref{sec:laptev-shallow}.
 Centered at each interest point along a trajectory, a $N \times N$ pixel area is defined with $N = 32$.
 These areas are then again subdivided into $n_\sigma \times n_\sigma$ subareas with $n_\sigma = 2$.
 The descriptors are then computed on each of these subareas and descriptors over $n_\tau = 3$ timesteps are then summed to form a single descriptor for each $n_\sigma \times n_\sigma \times n_\tau$ subvolume.
@@ -896,12 +999,19 @@ Especially in videos which are recorded by private individuals using cheap camer
 In general, according to the authors, using all descriptors for classification yields higher accuracies than only using a subset, suggesting that both flow and RBG information are necessary for high accuracy.
 
 In addition, they compared their findings against \cite{laptev_learning_2008}, discussed in \sref{sec:laptev-shallow}.
+For comparison, they used two datasets.
+The \textit{Youtube} dataset \cite{liu_recognizing_2009} contains video clips gathered from the video streaming platform YouTube.
+The dataset contains $11$ different actions, mostly from the context of sport.
+The other dataset is \textit{Hollywood2} \cite{marszalek_actions_2009}, which is an extension of the previously discussed \textit{Hollywood1} dataset \cite{laptev_learning_2008} (see \sref{sec:laptev-shallow}).
+First, the number of actions was increased to $12$ by adding \textit{FightPerson, Run, Eat} and \textit{DriveCar}.
+Additionally, the number of training video clips was increased to $810$ while the number of test clips was increased to $884$. 
+
 To accurately compare both approaches, they utilize the interest points computed by \cite{laptev_learning_2008} to compute the HoG and HoF descriptors.
 In a direct comparison, both HoG and HoF descriptors on their own lead to the same accuracy regardless of whether the trajectory is used or the interest points computed by \cite{laptev_learning_2008}.
 However, the MBH descriptor consistently outperforms both HoG and HoF, and by combining MBH with HoG and HoF the authors achieve a significant accuracy gain over \cite{laptev_learning_2008} ($7.0$ percentage points on the YouTube dataset and $4.2$ percentage points on the Hollywood2 dataset).
 
 \subsubsection{Improved Dense Trajectories}
-
+\label{sec:improved-dense-trajectories}
 % Intro
 After their work in \cite{wang_dense_2013}, some of the same authors improved upon their work in \cite{wang_action_2013}.
 The new approach is named \textit{Improved Dense Trajectories (IDT)}.
@@ -1031,7 +1141,7 @@ They find that, while the estimated pose is of low quality compared to the groun
 \begin{figure}[htb!]
     \centering
     \includegraphics[width=0.99\textwidth]{p-cnn-architecture.png}
-    \caption{Visualization of the network architecture used to extract the video descriptor in \cite{cheron_pcnn_2015}. \textbf{In blue}: The part of the Two-Stream network which extracts the visual feature vector $\bm{v_app}$. \textbf{In red}: The flow feature extraction network part. Image taken from \cite{cheron_pcnn_2015}. }
+    \caption{Visualization of the network architecture used to extract the video descriptor in \cite{cheron_pcnn_2015}. \textbf{In blue}: The part of the Two-Stream network which extracts the visual feature vector $\bm{v_{app}}$. \textbf{In red}: The flow feature extraction network part. Image taken from \cite{cheron_pcnn_2015}. }
     \label{fig:p-cnn-architecture}
 \end{figure}
 
@@ -1060,7 +1170,7 @@ Finally, both descriptors are normalized and again concatenated, yielding the fi
 The resulting feature vector is then used as input for a linear Support Vector Machine, used for action classification.
 See \fref{fig:p-cnn-architecture} for a visualization.
 
-The authors compare their results to the descriptor presented in \sref{sec:jhuang-towards} (from now on referred to as \textit{HLPF} for High Level Pose Features) as well as to the Improved Dense Trajectories (\textit{IDT}) descriptor presented in Section XX, which was the state-of-the-art approach at that time. %TODO: Backreferenz
+The authors compare their results to the descriptor presented in \sref{sec:jhuang-towards} (from now on referred to as \textit{HLPF} for High Level Pose Features) as well as to the Improved Dense Trajectories (\textit{IDT}) descriptor presented in \sref{sec:improved-dense-trajectories}, which was the state-of-the-art approach at that time.
 
 When training on the JHMDB dataset, the authors find that their approach does not outperform \textit{HLPF} when using ground truth pose annotations ($74.6$ and $77.8$ percent accuracy respectively).
 However, when using estimated pose, their approach significantly outperforms \textit{HLPF} by almost $35$ percentage points ($61.1$ as opposed to $25.3$).
