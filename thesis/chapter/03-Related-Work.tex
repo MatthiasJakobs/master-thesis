@@ -1093,7 +1093,7 @@ The authors were not able to achieve comparable results to the hand-crafted feat
 
 \begin{figure}[htb!]
     \centering
-    \includegraphics[width=0.8\textwidth]{two-stream-architecture.png}
+    \includegraphics[width=0.99\textwidth]{two-stream-architecture.png}
     \caption{The Two-Stream architecture used by \cite{simonyan_two-stream_2014}. Notice that the spatial and temporal networks have nearly identical architecture, with the difference that the sencond convolutional layer in the temporal network does not have batch normalization to reduce memory consumption. Image taken from \cite{simonyan_two-stream_2014}. }
     \label{fig:two-stream-architecture}
 \end{figure}
@@ -1104,7 +1104,7 @@ The first network extracts features from a single RGB frame of the video and, by
 Simultaniously, the second network processes $L$ consecutive optical flow images and also outputs a classification using a softmax layer.
 Both classification outputs are then fed to a multiclass linear Support Vector machine which then outputs the final action prediction.
 In \cite{simonyan_two-stream_2014}, the networks have almost the same, shallow architecture, consisting of $5$ convolutional and $2$ fully-connected layers, followed by a softmax layer.
-See \fref{fig:two-stream-architecutre} for a visualization of the used architecture.
+See \fref{fig:two-stream-architecture} for a visualization of the used architecture.
 
 % Spatial
 Because the spatial network classifies static images, the authors pretrain it on the ImageNet dataset \cite{deng_imagenet:_2009}.
@@ -1132,8 +1132,8 @@ They argue that this is the case because the Two-Stream network can generalise t
 
 \begin{figure}[htb!]
     \centering
-    \includegraphics[width=0.8\textwidth]{five-architectures.png}
-    \caption{The five architecture types compared in \cite{carreira_quo_2017}. \textbf{e)} is a novel approach propsed by the authors. Image taken from \cite{carreira_quo_2017}. }
+    \includegraphics[width=0.99\textwidth]{five-architectures.png}
+    \caption{The five architecture types compared in \cite{carreira_quo_2017}. \textbf{e)} is a novel approach propsed by the authors, while \textbf{c)} is the Two-Stream approach proposed by \cite{simonyan_two-stream_2014}. Image taken from \cite{carreira_quo_2017}. }
     \label{fig:five-architectures}
 \end{figure}
 
