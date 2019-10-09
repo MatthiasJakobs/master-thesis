@@ -20,6 +20,8 @@ class Mpii_2(nn.Module):
     def __init__(self, num_context=0):
         super(Mpii_2, self).__init__()
 
+        self.blocks = 2
+
         self.stem = Stem()
         self.rec1 = ReceptionBlock(num_context=num_context)
         self.rec2 = ReceptionBlock(num_context=num_context)
@@ -29,7 +31,7 @@ class Mpii_2(nn.Module):
         _, pose1 , output1 = self.rec1(a)
         heatmaps, pose2 , _ = self.rec2(output1)
 
-        return heatmaps, torch.cat((pose1, pose2), 0)
+        return torch.cat((pose1, pose2), 0), pose2, heatmaps, output1
 
 class Mpii_4(nn.Module):
     def __init__(self, num_context=0):
@@ -57,6 +59,8 @@ class Mpii_8(nn.Module):
     def __init__(self, num_context=0):
         super(Mpii_8, self).__init__()
 
+        self.blocks = 8
+
         self.stem = Stem()
         self.rec1 = ReceptionBlock(num_context=num_context)
         self.rec2 = ReceptionBlock(num_context=num_context)
@@ -80,7 +84,7 @@ class Mpii_8(nn.Module):
         heatmaps, pose8 , _ = self.rec8(output7)
 
 
-        return heatmaps, torch.cat((pose1, pose2, pose3, pose4, pose5, pose6, pose7, pose8), 0)
+        return torch.cat((pose1, pose2, pose3, pose4, pose5, pose6, pose7, pose8), 0), pose8, heatmaps, output1
 
 
 class DeepHar(nn.Module):
