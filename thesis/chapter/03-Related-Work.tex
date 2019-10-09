@@ -825,6 +825,7 @@ Other: Use temporal information.
 Here: Only those who use temporal information.
 
 \subsection{Shallow Methods}
+\label{sec:har_shallow}
 \subsubsection{Learning realistic human actions from movies}
 \label{sec:laptev-shallow}
 
@@ -1078,6 +1079,95 @@ They found that, using the computed bounding box, increases uppon the baseline b
 Using the ground truth, an additional increase in accuracy of $1.2$ percentage points was observed.
 The authors argue that the accuracy increases because the homography $H$ is more accurate when using a human bounding box, which then leads to a better approximation of the camera motion and in turn to better motion descriptors like HoF and MBH.
 
+\subsection{HAR using Two-Stream Convolutional Neural Networks}
+\label{sec:two-stream}
+Recently, many approaches for action recognition in videos incorporate a concept referred to as a \textit{Two-Stream Convolutional neural network}.
+For a better understanding of the approaches discussed later, a short overview over this concept is provided.
+
+As discussed previously (see \sref{sec:har_shallow}), the combination of spatial features, such as the HoG descriptor, and temporal features, such as the HoF descriptor, yielded significant improvements over the individual components.
+Many methods utilizied precomputed optical flow fields for computing temporal features (see \sref{sec:laptev-shallow} and \sref{sec:dense-trajectories}).
+With the success that CNNs achieved in computer vision tasks on still images, such as image classification and image segmentation, \cite{karpathy_large-scale_2014} proposed a similar approach for use in video action recognition.
+The authors, however, did not incorporate temporal information in form of optical flow fields into their architecture.
+Instead, they relied solely on passing multiple consecutive frames to 2D convolutional layers.
+The authors were not able to achieve comparable results to the hand-crafted feature approaches proposed by \cite{wang_action_2013} (see \sref{sec:improved-dense-trajectories}), gaining $65.4$ percent accuracy compared to $85.9$ percent on the UCF101 dataset \cite{soomro_ucf101:_2012}.
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.8\textwidth]{two-stream-architecture.png}
+    \caption{The Two-Stream architecture used by \cite{simonyan_two-stream_2014}. Notice that the spatial and temporal networks have nearly identical architecture, with the difference that the sencond convolutional layer in the temporal network does not have batch normalization to reduce memory consumption. Image taken from \cite{simonyan_two-stream_2014}. }
+    \label{fig:two-stream-architecture}
+\end{figure}
+
+In order to improve upon this first approach, \cite{simonyan_two-stream_2014} proposed the \textit{Two-Stream Convolutional neural network}.
+Such a network is comprised of two individual networks.
+The first network extracts features from a single RGB frame of the video and, by using a softmax layer, classifies the present action.
+Simultaniously, the second network processes $L$ consecutive optical flow images and also outputs a classification using a softmax layer.
+Both classification outputs are then fed to a multiclass linear Support Vector machine which then outputs the final action prediction.
+In \cite{simonyan_two-stream_2014}, the networks have almost the same, shallow architecture, consisting of $5$ convolutional and $2$ fully-connected layers, followed by a softmax layer.
+See \fref{fig:two-stream-architecutre} for a visualization of the used architecture.
+
+% Spatial
+Because the spatial network classifies static images, the authors pretrain it on the ImageNet dataset \cite{deng_imagenet:_2009}.
+This step alone improves the accuracy achieved on the UCF101 dataset by $20.5$ percentage points from $52.3$ percent when training from scratch, suggesting that it is highly beneficial to design action recognition architectures in a way that they can be pretrained on large static image datasets.
+The authors did not pretrain the temporal network since sufficiently large datasets were not available.
+
+% Flow
+The authors evaluated the length of consecutive optical flow frames $L$ of an RGB frame to pass into the flow network.
+They noticed that $L=5$ and $L=10$ flow frames lead to similar performance, with $L=10$ being slightly better.
+Thus, they decided to set $L=10$.
+Additionally, they found that subtracting the mean flow image from every flow frame significantly improved the overall accuracy.
+They argue that this is due to the fact that such a subtrraction reduces the camera motion, similar to the homography approach by \cite{wang_action_2013} (see \sref{sec:improved-dense-trajectories}).
+
+% Multi Task learning
+To train their model, the authors utilized \textit{multi task learning}.
+They combined two datasets for training, UCF101 and HMDB51 \cite{kuehne_hmdb:_2011}, 
+by changing the architecture so that there are two final softmax layers, one which outputs the prediction for UCF101 and one which outputs the prediction for HMDB51.
+The authors found that training in such a way has a regularisation aspect, reducing the risk of overfitting on any of the two datasets.
+For computing optical flow, they use the algorithm provided by the OpenCV library \cite{bradski_opencv_2000}.
+
+% Comparison to DenseTrajectories
+The authors also evaluated their approach against the Improved Dense Trajectories approach by \cite{wang_action_2013} (see \sref{sec:improved-dense-trajectories}).
+On the UCF101 dataset, the Two-Stream network outperformed IDT by $2.1$ percentage points ($85.9$ percent versus $88.0$ percent). 
+They argue that this is the case because the Two-Stream network can generalise the HoG, HoF and MBH descriptors used in IDT using its convolutional layers.
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.8\textwidth]{five-architectures.png}
+    \caption{The five architecture types compared in \cite{carreira_quo_2017}. \textbf{e)} is a novel approach propsed by the authors. Image taken from \cite{carreira_quo_2017}. }
+    \label{fig:five-architectures}
+\end{figure}
+
+Recently, \cite{carreira_quo_2017} published a video dataset called \textit{Kinetics}, which claims to be big enough to be used for pretraining video processing neural networks, similar to ImageNet \cite{deng_imagenet:_2009}.
+To inspect how much impact such pretraining in the domain of video has the authors reimplemented $5$ popular action recognition architecture types.
+
+First, an architecture where each frame of a video is fed through a 2D convolutional network, whose outputs get aggregated over time using a LSTM layer \cite{hochreiter_long_1997}.
+Second, the authors implement a model which uses 3D convolutional layer to process $k$ frames of a video simultaniously.
+The idea is that such a model would not need additional temporal components as the 3D layers already capture temporal information.
+The architecture is based on \cite{tran_learning_2015}, however, the authors add additional batch normalization to allow for an accurate comparison to other architectures who use batch normalization.
+Third, the authors took the Two-Stream architecutre by \cite{simonyan_two-stream_2014}.
+Fourth, an extension to the Two-Stream architecture by \cite{feichtenhofer_convolutional_2016} is added.
+The extension exchanges the fusion stage of the traditional Two-Stream network with 3D convolutional layers.
+Also, this approach achieved state-of-the-art results on both UCF101 as well as HMDB51.
+Lastly, the authors propose a novel architecture based on both the Two-Stream architecture as well as the 3D convolutional network.
+They use two 3D convolutional networks to extract spatial and temporal classifications and then fuse them together, similar to \cite{simonyan_two-stream_2014}.
+They utilize a novel approach for pretraining 3D networks by inflating the parameters to the third dimension.
+First, they pretrain two 2D networks on ImageNet.
+Then, they inflate the convolutional layers filter sizes from $N \times N$ by repeating each filter $N$ times and dividing all filters by $N$.
+Thus, they change the dimensionality from $N \times N$ to $N \times N \times N$ for each filter.
+They claim that this produces identical output to the 2D network. 
+An overview over all $5$ architectures is provided in \fref{fig:five-architectures}.
+
+% Evaluation
+For evaluation, the authors pretrained the models on ImageNet and then fine-tuned them on UCF101, HMDB51 as well as Kinetics individually.
+In general, they noticed that the Two-Stream approaches outperform the other approaches on all datasets.
+The authors argue that this is due to the flow used since the flow network contributes more to the overall accuracy when compared to the spatial network.
+Also, they observe that all architectures achieve higher accuracies when pretrained using Kinetics, suggesting that the dataset is suitable for pretraining action recognition models in general.
+
+Moreover, the architecture proposed by the authors achieves state-of-the-art accuracies on both UCF101 ($98$ percent) as well as HMDB51 ($80.7$ percent) when first pretrained on ImageNet, followed by additional pretraining on Kinetics.
+The previous state-of-the-art approach by \cite{feichtenhofer_spatiotemporal_2016} achieved $94.5$ and $70.3$ percent, respectively.
+The improvement in accuracy over \cite{simonyan_two-stream_2014} is thus $10$ percentage points on UCF101 and $21.3$ percentage points on HMDB51.
+Analogously, the performance improvement over \cite{wang_action_2013} is $11.6$ percentage points on UCF101 and $19$ percentage points on HMDB51.
+Overall, the authors argue that using Kinetics for pretraining and transfer learning is a feasible approach to achieve similar transfer learning capabilities for video clips as with ImageNet and static images.
 
 \subsection{HAR using pose information}
 \label{sec:jhuang-towards}
@@ -1146,7 +1236,7 @@ They find that, while the estimated pose is of low quality compared to the groun
 \end{figure}
 
 After the findings of \cite{jhuang_towards_2013} discussed previously, \cite{cheron_pcnn_2015} build on their work by proposing a new action descriptor extracted using a Convolutional Neural network.
-Specifically, they use a Two-Stream network approach similar to \cite{simonyan_two-stream_2014} where the network is split into two parallel parts.
+Specifically, they use a Two-Stream network approach similar to \cite{simonyan_two-stream_2014} (see \sref{sec:two-stream}) where the network is split into two parallel parts.
 The first part processes the individual RGB frames, resulting in an appearance feature vector. 
 The second part processes flow images and outputs another feature vector. 
 These two vectors are then concatenated, which results in the final feature vector for the entire video clip. 
@@ -1183,3 +1273,15 @@ Interestingly, the authors find that, while their approach does not outperform \
 The authors argue that, because \textit{IDT} uses a larger time window for feature aggregation, actions like \textit{kick ball} achieve higher accuracy while on actions like \textit{shoot gun} and \textit{waving} the image features extracted by their method provide more information and thus higher accuracy.
 A combination thus improves the accuracy in both scenarios simultaniously.
 %- TODO: Explain Fisher Vector (Improving the Fisher kernel for large-scale image classification)
+
+\subsubsection{PoTion}
+\label{sec:potion}
+
+% Intro + general appraoch
+
+% (Maybe short about two stream networks? Need \cite{simonyan_two-stream_2014} \cite{carreira_quo_2017})
+% This could also be explained in P-CNN since it is basically a two stream approach
+
+% Method
+
+% Evalution
