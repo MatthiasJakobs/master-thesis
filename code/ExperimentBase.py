@@ -229,7 +229,7 @@ class HAR_Testing_Experiment(ExperimentBase):
 
         self.test_loader = data.DataLoader(
             self.ds_test,
-            batch_size=self.conf["batch_size"],
+            batch_size=1,
             sampler=test_sampler
         )
 
@@ -249,7 +249,7 @@ class HAR_Testing_Experiment(ExperimentBase):
         actions = actions.unsqueeze(1)
         actions = actions.expand(-1, 4, -1)
 
-        _, pose_predicted_actions, vis_predicted_actions, _ = self.model(frames, train_pose=self.fine_tune)
+        _, _, pose_predicted_actions, vis_predicted_actions, _ = self.model(frames, finetune=self.fine_tune)
 
         partial_loss_pose = torch.sum(categorical_cross_entropy(pose_predicted_actions, actions))
         partial_loss_action = torch.sum(categorical_cross_entropy(vis_predicted_actions, actions))
@@ -278,7 +278,7 @@ class HAR_Testing_Experiment(ExperimentBase):
 
                 ground_class = torch.argmax(actions, 1)
 
-                predicted_poses, _, _, prediction = self.model(frames)
+                _, predicted_poses, _, _, prediction = self.model(frames)
 
                 if torch.cuda.is_available():
                     frames = frames.cpu()
@@ -342,57 +342,69 @@ class HAR_Testing_Experiment(ExperimentBase):
                 for i in range(nr_multiple_clips):
                     multi_clip[i] = frames[0, i * spacing : i * spacing + 16]
 
-                _, _, _, single_result = self.model(single_clip)
-               # _, _, _, multi_result = self.model(multi_clip)
+                _, _, _, _, single_result = self.model(single_clip)
+                _, _, _, _, multi_result = self.model(multi_clip)
 
                 pred_class_single = torch.argmax(single_result.squeeze(1), 1)
-                #pred_class_multi = torch.argmax(multi_result.squeeze(1), 1)
+                pred_class_multi = torch.argmax(multi_result.squeeze(1), 1)
 
                 correct_single = correct_single + (pred_class_single == ground_class).item()
 
                 ground_class = ground_class.expand(nr_multiple_clips).long()
-                #correct_multi = correct_multi + torch.mean((pred_class_multi == ground_class).float()).item()
+
+                majority_correct = torch.sum((pred_class_multi == ground_class).float()) >= (nr_multiple_clips / 2.0)
+
+                correct_multi = correct_multi + majority_correct.int().item()
                 total = total + 1
 
                 accuracy_single = correct_single / float(total)
+                accuracy_multi = correct_multi / float(total)
 
                 #print("test {} / {}".format(current, length))
                 #print(accuracy_single, correct_multi / float(total))
                 current = current + 1
 
-            return accuracy_single, correct_multi / float(total)
+            return accuracy_single, accuracy_multi
 
 class HAR_E2E(HAR_Testing_Experiment):
+
+    def preparation(self):
+        super().preparation()
+        self.model = DeepHar(num_actions=21, use_gt=False).to(self.device)
+
     def train(self, train_objects):
         self.model.train()
         frames = train_objects["frames"].to(self.device)
         actions = train_objects["action_1h"].to(self.device)
 
-        ground_poses = train_objects["normalized_pose"].to(self.device)
+        ground_poses = train_objects["poses"].to(self.device)
 
         actions = actions.unsqueeze(1)
-        actions = actions.expand(-1, 4, -1)
+        actions = actions.expand(-1, self.conf["num_blocks"], -1)
 
-        predicted_poses, pose_predicted_actions, vis_predicted_actions, _ = self.model(frames, train_pose=True)
+        predicted_poses, _, pose_predicted_actions, vis_predicted_actions, _ = self.model(frames, finetune=True)
 
         partial_loss_pose = torch.sum(categorical_cross_entropy(pose_predicted_actions, actions))
         partial_loss_action = torch.sum(categorical_cross_entropy(vis_predicted_actions, actions))
         
         har_loss = partial_loss_pose + partial_loss_action
 
-        predicted_poses = predicted_poses.permute(1, 0, 2, 3)
+        pred_pose = predicted_poses[:, :, :, :, 0:2]
+        ground_pose = ground_poses[:, :, :, 0:2]
+        ground_pose = ground_pose.unsqueeze(2)
+        ground_pose = ground_pose.expand(-1, -1, self.conf["num_blocks"], -1, -1)
 
-        pred_pose = predicted_poses[:, :, :, 0:2]
-        ground_pose = ground_poses[:, :, 0:2]
-        ground_pose = ground_pose.unsqueeze(1)
-        ground_pose = ground_pose.expand(-1, self.conf["num_blocks"], -1, -1)
-
-        pred_vis = predicted_poses[:, :, :, 2]
-        ground_vis = ground_poses[:, :, 2]
-        ground_vis = ground_vis.unsqueeze(1)
-        ground_vis = ground_vis.expand(-1, self.conf["num_blocks"], -1)
+        pred_vis = predicted_poses[:, :, :, :, 2]
+        ground_vis = ground_poses[:, :, :, 2]
+        ground_vis = ground_vis.unsqueeze(2)
+        ground_vis = ground_vis.expand(-1, -1, self.conf["num_blocks"], -1)
 
         binary_crossentropy = nn.BCELoss()
+
+        pred_pose = pred_pose.contiguous().view(len(frames) * 16, self.conf["num_blocks"], 16, 2)
+        ground_pose = ground_pose.contiguous().view(len(frames) * 16, self.conf["num_blocks"], 16, 2)
+        pred_vis = pred_vis.contiguous().view(len(frames) * 16, self.conf["num_blocks"], 16)
+        ground_vis = ground_vis.contiguous().view(len(frames) * 16, self.conf["num_blocks"], 16)
 
         vis_loss = binary_crossentropy(pred_vis, ground_vis)
 
@@ -401,16 +413,16 @@ class HAR_E2E(HAR_Testing_Experiment):
 
         loss = pose_loss + har_loss
 
-        losses.backward()
+        loss.backward()
 
-        self.train_writer.write([self.iteration, losses.item()])
+        self.train_writer.write([self.iteration, loss.item()])
 
         self.optimizer.step()
         self.optimizer.zero_grad()
 
         self.iteration = self.iteration + 1
 
-        print("iteration {} train-loss {}".format(self.iteration, losses.item()))
+        print("iteration {} train-loss {}".format(self.iteration, loss.item()))
 
 class Pose_JHMDB(ExperimentBase):
 
@@ -421,7 +433,7 @@ class Pose_JHMDB(ExperimentBase):
 
     def preparation(self):
 
-        self.model = Mpii_4(num_context=0, standalone=True).to(self.device)
+        self.model = Mpii_4(num_context=0).to(self.device)
         if self.use_pretrained:
             print("Using pretrained model")
             self.model.load_state_dict(torch.load("/data/mjakobs/data/pretrained_weights_4", map_location=self.device))
@@ -477,7 +489,7 @@ class Pose_JHMDB(ExperimentBase):
         images = images.contiguous().view(images.size()[0] * images.size()[1], 3, 255, 255)
         train_poses = train_poses.contiguous().view(train_poses.size()[0] * train_poses.size()[1], 16, 3)
 
-        heatmaps, poses = self.model(images)
+        poses, _, _, _ = self.model(images)
 
         poses = poses.permute(1, 0, 2, 3)
 
@@ -532,8 +544,8 @@ class Pose_JHMDB(ExperimentBase):
                 trans_matrices = val_data["trans_matrices"].to(self.device)
                 trans_matrices = trans_matrices.contiguous().view(val_data["trans_matrices"].size()[0] * val_data["trans_matrices"].size()[1], 3, 3)
 
-                heatmaps, predictions = self.model(val_images)
-                predictions = predictions[-1, :, :, :].squeeze(dim=0)
+                _, predictions, _, _ = self.model(val_images)
+                #predictions = predictions[-1, :, :, :].squeeze(dim=0)
 
                 if predictions.dim() == 2:
                     predictions = predictions.unsqueeze(0)
@@ -610,8 +622,8 @@ class Pose_JHMDB(ExperimentBase):
                 trans_matrices = test_data["trans_matrices"].to(self.device)
                 trans_matrices = trans_matrices.contiguous().view(test_data["trans_matrices"].size()[0] * test_data["trans_matrices"].size()[1], 3, 3)
 
-                _, predictions = self.model(test_images)
-                predictions = predictions[-1, :, :, :].squeeze(dim=0)
+                _, predictions, _, _ = self.model(test_images)
+                #predictions = predictions[-1, :, :, :].squeeze(dim=0)
 
                 if predictions.dim() == 2:
                     predictions = predictions.unsqueeze(0)
@@ -698,7 +710,7 @@ class MPIIExperiment(ExperimentBase):
         images = train_objects["normalized_image"].to(self.device)
         poses = train_objects["normalized_pose"].to(self.device)
 
-        heatmaps, output = self.model(images)
+        output, _, _, _ = self.model(images)
 
         output = output.permute(1, 0, 2, 3)
 
@@ -742,8 +754,8 @@ class MPIIExperiment(ExperimentBase):
             for batch_idx, val_data in enumerate(self.val_loader):
                 val_images = val_data["normalized_image"].to(self.device)
 
-                heatmaps, predictions = self.model(val_images)
-                predictions = predictions[-1, :, :, :].squeeze(dim=0)
+                _, predictions, _, _ = self.model(val_images)
+                #predictions = predictions[-1, :, :, :].squeeze(dim=0)
 
                 if predictions.dim() == 2:
                     predictions = predictions.unsqueeze(0)

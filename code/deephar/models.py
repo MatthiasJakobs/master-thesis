@@ -32,16 +32,16 @@ class Mpii_2(nn.Module):
         return heatmaps, torch.cat((pose1, pose2), 0)
 
 class Mpii_4(nn.Module):
-    def __init__(self, num_context=0, standalone=True):
+    def __init__(self, num_context=0):
         super(Mpii_4, self).__init__()
+
+        self.blocks = 4
 
         self.stem = Stem()
         self.rec1 = ReceptionBlock(num_context=num_context)
         self.rec2 = ReceptionBlock(num_context=num_context)
         self.rec3 = ReceptionBlock(num_context=num_context)
         self.rec4 = ReceptionBlock(num_context=num_context)
-
-        self.standalone = standalone
 
     def forward(self, x):
         a = self.stem(x)
@@ -50,10 +50,8 @@ class Mpii_4(nn.Module):
         _, pose3 , output3 = self.rec3(output2)
         heatmaps, pose4 , _ = self.rec4(output3)
 
-        if self.standalone:
-            return heatmaps, torch.cat((pose1, pose2, pose3, pose4), 0)
-        else:
-            return pose4, heatmaps, output1
+        return torch.cat((pose1, pose2, pose3, pose4), 0), pose4, heatmaps, output1
+
 
 class Mpii_8(nn.Module):
     def __init__(self, num_context=0):
@@ -86,16 +84,12 @@ class Mpii_8(nn.Module):
 
 
 class DeepHar(nn.Module):
-    def __init__(self, num_frames=16, num_joints=16, num_actions=10, use_gt=True, model_path=None, end_to_end=False):
+    def __init__(self, num_frames=16, num_joints=16, num_actions=10, use_gt=True, model_path=None):
         super(DeepHar, self).__init__()
 
         self.use_gt = use_gt
-        self.end_to_end = end_to_end
 
-        if self.end_to_end:
-            assert not self.use_gt
-
-        self.pose_estimator = Mpii_4(num_context=0, standalone=end_to_end)
+        self.pose_estimator = Mpii_4(num_context=0)
 
         if use_gt:
             if torch.cuda.is_available():
@@ -118,26 +112,17 @@ class DeepHar(nn.Module):
 
         #self.action_predictions = []
 
-    def forward(self, x, train_pose=False):
+    def forward(self, x, finetune=False):
  
         td_poste_estimator = TimeDistributedPoseEstimation(self.pose_estimator)
 
         batch_size = len(x)
-
-        if self.end_to_end:
-            assert train_pose
-        
-        if train_pose:
-            if self.end_to_end:
-                train_heatmaps, train_poses = td_poste_estimator(x)
-
-                heatmaps = train_heatmaps[-1]
-                poses = train_poses[-1]
-            else:
-                poses, heatmaps, features = td_poste_estimator(x)
+      
+        if finetune:
+            train_poses, poses, heatmaps, features = td_poste_estimator(x)
         else:
             with torch.no_grad():
-                poses, heatmaps, features = td_poste_estimator(x)
+                train_poses, poses, heatmaps, features = td_poste_estimator(x)
 
         nj = poses.size()[2]
         nf = features.size()[2]
@@ -193,7 +178,4 @@ class DeepHar(nn.Module):
         final_output = self.max_min_pooling(final_output)
         final_output = self.softmax(final_output).squeeze(-1).squeeze(-1).unsqueeze(1)
 
-        if self.end_to_end:
-            return train_pose, torch.cat(pose_action_predictions, 1), torch.cat(vis_action_predictions, 1), final_output
-        else:
-            return poses, torch.cat(pose_action_predictions, 1), torch.cat(vis_action_predictions, 1), final_output
+        return train_poses, poses, torch.cat(pose_action_predictions, 1), torch.cat(vis_action_predictions, 1), final_output
