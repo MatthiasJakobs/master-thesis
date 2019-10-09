@@ -138,7 +138,7 @@ class MPIIDataset(BaseDataset):
         val_limit = int(self.val_split_amount * len(self.items))
 
         all_indices = list(range(len(self.items)))
-        random.shuffle(all_indices)
+        np.random.shuffle(all_indices)
 
         if self.train and self.val:
             self.indices = all_indices[0:val_limit]
