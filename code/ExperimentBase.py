@@ -755,6 +755,7 @@ class MPIIExperiment(ExperimentBase):
                 val_images = val_data["normalized_image"].to(self.device)
 
                 _, predictions, _, _ = self.model(val_images)
+                predictions = predictions.squeeze(dim=0)
                 #predictions = predictions[-1, :, :, :].squeeze(dim=0)
 
                 if predictions.dim() == 2:
