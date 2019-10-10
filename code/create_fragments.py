@@ -39,8 +39,8 @@ def delete_and_create(root_dir, use_random=False, split=1, subprefix="2"):
                 else:
                         os.makedirs(folder_path)
 
-def create_fragments_pennaction(train, val):
-        ds = PennActionDataset("/data/mjakobs/data/pennaction/", use_random_parameters=False, train=train)
+def create_fragments_pennaction(train=False, val=False, use_random=False, subprefix="1"):
+        ds = PennActionDataset("/data/mjakobs/data/pennaction/", use_random_parameters=False, train=train, val=val)
 
         print("-" * 50)
         print("Train: {}, Val: {}".format(train, val))
@@ -49,21 +49,18 @@ def create_fragments_pennaction(train, val):
         length = len(ds)
         current = 0
 
+        if use_random:
+            prefix = "rand{}_".format(subprefix)
+        else:
+            prefix = ""
+
         all_indices = list(range(len(ds)))
 
         if train:
-                random.seed(1)
-                random.shuffle(all_indices)
-                ten_percent = int(0.1 * len(ds))
-                train_indices = all_indices[ten_percent:]
-                val_indices = all_indices[:ten_percent]
-
                 if val:
                         train_test_folder = "val"
-                        all_indices = val_indices
                 else:
                         train_test_folder = "train"
-                        all_indices = train_indices
 
         else:
                 train_test_folder = "test"
@@ -89,22 +86,17 @@ def create_fragments_pennaction(train, val):
                 padded_image = str(idx).zfill(8)
 
                 original_image = ds.indices[idx]
-                padded_original_image = str(original_image).zfill(4)
+                padded_original_image = str(original_image).zfill(8)
 
                 root_dir = "/data/mjakobs/data/pennaction_fragments/"
 
-                if not os.path.exists(root_dir + "images/" + padded_original_image + ".frames.pt"):
-                        torch.save(frames, root_dir + "images/" + padded_original_image + ".frames.pt")
-                if not os.path.exists(root_dir + "annotations/" + padded_original_image + ".action_1h.pt"):
-                        torch.save(actions, root_dir + "annotations/" + padded_original_image + ".action_1h.pt")
-                if not os.path.exists(root_dir + "annotations/" + padded_original_image + ".poses.pt"):
-                        torch.save(poses, root_dir + "annotations/" + padded_original_image + ".poses.pt")
-                if not os.path.exists(root_dir + "annotations/" + padded_original_image + ".matrices.pt"):
-                        torch.save(matrices, root_dir + "annotations/" + padded_original_image + ".matrices.pt")
-                if not os.path.exists(root_dir + "annotations/" + padded_original_image + ".bbox.pt"):
-                        torch.save(bbox, root_dir + "annotations/" + padded_original_image + ".bbox.pt")
-                if not os.path.exists(root_dir + "annotations/" + padded_original_image + ".parameters.pt"):
-                        torch.save(parameters, root_dir + "annotations/" + padded_original_image + ".parameters.pt")
+                torch.save(frames, root_dir + prefix + "images/" + padded_original_image + ".frames.pt")
+                torch.save(actions, root_dir + prefix + "annotations/" + padded_original_image + ".action_1h.pt")
+                torch.save(poses, root_dir + prefix + "annotations/" + padded_original_image + ".poses.pt")
+                torch.save(matrices, root_dir + prefix + "annotations/" + padded_original_image + ".matrices.pt")
+                torch.save(bbox, root_dir + prefix + "annotations/" + padded_original_image + ".bbox.pt")
+                torch.save(parameters, root_dir + prefix + "annotations/" + padded_original_image + ".parameters.pt")
+                
                 indices = torch.zeros((num_frames_total - num_frames), 2)
 
                 for i in range(num_frames_total - num_frames):
@@ -119,7 +111,7 @@ def create_fragments_pennaction(train, val):
                         indices[1] = end
                         indices[2] = original_image
 
-                        torch.save(indices, root_dir + "indices/{}/{}.indices.pt".format(train_test_folder, padded))
+                        torch.save(indices, root_dir + prefix + "indices/{}/{}.indices.pt".format(train_test_folder, padded))
                         assert indices.shape == (3,)
 
                 print("{} - {}: {} / {}".format(train_test_folder, split, counter+1, len(all_indices)))
@@ -289,8 +281,9 @@ create_fragments_mpii(train=True, val=True, use_random=False) # val
 
 ######
 #  Penn Action
-#####
+# #####
 delete_and_create("/data/mjakobs/data/pennaction_fragments/")
-create_fragments_pennaction(False, False)
-create_fragments_pennaction(True, True)
-create_fragments_pennaction(True, False)
+create_fragments_pennaction(train=False, val=False) # test
+create_fragments_pennaction(train=True, val=True) # val
+create_fragments_pennaction(train=True, val=False, use_random=False) # train, no random
+create_fragments_pennaction(train=True, val=False, use_random=True) # train, random
