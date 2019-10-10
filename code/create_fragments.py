@@ -243,6 +243,7 @@ def create_fragments_mpii(train=False, val=False, use_random=False, subprefix="1
                 bbox = entry["bbox"]
                 headsize = entry["head_size"]
                 parameters = entry["parameters"]
+                image_path = entry["image_path"]
 
                 original_image = ds.indices[idx]
                 padded_original_image = str(original_image).zfill(8)
@@ -259,6 +260,7 @@ def create_fragments_mpii(train=False, val=False, use_random=False, subprefix="1
                 torch.save(bbox, root_dir + train_test_folder + prefix + "annotations/" + padded_original_image + ".bbox.pt")
                 #if not os.path.exists(root_dir + train_test_folder + prefix + "annotations/" + padded_original_image + ".parameters.pt"):
                 torch.save(parameters, root_dir + train_test_folder + prefix + "annotations/" + padded_original_image + ".parameters.pt")
+                torch.save(image_path, root_dir + train_test_folder + prefix + "annotations/" + padded_original_image + ".image_path.pt")
 
 
 split = 1
