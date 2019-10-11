@@ -208,6 +208,9 @@ class HAR_Testing_Experiment(ExperimentBase):
         print(torch.cuda.memory_allocated(device=0))
 
         self.model = DeepHar(num_actions=21, use_gt=True, model_path="/data/mjakobs/data/pretrained_jhmdb").to(self.device)
+        print("after model")
+        print(torch.cuda.memory_allocated(device=0))
+
         self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False, use_random_parameters=True)
         self.ds_val = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=True)
         self.ds_test = JHMDBDataset("/data/mjakobs/data/jhmdb/", train=False)
