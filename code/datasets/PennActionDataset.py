@@ -2,6 +2,7 @@ import torch
 import torch.utils.data as data
 
 import random
+import math
 
 import os
 import re
@@ -14,8 +15,10 @@ import pandas as pd
 from skimage import io
 from skimage.transform import resize
 
+from datasets.BaseDataset import BaseDataset
+
 from deephar.image_processing import center_crop, rotate_and_crop, normalize_channels
-from deephar.utils import transform_2d_point, translate, scale, flip_h, superflatten, transform_pose, get_valid_joints
+from deephar.utils import transform_2d_point, translate, scale, flip_h, superflatten, transform_pose, get_valid_joints, flip_lr_pose
 
 actions = [
     "baseball_pitch",
@@ -35,13 +38,10 @@ actions = [
     "tennis_serve"    
 ]
 
-class PennActionDataset(data.Dataset):
+class PennActionDataset(BaseDataset):
 
-    def __init__(self, root_dir, use_random_parameters=False, transform=None, train=True):
-        self.root_dir = root_dir
-        self.all_items = sorted(os.listdir(self.root_dir + "frames"))
-
-        self.train = train
+    def __init__(self, root_dir, use_random_parameters=False, transform=None, train=True, val=False):
+        super().__init__(root_dir, use_random_parameters=use_random_parameters, train=train, val=val)        
 
         self.mpii_mapping = np.array([
             [0, 8],  # head -> upper neck
@@ -77,75 +77,67 @@ class PennActionDataset(data.Dataset):
             "tennis_serve": 14
         }
 
-        self.final_size=256
-
-        if use_random_parameters:
+        if self.use_random_parameters:
             self.angles=np.array(range(-30, 30+1, 5))
             self.scales=np.array([0.7, 1.0, 1.3, 2.5])
-            self.channel_power_exponent = 0.01*np.array(range(90, 110+1, 2))
             self.flip_horizontal = np.array([0, 1])
-            self.trans_x=np.arange(start=-40, stop=40+1, step=5)
-            self.trans_y=np.arange(start=-40, stop=40+1, step=5)
-            self.subsampling=[1, 2]
-        else:
-            self.angles=np.array([0, 0, 0])
-            self.scales=np.array([1., 1., 1.])
-            self.flip_horizontal = np.array([0, 0])
-            self.channel_power_exponent = None
-            self.trans_x=np.array([0., 0., 0.])
-            self.trans_y=np.array([0., 0., 0.])
-            self.subsampling=[1, 1]
 
-        self.items = []
+        self.items = sorted(os.listdir(self.root_dir + "frames"))
         self.indices = []
+        self.classes = {}
 
-        for i in range(len(self.all_items)):
-            label_path = self.root_dir + "labels/" + str(i+1).zfill(4)
+        np.random.seed(None)
+        st0 = np.random.get_state()
+        np.random.seed(1)
+
+        np.random.shuffle(self.items)
+
+        for i, name in enumerate(self.items):
+            label_path = self.root_dir + "labels/" + name
             label = sio.loadmat(label_path)
             raw_label = label["train"][0][0]
+
+            action = self.get_action(label)
 
             assert raw_label == -1 or raw_label == 1
 
             train_indicator = bool((raw_label + 1 ) / 2.0)
-            if self.train == train_indicator:
-                self.items.append(self.all_items[i])
-                self.indices.append(i+1)
-            
-
-    def __len__(self):
-        return len(self.items)
-
-    def __getitem__(self, idx):
-        label_path = self.root_dir + "labels/" + self.items[idx]
-        if self.items[idx] == 435:
-            print("here is something wrong!")
-
-        label = sio.loadmat(label_path)
-        images = []
-        frame_folder = self.root_dir + "frames/" + self.items[idx] + "/"
-        all_images = sorted(os.listdir(frame_folder))
-
-        poses = []
-        for i in range(len(all_images)):
-            image = io.imread(frame_folder + all_images[i])
-            images.append(image)
-
-            joint_frame = []
-            for o in range(13):
-                joint_coordinate = [label["x"][i][o], label["y"][i][o]]
-                visibility = bool(label["visibility"][i][o])
-                if visibility:
-                    joint_frame.append(joint_coordinate)
+            if self.train and train_indicator:
+                self.indices.append(i)
+                if not action in self.classes:
+                    self.classes[action] = [ i ]
                 else:
-                    joint_frame.append([-1e9, -1e9])
+                    self.classes[action].append(i)
 
-            poses.append(joint_frame)
+            if not self.train and not train_indicator:
+                self.indices.append(i)
 
-        images, normalized_images, poses, trans_matrices = self.preprocess(np.array(images), np.array(poses))
+        if self.train:
+            self.train_val_split()
 
-        normalized_pose = poses.copy()
-        normalized_pose[:, :,0:2]
+        np.random.set_state(st0)
 
+        self.indices = sorted(self.indices)
+        self.items = sorted(self.items)
+
+    # TODO: Identical to JHMDB, need refactor
+    def train_val_split(self):
+        new_indices = []
+        for action in self.classes:
+            if self.train and self.val:
+                # validation
+                lower_limit = 0
+                upper_limit = math.ceil(self.val_split_amount * len(self.classes[action]))
+            else:
+                # train
+                lower_limit = math.ceil(self.val_split_amount * len(self.classes[action]))
+                upper_limit = len(self.classes[action])
+            
+            new_indices.extend(self.classes[action][lower_limit:upper_limit])
+
+        self.indices = new_indices
+
+    def get_action(self, label):
         # handling wrong annotations
         action = label["action"][0]
         if action == "bowl":
@@ -166,135 +158,108 @@ class PennActionDataset(data.Dataset):
         if action == "strum_guitar":
             action = "strumming_guitar"
 
-        t_action_1h = torch.zeros(15)
-        t_action_1h[self.action_mapping[action]] = 1
+        return action
 
-        t_index = torch.zeros(1)
-        t_index[0] = idx
+    # TODO: Identical to JHMDB, needs refactor
+    def map_to_mpii(self, pose):
+        final_pose = torch.zeros((16, 3)).float()
+        final_pose[:, 0:2] = torch.FloatTensor([-1e9, -1e9])
 
-        t_parameters = torch.zeros(5).float()
-        t_parameters[0] = self.test["scale"]
-        t_parameters[1] = float(self.test["angle"])
-        t_parameters[2] = float(self.test["flip"])
-        t_parameters[3] = float(self.test["trans_x"])
-        t_parameters[4] = float(self.test["trans_y"])
+        for i in range(len(self.mpii_mapping)):
+            mpii_index = self.mpii_mapping[i][1].item()
+            own_index = self.mpii_mapping[i][0].item()
 
-        t_bbox = torch.from_numpy(self.bbox).float()
+            joint_in_frame =  (0 <= pose[own_index][0] <= 1) and (0 <= pose[own_index][1] <= 1)
+            if joint_in_frame:
+                final_pose[mpii_index, 0:2] = pose[own_index]
 
-        t_normalized_frames = torch.from_numpy(normalized_images).float()
-        t_normalized_poses = torch.from_numpy(normalized_pose).float()
-        t_trans_matrices = torch.from_numpy(trans_matrices).float()
+        return final_pose
 
-        return {
-            "action_1h": t_action_1h,
-            "normalized_frames": t_normalized_frames,
-            "normalized_poses": t_normalized_poses,
-            "trans_matrices": t_trans_matrices,
-            "bbox": t_bbox,
-            "parameters": t_parameters
-        }
 
-    def preprocess(self, images, poses):
-        conf_scale = self.scales[np.random.randint(0, len(self.scales))]
-        conf_angle = self.angles[np.random.randint(0, len(self.angles))]
-        conf_flip = self.flip_horizontal[np.random.randint(0, len(self.flip_horizontal))]
-        conf_subsample = self.subsampling[np.random.randint(0, len(self.subsampling))]
-        conf_trans_x = self.trans_x[np.random.randint(0, len(self.trans_x))]
-        conf_trans_y = self.trans_y[np.random.randint(0, len(self.trans_y))]
+    def __getitem__(self, idx):
+        label_path = self.root_dir + "labels/" + self.items[self.indices[idx]]
 
-        if self.channel_power_exponent is not None:
-            conf_exponents = np.array([
-                self.channel_power_exponent[np.random.randint(0, len(self.channel_power_exponent))],
-                self.channel_power_exponent[np.random.randint(0, len(self.channel_power_exponent))],
-                self.channel_power_exponent[np.random.randint(0, len(self.channel_power_exponent))]
-            ])
-        else:
-            conf_exponents = None
+        label = sio.loadmat(label_path)
+        images = []
+        frame_folder = self.root_dir + "frames/" + self.items[self.indices[idx]] + "/"
+        all_images = sorted(os.listdir(frame_folder))
 
-        self.test = {}
-        self.test["angle"] = conf_angle
-        self.test["scale"] = conf_scale
-        self.test["flip"] = conf_flip
-        self.test["trans_x"] = conf_trans_x
-        self.test["trans_y"] = conf_trans_y
+        poses = []
+        for i in range(len(all_images)):
+            image = io.imread(frame_folder + all_images[i])
+            images.append(torch.from_numpy(image))
 
-        image_width = images.shape[2]
-        image_height = images.shape[1]
-        window_size = conf_scale * max(image_height, image_width)
+            joint_frame = []
+            for o in range(13):
+                joint_coordinate = [label["x"][i][o], label["y"][i][o]]
+                visibility = bool(label["visibility"][i][o])
+                if visibility:
+                    joint_frame.append(joint_coordinate)
+                else:
+                    joint_frame.append([-1e9, -1e9])
 
-        bbox = np.array([
-            int(image_width / 2) - (window_size / 2), # x1, upper left
-            int(image_height / 2) - (window_size / 2), # y1, upper left
-            int(image_width / 2) + (window_size / 2), # x2, lower right
-            int(image_height / 2) + (window_size / 2)  # y2, lower right
-        ])
+            poses.append(torch.FloatTensor(joint_frame))
 
-        self.bbox = bbox
+        action = self.get_action(label)
 
-        bbox_width = int(abs(bbox[0] - bbox[2]))
-        bbox_height = int(abs(bbox[1] - bbox[3]))
-        window_size = np.array([bbox_width, bbox_height])
-        center = np.array([
-            int(bbox[2] - int(bbox_width / 2)),
-            int(bbox[3] - int(bbox_height / 2))
-        ])
+        image_height = len(images[0])
+        image_width = len(images[0][0])
 
-        assert bbox_width >= 32 and bbox_height >= 32
-
-        center += np.array(conf_scale * np.array([conf_trans_x, conf_trans_y])).astype(int)
+        self.set_augmentation_parameters()
 
         processed_frames = []
         processed_poses = []
-        normalized_frames = []
-        visibility = []
         trans_matrices = []
+        bounding_boxes = []
 
-        #TODO: transx, transy
+
         for frame, pose in zip(images, poses):
-            trans_matrix, image = rotate_and_crop(frame, conf_angle, center, window_size)
-            size_after_rotate = np.array([image.shape[1], image.shape[0]])
+            self.calc_bbox_and_center(image_width, image_height)
 
-            image = resize(image, (256, 256), preserve_range=True)
-            trans_matrix = scale(trans_matrix, 256 / size_after_rotate[0], 256 / size_after_rotate[1])
+            trans_matrix, norm_frame, norm_pose = self.preprocess(frame, pose)
 
-            #TODO: subsampling
+            norm_pose = self.map_to_mpii(norm_pose)
+            norm_pose = self.set_visibility(norm_pose)
 
-            # randomly flip horizontal
-            if conf_flip:
-                image = np.fliplr(image)
+            if self.aug_conf["flip"]:
+                norm_pose = flip_lr_pose(norm_pose)
 
-                trans_matrix = translate(trans_matrix, -image.shape[1] / 2, -image.shape[0] / 2)
-                trans_matrix = flip_h(trans_matrix)
-                trans_matrix = translate(trans_matrix, image.shape[1] / 2, image.shape[0] / 2)
+            bounding_boxes.append(self.bbox.clone().unsqueeze(0))
+            processed_poses.append(norm_pose.unsqueeze(0))
+            processed_frames.append(norm_frame.unsqueeze(0))
+            trans_matrices.append(trans_matrix.clone().unsqueeze(0))
 
-            trans_matrix = scale(trans_matrix, 1.0 / self.final_size, 1.0 / self.final_size)
 
-            transformed_pose = transform_pose(trans_matrix, pose)
+        frames = torch.cat(processed_frames)
+        poses = torch.cat(processed_poses)
+        trans_matrices = torch.cat(trans_matrices)
+        t_bounding_boxes = torch.cat(bounding_boxes)
 
-            normalized_image = normalize_channels(image, power_factors=conf_exponents)
-            normalized_frames.append(normalized_image)
+        frames = frames.permute(0, 3, 1, 2)
 
-            final_pose = np.empty((16, 3))
-            final_pose[:] = np.nan
+        action_1h = torch.zeros(15).float()
+        action_1h[self.action_mapping[action]] = 1
 
-            for i in range(13):
-                mpii_index = self.mpii_mapping[i][1]
-                penn_index = self.mpii_mapping[i][0]
+        # t_sequence_length = torch.ByteTensor([number_of_frames])
 
-                joint_in_frame =  (0 <= transformed_pose[penn_index][0] <= 1) and (0 <= transformed_pose[penn_index][1] <= 1)
-                if joint_in_frame:
-                    final_pose[mpii_index, 0:2] = transformed_pose[penn_index]
-                else:
-                    final_pose[mpii_index, 0:2] = np.array([-1e9, -1e9])
+        t_index = torch.zeros(1).float()
+        t_index[0] = idx
 
-            final_pose[np.isnan(final_pose)] = -1e9
+        t_parameters = torch.zeros(5).float()
+        t_parameters[0] = self.aug_conf["scale"]
+        t_parameters[1] = float(self.aug_conf["angle"])
+        t_parameters[2] = float(self.aug_conf["flip"])
+        t_parameters[3] = float(self.aug_conf["trans_x"])
+        t_parameters[4] = float(self.aug_conf["trans_y"])
 
-            valid_joints = get_valid_joints(final_pose, need_sum=False)[:, 0:2]
-            visibility = np.apply_along_axis(np.all, 1, valid_joints)
-            final_pose[:, 2] = visibility
-
-            processed_poses.append(final_pose)
-            processed_frames.append(image)
-            trans_matrices.append(trans_matrix.copy())
-
-        return np.array(processed_frames), np.array(normalized_frames), np.array(processed_poses), np.array(trans_matrices)
+        return {
+            "action_1h": action_1h,
+            "action_label": action,
+            "normalized_frames": frames,
+            "normalized_poses": poses,
+            # "sequence_length": t_sequence_length,
+            "trans_matrices": trans_matrices,
+            "parameters": t_parameters,
+            "index": t_index,
+            "bbox": t_bounding_boxes
+        }

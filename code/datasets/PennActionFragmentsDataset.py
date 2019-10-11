@@ -18,23 +18,16 @@ from deephar.image_processing import center_crop, rotate_and_crop, normalize_cha
 from deephar.utils import transform_2d_point, translate, scale, flip_h, superflatten, transform_pose, get_valid_joints
 
 class PennActionFragmentsDataset(data.Dataset):
-    def __init__(self, root_dir, transform=None, use_random_parameters=False, train=True, val=False):
+    def __init__(self, root_dir, transform=None, use_random_parameters=False, train=True, val=False, augmentation_amount=1):
         self.root_dir = root_dir
         self.padding_amount = 8
 
         self.train = train
         self.val = val
 
+        self.augmentation_amount = augmentation_amount
+
         self.use_random_parameters = use_random_parameters
-
-        if self.use_random_parameters:
-            self.prefix = "rand_"
-        else:
-            self.prefix = ""
-
-        self.images_folder = self.root_dir + self.prefix + "images/"
-        self.annotation_folder = self.root_dir + self.prefix + "annotations/"
-        self.indices_folder = self.root_dir + self.prefix + "indices/"
 
         if self.train:
             if self.val:
@@ -46,10 +39,24 @@ class PennActionFragmentsDataset(data.Dataset):
 
         self.number_of_fragments = len(glob.glob("{}{}indices/{}*".format(self.root_dir, self.prefix, self.train_test_folder)))
 
+    def set_prefix(self, path):
+        self.prefix = path
+
+        self.images_folder = self.root_dir + self.prefix + "images/"
+        self.annotation_folder = self.root_dir + self.prefix + "annotations/"
+        self.indices_folder = self.root_dir + self.prefix + "indices/"
+
     def __len__(self):
         return self.number_of_fragments
 
     def __getitem__(self, idx):
+        if self.use_random_parameters:
+            dice_roll = random.randint(0, self.augmentation_amount)
+            if dice_roll == 0:
+                self.set_prefix("")
+            else:
+                self.set_prefix("rand{}_".format(dice_roll))
+
         padded_indice = str(idx).zfill(self.padding_amount)
         
         t_indices = torch.load(self.indices_folder + self.train_test_folder + padded_indice + ".indices.pt")
