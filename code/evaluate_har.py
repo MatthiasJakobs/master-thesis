@@ -21,4 +21,4 @@ conf["name"] = "eval"
 conf["limit_data_percent"] = 1 # limit dataset to x percent (for testing)
 
 har = HAR_Testing_Experiment(conf, validate=True)
-har.test(pretrained_model="/data/mjakobs/code/master-thesis/experiments/har_initial/no_finetune/weights/weights_00100000")
+print(har.test(pretrained_model="/data/mjakobs/code/master-thesis/code/experiments/har_initial/no_finetune/weights/weights_00100000"))

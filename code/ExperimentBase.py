@@ -337,11 +337,12 @@ class HAR_Testing_Experiment(ExperimentBase):
                 assert len(single_clip[0]) == 16
 
                 spacing = 8
-                nr_multiple_clips = int((sequence_length - 16) / spacing)
+                nr_multiple_clips = int((sequence_length - 16) / spacing) + 1
                 multi_clip = torch.zeros(nr_multiple_clips, 16, 3, 255, 255)
                 for i in range(nr_multiple_clips):
                     multi_clip[i] = frames[0, i * spacing : i * spacing + 16]
 
+                multi_clip = multi_clip.to(self.device)
                 _, _, _, _, single_result = self.model(single_clip)
                 _, _, _, _, multi_result = self.model(multi_clip)
 
@@ -386,7 +387,7 @@ class HAR_E2E(HAR_Testing_Experiment):
 
         partial_loss_pose = torch.sum(categorical_cross_entropy(pose_predicted_actions, actions))
         partial_loss_action = torch.sum(categorical_cross_entropy(vis_predicted_actions, actions))
-        
+
         har_loss = partial_loss_pose + partial_loss_action
 
         pred_pose = predicted_poses[:, :, :, :, 0:2]
@@ -545,7 +546,9 @@ class Pose_JHMDB(ExperimentBase):
                 trans_matrices = trans_matrices.contiguous().view(val_data["trans_matrices"].size()[0] * val_data["trans_matrices"].size()[1], 3, 3)
 
                 _, predictions, _, _ = self.model(val_images)
-                #predictions = predictions[-1, :, :, :].squeeze(dim=0)
+                print("before squeeze", predictions.shape)
+                predictions = predictions.squeeze(dim=0)
+                print("after squeeze", predictions.shape)
 
                 if predictions.dim() == 2:
                     predictions = predictions.unsqueeze(0)
@@ -623,7 +626,7 @@ class Pose_JHMDB(ExperimentBase):
                 trans_matrices = trans_matrices.contiguous().view(test_data["trans_matrices"].size()[0] * test_data["trans_matrices"].size()[1], 3, 3)
 
                 _, predictions, _, _ = self.model(test_images)
-                #predictions = predictions[-1, :, :, :].squeeze(dim=0)
+                predictions = predictions.squeeze(dim=0)
 
                 if predictions.dim() == 2:
                     predictions = predictions.unsqueeze(0)
