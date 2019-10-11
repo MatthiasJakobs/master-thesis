@@ -392,9 +392,16 @@ class HAR_E2E(HAR_Testing_Experiment):
     def train(self, train_objects):
         self.model.train()
         frames = train_objects["frames"].to(self.device)
+        print("after frames data batch")
+        print(torch.cuda.memory_allocated(device=0)  / 1024 / 1024)
+
         actions = train_objects["action_1h"].to(self.device)
+        print("after actions data batch")
+        print(torch.cuda.memory_allocated(device=0)  / 1024 / 1024)
 
         ground_poses = train_objects["poses"].to(self.device)
+        print("after pose data batch")
+        print(torch.cuda.memory_allocated(device=0)  / 1024 / 1024)
 
         print("after train data batch")
         print(torch.cuda.memory_allocated(device=0)  / 1024 / 1024)
