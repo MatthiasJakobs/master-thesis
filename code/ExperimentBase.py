@@ -208,21 +208,9 @@ class HAR_Testing_Experiment(ExperimentBase):
         print(torch.cuda.memory_allocated(device=0))
 
         self.model = DeepHar(num_actions=21, use_gt=True, model_path="/data/mjakobs/data/pretrained_jhmdb").to(self.device)
-        print("after loading model")
-        print(torch.cuda.memory_allocated(device=0))
-
         self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False, use_random_parameters=True)
-        print("after loading train")
-        print(torch.cuda.memory_allocated(device=0))
-
         self.ds_val = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=True)
-        print("after loading val")
-        print(torch.cuda.memory_allocated(device=0))
-
         self.ds_test = JHMDBDataset("/data/mjakobs/data/jhmdb/", train=False)
-        print("after loading test")
-        print(torch.cuda.memory_allocated(device=0))
-
 
         train_indices, val_indices, test_indices = self.limit_dataset(include_test=True)
 
@@ -260,6 +248,10 @@ class HAR_Testing_Experiment(ExperimentBase):
         self.model.train()
         frames = train_objects["frames"].to(self.device)
         actions = train_objects["action_1h"].to(self.device)
+
+        print("after train data batch")
+        print(torch.cuda.memory_allocated(device=0))
+
 
         actions = actions.unsqueeze(1)
         actions = actions.expand(-1, 4, -1)
