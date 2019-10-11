@@ -205,11 +205,11 @@ class HAR_Testing_Experiment(ExperimentBase):
         print("Fine Tuning: " + str(self.fine_tune))
 
         print("without anything")
-        print(torch.cuda.memory_allocated(device=0))
+        print(torch.cuda.memory_allocated(device=0) / 1024 / 1024)
 
         self.model = DeepHar(num_actions=21, use_gt=True, model_path="/data/mjakobs/data/pretrained_jhmdb").to(self.device)
         print("after model")
-        print(torch.cuda.memory_allocated(device=0))
+        print(torch.cuda.memory_allocated(device=0)  / 1024 / 1024)
 
         self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False, use_random_parameters=True)
         self.ds_val = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=True)
@@ -253,7 +253,7 @@ class HAR_Testing_Experiment(ExperimentBase):
         actions = train_objects["action_1h"].to(self.device)
 
         print("after train data batch")
-        print(torch.cuda.memory_allocated(device=0))
+        print(torch.cuda.memory_allocated(device=0)  / 1024 / 1024)
 
 
         actions = actions.unsqueeze(1)
