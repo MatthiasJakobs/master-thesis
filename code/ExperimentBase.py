@@ -205,7 +205,7 @@ class HAR_Testing_Experiment(ExperimentBase):
         print("Fine Tuning: " + str(self.fine_tune))
 
         print("without anything")
-        print(torch.cuda.max_memory_allocated(device=0)
+        print(torch.cuda.max_memory_allocated(device=0))
 
         self.model = DeepHar(num_actions=21, use_gt=True, model_path="/data/mjakobs/data/pretrained_jhmdb").to(self.device)
         print("after model")
