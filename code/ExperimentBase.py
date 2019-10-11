@@ -255,7 +255,6 @@ class HAR_Testing_Experiment(ExperimentBase):
         print("after train data batch")
         print(torch.cuda.memory_allocated(device=0)  / 1024 / 1024)
 
-
         actions = actions.unsqueeze(1)
         actions = actions.expand(-1, 4, -1)
 
@@ -265,12 +264,19 @@ class HAR_Testing_Experiment(ExperimentBase):
         partial_loss_action = torch.sum(categorical_cross_entropy(vis_predicted_actions, actions))
         losses = partial_loss_pose + partial_loss_action
 
+        print("before backward")
+        print(torch.cuda.memory_allocated(device=0)  / 1024 / 1024)
+
         losses.backward()
 
         self.train_writer.write([self.iteration, losses.item()])
 
         self.optimizer.step()
         self.optimizer.zero_grad()
+
+        print("after zero_grad")
+        print(torch.cuda.memory_allocated(device=0)  / 1024 / 1024)
+
 
         self.iteration = self.iteration + 1
 
