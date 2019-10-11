@@ -396,6 +396,9 @@ class HAR_E2E(HAR_Testing_Experiment):
 
         ground_poses = train_objects["poses"].to(self.device)
 
+        print("after train data batch")
+        print(torch.cuda.memory_allocated(device=0)  / 1024 / 1024)
+
         actions = actions.unsqueeze(1)
         actions = actions.expand(-1, self.conf["num_blocks"], -1)
 
