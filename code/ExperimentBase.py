@@ -205,23 +205,23 @@ class HAR_Testing_Experiment(ExperimentBase):
         print("Fine Tuning: " + str(self.fine_tune))
 
         print("without anything")
-        print(torch.cuda.memory_allocated(device=self.device))
+        print(torch.cuda.memory_allocated(device=0))
 
         self.model = DeepHar(num_actions=21, use_gt=True, model_path="/data/mjakobs/data/pretrained_jhmdb").to(self.device)
         print("after loading model")
-        print(torch.cuda.memory_allocated(device=self.device))
+        print(torch.cuda.memory_allocated(device=0))
 
         self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False, use_random_parameters=True)
         print("after loading train")
-        print(torch.cuda.memory_allocated(device=self.device))
+        print(torch.cuda.memory_allocated(device=0))
 
         self.ds_val = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=True)
         print("after loading val")
-        print(torch.cuda.memory_allocated(device=self.device))
+        print(torch.cuda.memory_allocated(device=0))
 
         self.ds_test = JHMDBDataset("/data/mjakobs/data/jhmdb/", train=False)
         print("after loading test")
-        print(torch.cuda.memory_allocated(device=self.device))
+        print(torch.cuda.memory_allocated(device=0))
 
 
         train_indices, val_indices, test_indices = self.limit_dataset(include_test=True)
