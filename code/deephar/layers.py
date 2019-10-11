@@ -170,11 +170,11 @@ class TimeDistributedPoseEstimation(nn.Module):
         size_before = x.size()
 
         print("before reshape")
-        print(torch.cuda.max_memory_allocated(device=0)  / 1024 / 1024)
+        print(torch.cuda.max_memory_allocated(device=0))
 
         x_reshape = x.contiguous().view(size_before[0] * size_before[1], 3, 255, 255)  # (samples * timesteps, input_size)
         print("after reshape")
-        print(torch.cuda.max_memory_allocated(device=0)  / 1024 / 1024)
+        print(torch.cuda.max_memory_allocated(device=0))
 
         train_poses, poses, heatmaps, features = self.module(x_reshape)
         train_poses = train_poses.permute(1, 0, 2, 3)
