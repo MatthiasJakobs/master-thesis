@@ -176,6 +176,50 @@ class PennActionDataset(BaseDataset):
         return final_pose
 
 
+    def calc_gt_bb(self, pose, offset=None):
+        min_x = 1e10
+        max_x = -1e10
+        min_y = 1e10
+        max_y = -1e10
+
+        bbox = torch.IntTensor(4)
+
+        for joint in poses:
+            x = joint[0]
+            y = joint[1]
+
+            if x < min_x:
+                min_x = x
+
+            if x > max_x:
+                max_x = x
+
+            if y < min_y:
+                min_y = y
+
+            if y > max_y:
+                max_y = y
+
+        bbox[0] = min_x
+        bbox[1] = min_y
+        bbox[2] = max_x
+        bbox[3] = min_y
+
+        bbox_width = torch.abs(bbox[0] - bbox[2]).item()
+        bbox_height = torch.abs(bbox[1] - bbox[3]).item()
+
+        if offset is not None:
+            window_size = torch.IntTensor([max(bbox_height, bbox_width) + offset, max(bbox_height, bbox_width) + offset])
+        else:
+            window_size = torch.IntTensor([max(bbox_height, bbox_width), max(bbox_height, bbox_width)])
+        self.window_size = window_size
+        center = torch.IntTensor([
+            bbox[2] - bbox_width / 2,
+            bbox[3] - bbox_height / 2
+        ])
+        self.bbox = bbox
+        self.center = center
+
     def __getitem__(self, idx):
         label_path = self.root_dir + "labels/" + self.items[self.indices[idx]]
 
@@ -214,7 +258,10 @@ class PennActionDataset(BaseDataset):
 
 
         for frame, pose in zip(images, poses):
-            self.calc_bbox_and_center(image_width, image_height)
+            if self.train:
+                self.calc_gt_bb(pose)
+            else:
+                self.calc_bbox_and_center(image_width, image_height)
 
             trans_matrix, norm_frame, norm_pose = self.preprocess(frame, pose)
 
