@@ -325,6 +325,7 @@ class HAR_Testing_Experiment(ExperimentBase):
             del frames
             del actions
             del predicted_poses
+            del prediction
 
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
@@ -424,6 +425,10 @@ class HAR_E2E(HAR_Testing_Experiment):
         ground_vis = ground_vis.unsqueeze(2)
         ground_vis = ground_vis.expand(-1, -1, self.conf["num_blocks"], -1)
 
+        del predicted_poses
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
         binary_crossentropy = nn.BCELoss()
 
         pred_pose = pred_pose.contiguous().view(len(frames) * 16, self.conf["num_blocks"], 16, 2)
@@ -437,6 +442,19 @@ class HAR_E2E(HAR_Testing_Experiment):
         pose_loss = vis_loss * 0.01 + pose_loss
 
         loss = pose_loss + har_loss
+
+        del frames
+        del actions
+        del ground_poses
+        del pose_predicted_actions
+        del vis_predicted_actions
+        del pred_pose
+        del ground_poses
+        del pred_vis
+        del ground_vis
+
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
         loss.backward()
 
