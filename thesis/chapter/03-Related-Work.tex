@@ -1227,6 +1227,7 @@ Additionaly, they evaluate the use of estimated poses using the approach present
 They find that, while the estimated pose is of low quality compared to the ground truth, this approach still outperforms the baseline approach, suggesting that even low quality pose information is highly relevant as a feature for action recognition.
 
 \subsubsection{Pose-CNN}
+\label{sec:pcnn}
 
 \begin{figure}[htb!]
     \centering
@@ -1277,11 +1278,125 @@ A combination thus improves the accuracy in both scenarios simultaniously.
 \subsubsection{PoTion}
 \label{sec:potion}
 
-% Intro + general appraoch
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.9\textwidth]{potion-overview.png}
+    \caption{The approach presented in \cite{choutas_potion:_2018} first estimates the joint positions for each frame of a video. Then, depending on the frame, the position is colored according to a gradient from, for example, red to green. By aggregating all frames in to a single image the path the joint moved in the frame becomes visible. Image taken from \cite{choutas_potion:_2018}. }
+    \label{fig:potion-overview}
+\end{figure}
 
-% (Maybe short about two stream networks? Need \cite{simonyan_two-stream_2014} \cite{carreira_quo_2017})
-% This could also be explained in P-CNN since it is basically a two stream approach
+% Intro + general approach
+Building on the work of \cite{simonyan_two-stream_2014} (see \sref{sec:two-stream}), \cite{choutas_potion:_2018} propose a complementary pose-based feature called \textit{Pose motion (PoTion)}.
+The idea is to track joint positions over time and displaying them in a single frame using a color gradient.
+The authors argue that such a compact representation, which tracks joint movements over time, can be used in combination to recent Two-Stream approaches to achieve state-of-the-art performance.
+See \fref{fig:potion-overview} for a visualization of this approach.
 
-% Method
+First, the authors compute joint positions in the form of heatmaps for each frame of a clip using a pose estimator proposed in \cite{cao_realtime_2017}.
+Then, the authors define $C$ colors to encode the movement for each joint.
+Using a gradient between these colors, the authors color each joint position based on the frame position in the video.
+For example, consider $C=2$ and let these two colors be red and green.
+Then, the joints in the first frame would be colored red.
+Analogously, the joints in the last frame would be colored green.
+In between, the authors define a function for interpolating between the different colors.
+Notice that the color is solely dependent on the frame position $t$.
+See \fref{fig:potion-color} for a visualization of these functions. 
+In their evaluation, the authors find that, initially, the accuracy on the datasets incrreases with the number of colors used.
+They find that this is the case until $C=6$, where the accuracy stops increasing.
+Thus, the authors choose $C=4$ in order to get both a high accuracy and remain a compact representation.
 
-% Evalution
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.7\textwidth]{potion-color.png}
+    \caption{Example of the color interpolation for two and three different colors. On the bottom, the resulting color for each frame $t$ is shown. Image taken from \cite{choutas_potion:_2018}. }
+    \label{fig:potion-color}
+\end{figure}
+
+Afterwards, the authors aggregate the colorized frames for each joint into a single RGB image.
+They evaluate different aggregation techniques.
+First, they compute the normalized sum $U_j$ for each joint $j$ by summing all colorized frames and dividing by the maximum pixel value over all pixels.
+The authors notice that, if a joint stays at any position for a period of time, that the intensity increases at this particular position.
+Thus, they first compute an intensity image $I_j = \sum_c U_j(c)$ by summing all color channels for all pixels in $U_j$.
+Then, they compute an additional representation $N_j = \frac{U_J}{\epsilon + I_j}$, which does not contain intensity information.
+In their evaluation, the authors find they achieve the highest accuracy by using all three representations.
+
+For evaluation, the authors also propose a shallow CNN for classification using only the precomputed representations discussed earlier.
+The network is made up of $6$ convolutional layers, followed by a single full-connected layer.
+However, the authors find that this shallow classification network alone does not achiveve high accuracies compared the the previous work.
+On the JHMDB dataset, the authors achieve $57.0$ percent accuracy (as compared to $61.1$ percent achieved by \cite{cheron_pcnn_2015} (see \sref{sec:pcnn})) and on HMDB, the authors achieve $43.7$ percent accuracy (as compared to $59.4$ and $61.7$ percent by \cite{simonyan_two-stream_2014} (see \sref{sec:two-stream}) and \cite{wang_action_2013} \sref{sec:improved-dense-trajectories} respectively).
+
+The authors also evaluate the effect of adding their representation to other previous approaches and find that adding it to the previous state-of-the-art approach by \cite{carreira_quo_2017} (see \sref{sec:two-stream}) they were able to improve the accuracy slightly by $0.5$ ($87.9$ percent as opposed to $87.4$ percent) percentage points using estimated poses on the JHMDB dataset.
+When using ground truth annotation for the joint positions, the authors observe an improvement of $3$ percentage points to $90.4$ percent upon \cite{carreira_quo_2017}, indicating that their representation is complementary to the Two-Stream approach and that it is worthwhile to improve upon the pose estimation component.
+
+\subsubsection{Three-Stream Network}
+\label{sec:three-stream}
+
+Inspired by the success of the Two-Stream architecture (see \sref{sec:two-stream}), \cite{khalid_multi-modal_2018} expanded the idea to a Three-Stream approach, using pose information as the third stream.
+
+% Pose Tensor
+First, they estimate the poses for each frame using the same pose estimator by \cite{cao_realtime_2017} that \cite{choutas_potion:_2018} use.
+%% Missing Joints (two interpolation techniques)
+The authors argue, however, that missing joints need to be interpolated because this leads to higher accuracy on the benchmark datasets.
+However, they do not provide evidence in form of a direct comparison of accuracy with and without interpolation.
+They propose two different interpolation strategies, referred to as \textit{temporal interpolation} and \textit{spatial interpolation}.
+\textit{Temporal interpolation} is used whenever a joint is not visible for a small number of frames.
+Let $f_l$ be the frame where the joint was last visible.
+This frame is then followed by $n$ frames, where it is not visible, followed by $f_k$, where it becomes visible again.
+Then, the authors linearly interpolate the position of the missing joint for each frame $f_{l+1}, \dots, f_{l+n}$ using the positions in $f_l$ and $f_k$.
+They do, however, not specify what constitues as a \textit{short period of time}, i.e., how small $n$ has to be in order for this approach to lead to good results.
+\textit{Spatial interpolation} is used for long-term occlusion, i.e., for large $n$.
+The authors argue that this is necessary since \textit{temporal interpolation} leads to worse results the bigger $n$ gets.
+Again, they do not specify for which value of $n$ \textit{spatial interpolation} is necessary.
+For \textit{spatial interpolation}, they divide the joints into $5$ groups, which can be seen in \fref{fig:khalid-joint-groups}.
+The groups are iterated, starting with the group the missing joint is in.
+If the other joints in a group are present, they \textit{vote} on the position of the missing joints based on a statistical model of relative joint positions computed on training data beforehand.
+The average vote is then assumed to be the missing joints position.
+The authors argue that this leads to good results since the position of joints is highly correlated for certain joints.
+As an example, they mention the correlation of head and neck positions.
+This approach and reasoning is similar to \cite{yang_articulated_2011} (see \sref{sec:yangramanan}), where the relative orientation between joints was used as a feature for action recognition.
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.3\textwidth]{khalid-joint-groups.png}
+    \caption{The authors divide the joints into $5$ groups in order to estimate relative positions of joints to each other. Image taken from \cite{khalid_multi-modal_2018}. }
+    \label{fig:khalid-joint-groups}
+\end{figure}
+
+Once the joint positions are estimated for each frame, the authors order them in a way so that the neighbourhood relationship between joints is kept.
+They argue that this leads to higher accuracy since the relationship of the joints is a useful feature, but they do not compare it to other approaches for joint ordering.
+The ordering process is visualized in \fref{fig:khalid-pose-tensor}.
+By traversing the tree in such a way, some nodes are visited multiple times and thus present multiple times in the pose tensor.
+That way, the authors argue, neighbourhood relationships are expressed more directly in comparison to simply starting at joint $1$ and concatenating the $x$ and $y$ positions.
+The pose tensor then contains the $x$ and $y$ information for each frame in a row.
+The authors process the video clips in chunks, so that the pose tensor always has identical dimensions.
+Also, in the third dimension they compute the first and second order derivatives of the joint position coordinates.
+Finally, the joint positions $P_i$ are normalized with regards to the middle point between \textit{neck} and \textit{belly} joint $P_{middle}$ and with regards to the torso length $d$ using the following two formulas:
+
+\begin{equation}
+    P^{norm}_i = \frac{P_i}{d}, \\
+    P^{rel}_i = P^{norm}_i - P_{middle}.
+\end{equation}
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.99\textwidth]{khalid-pose-tensor.png}
+    \caption{Visualization of the ordering process. \textbf{From left to right}: \textbf{a)} The original pose skeleton. The belly joint is highlighted and used as the root node. \textbf{b)} A tree is computed based on the previously chosen root node. \textbf{c)} Traversion algorithm example. \textbf{d)} The final pose vector. Each row contains $x$ and $y$ coordinates of the persons joint locations of one frame. Image taken from \cite{khalid_multi-modal_2018}. }
+    \label{fig:khalid-pose-tensor}
+\end{figure}
+
+% Pose ConvNet
+The authors propose a shallow CNN for classification, similar to the one proposed by \cite{choutas_potion:_2018} (see \sref{sec:potion}).
+The network is made up of two convolutional layers, followed by a max pooling layer and a fully-connected layer.
+Finally, a layer with the softmax activation function is used for classification.
+The other layers all utilize the ReLU activation function.
+Since the network is so small, the authors do not pretrain it.
+For the Two-Stream architecture, they use \cite{wang_temporal_2016}, which is a Two-Stream network achieving high accuracy on the UCF101 and HMDB datasets.
+They fuse their pose network into the existing Two-Stream approach by equally weighting all three components. 
+
+% Evaluation
+First, the authors evaluate each component of the Three-Stream architecture independently and find that the pose component (using estimated pose) and spatial component perform worse than the components using optical flow and ground truth pose components, suggesting the importance of motion information for action recognition.
+When combining the different components, the Three-Stream network performs the best with $78.81$ percent accuracy on the JHMDB dataset using estimated pose.
+When substituting ground truth pose, the accuracy further increases to $83.05$ percent.
+
+When comparing the Three-Stream network to previously discussed methods, it performs slightly worse ($0.7$ percentage points) on the JHMDB dataset, using estimated pose, when compared to \cite{cheron_pcnn_2015} (see \sref{sec:pcnn}).
+Even when utilizing ground truth pose information, the authors are not able to outperform \cite{choutas_potion:_2018}, who achieved $87.9$ percent accuracy on JHMDB using estimated pose.
+Notice that the pose estimator was identical in both cases, suggesting that either the architecture proposed by \cite{khalid_multi-modal_2018} is not deep enough or that estimating missing joint positions by linear interpolation and statistical modeling leads to worse results.
