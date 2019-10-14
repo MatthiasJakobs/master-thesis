@@ -172,18 +172,18 @@ class TimeDistributedPoseEstimation(nn.Module):
         print("before reshape")
         print(torch.cuda.max_memory_allocated(device=0))
 
-        x_reshape = x.contiguous().view(size_before[0] * size_before[1], 3, 255, 255)  # (samples * timesteps, input_size)
+        x = x.contiguous().view(size_before[0] * size_before[1], 3, 255, 255)  # (samples * timesteps, input_size)
         print("after reshape")
         print(torch.cuda.max_memory_allocated(device=0))
 
-        train_poses, poses, heatmaps, features = self.module(x_reshape)
+        train_poses, poses, heatmaps, features = self.module(x)
         train_poses = train_poses.permute(1, 0, 2, 3)
         poses = poses.squeeze(0)
 
-        features_correct = features.contiguous().view((size_before[0], size_before[1], 576, 32, 32))
-        poses_correct = poses.contiguous().view((size_before[0], size_before[1], 16, 3))
-        train_poses_correct = train_poses.contiguous().view((size_before[0], size_before[1], self.module.blocks, 16, 3))
-        heatmaps_correct = heatmaps.contiguous().view((size_before[0], size_before[1], 16, 32, 32))
+        features = features.contiguous().view((size_before[0], size_before[1], 576, 32, 32))
+        poses = poses.contiguous().view((size_before[0], size_before[1], 16, 3))
+        train_poses = train_poses.contiguous().view((size_before[0], size_before[1], self.module.blocks, 16, 3))
+        heatmaps = heatmaps.contiguous().view((size_before[0], size_before[1], 16, 32, 32))
 
 
-        return train_poses_correct, poses_correct, heatmaps_correct, features_correct
+        return train_poses, poses, heatmaps, features

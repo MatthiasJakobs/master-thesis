@@ -204,12 +204,8 @@ class HAR_Testing_Experiment(ExperimentBase):
 
         print("Fine Tuning: " + str(self.fine_tune))
 
-        print("without anything")
-        print(torch.cuda.max_memory_allocated(device=0))
 
         self.model = DeepHar(num_actions=21, use_gt=True, model_path="/data/mjakobs/data/pretrained_jhmdb").to(self.device)
-        print("after model")
-        print(torch.cuda.max_memory_allocated(device=0))
 
         self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False, use_random_parameters=True)
         self.ds_val = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=True)
@@ -263,6 +259,12 @@ class HAR_Testing_Experiment(ExperimentBase):
         partial_loss_pose = torch.sum(categorical_cross_entropy(pose_predicted_actions, actions))
         partial_loss_action = torch.sum(categorical_cross_entropy(vis_predicted_actions, actions))
         losses = partial_loss_pose + partial_loss_action
+
+        del frames
+        del actions
+
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
         print("before backward")
         print(torch.cuda.max_memory_allocated(device=0))
@@ -319,6 +321,13 @@ class HAR_Testing_Experiment(ExperimentBase):
 
                 total = total + len(pred_class)
                 correct = correct + torch.sum(pred_class == ground_class).item()
+
+            del frames
+            del actions
+            del predicted_poses
+
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
 
             accuracy = correct / float(total)
 
@@ -392,19 +401,8 @@ class HAR_E2E(HAR_Testing_Experiment):
     def train(self, train_objects):
         self.model.train()
         frames = train_objects["frames"].to(self.device)
-        print("after frames data batch")
-        print(torch.cuda.max_memory_allocated(device=0))
-
         actions = train_objects["action_1h"].to(self.device)
-        print("after actions data batch")
-        print(torch.cuda.max_memory_allocated(device=0))
-
         ground_poses = train_objects["poses"].to(self.device)
-        print("after pose data batch")
-        print(torch.cuda.max_memory_allocated(device=0))
-
-        print("after train data batch")
-        print(torch.cuda.max_memory_allocated(device=0))
 
         actions = actions.unsqueeze(1)
         actions = actions.expand(-1, self.conf["num_blocks"], -1)
@@ -417,9 +415,9 @@ class HAR_E2E(HAR_Testing_Experiment):
         har_loss = partial_loss_pose + partial_loss_action
 
         pred_pose = predicted_poses[:, :, :, :, 0:2]
-        ground_pose = ground_poses[:, :, :, 0:2]
-        ground_pose = ground_pose.unsqueeze(2)
-        ground_pose = ground_pose.expand(-1, -1, self.conf["num_blocks"], -1, -1)
+        ground_poses = ground_poses[:, :, :, 0:2]
+        ground_poses = ground_poses.unsqueeze(2)
+        ground_poses = ground_poses.expand(-1, -1, self.conf["num_blocks"], -1, -1)
 
         pred_vis = predicted_poses[:, :, :, :, 2]
         ground_vis = ground_poses[:, :, :, 2]
@@ -429,13 +427,13 @@ class HAR_E2E(HAR_Testing_Experiment):
         binary_crossentropy = nn.BCELoss()
 
         pred_pose = pred_pose.contiguous().view(len(frames) * 16, self.conf["num_blocks"], 16, 2)
-        ground_pose = ground_pose.contiguous().view(len(frames) * 16, self.conf["num_blocks"], 16, 2)
+        ground_poses = ground_poses.contiguous().view(len(frames) * 16, self.conf["num_blocks"], 16, 2)
         pred_vis = pred_vis.contiguous().view(len(frames) * 16, self.conf["num_blocks"], 16)
         ground_vis = ground_vis.contiguous().view(len(frames) * 16, self.conf["num_blocks"], 16)
 
         vis_loss = binary_crossentropy(pred_vis, ground_vis)
 
-        pose_loss = elastic_net_loss_paper(pred_pose, ground_pose)
+        pose_loss = elastic_net_loss_paper(pred_pose, ground_poses)
         pose_loss = vis_loss * 0.01 + pose_loss
 
         loss = pose_loss + har_loss
