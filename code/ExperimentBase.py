@@ -698,7 +698,13 @@ class Pose_JHMDB(ExperimentBase):
 class MPIIExperiment(ExperimentBase):
 
     def preparation(self):
-        self.ds_train = MPIIDataset("/data/mjakobs/data/mpii/", train=True, val=False, use_random_parameters=self.conf["use_random_parameters"], use_saved_tensors=self.conf["use_saved_tensors"])
+
+        if "augmentation_amount" in self.conf:
+            aug_amount = self.conf["augmentation_amount"]
+        else:
+            aug_amount = 1
+
+        self.ds_train = MPIIDataset("/data/mjakobs/data/mpii/", train=True, val=False, use_random_parameters=self.conf["use_random_parameters"], use_saved_tensors=self.conf["use_saved_tensors"], augmentation_amount=aug_amount)
         self.ds_val = MPIIDataset("/data/mjakobs/data/mpii/", train=True, val=True, use_random_parameters=False, use_saved_tensors=self.conf["use_saved_tensors"])
 
         if self.conf["num_blocks"] == 1:
