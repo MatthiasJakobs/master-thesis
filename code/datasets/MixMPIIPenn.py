@@ -1,7 +1,7 @@
 import torch
 import torch.utils.data as data
 
-from datasets.PennActionFragmentsDataset import PennActionFragmentsDataset
+from datasets.PennActionDataset import PennActionDataset
 from datasets.MPIIDataset import MPIIDataset
 
 import glob
@@ -12,7 +12,7 @@ class MixMPIIPenn(data.Dataset):
 
         assert train
 
-        self.pennaction = PennActionFragmentsDataset("/data/mjakobs/data/pennaction_fragments/", use_random_parameters=use_random_parameters, train=train, val=val)
+        self.pennaction = PennActionDataset("/data/mjakobs/data/pennaction/", use_random_parameters=use_random_parameters, train=train, val=val)
         self.mpii = MPIIDataset("/data/mjakobs/data/mpii/", use_random_parameters=use_random_parameters, use_saved_tensors=True, train=train, val=val)
 
         self.padding_amount = 8
@@ -29,7 +29,7 @@ class MixMPIIPenn(data.Dataset):
     def __getitem__(self, idx):
         dice_roll_dataset = random.randint(0, 3)
         # if dice_roll == 0 or 1 or 2 then use MPII, else PennAction
-
+        
 
         if self.use_random_parameters:
             dice_roll = random.randint(0, self.augmentation_amount)
