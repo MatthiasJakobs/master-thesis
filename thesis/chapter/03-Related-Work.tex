@@ -1227,6 +1227,7 @@ Additionaly, they evaluate the use of estimated poses using the approach present
 They find that, while the estimated pose is of low quality compared to the ground truth, this approach still outperforms the baseline approach, suggesting that even low quality pose information is highly relevant as a feature for action recognition.
 
 \subsubsection{Pose-CNN}
+\label{sec:pcnn}
 
 \begin{figure}[htb!]
     \centering
@@ -1277,11 +1278,51 @@ A combination thus improves the accuracy in both scenarios simultaniously.
 \subsubsection{PoTion}
 \label{sec:potion}
 
-% Intro + general appraoch
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.9\textwidth]{potion-overview.png}
+    \caption{The approach presented in \cite{choutas_potion:_2018} first estimates the joint positions for each frame of a video. Then, depending on the frame, the position is colored according to a gradient from, for example, red to green. By aggregating all frames in to a single image the path the joint moved in the frame becomes visible. Image taken from \cite{choutas_potion:_2018}. }
+    \label{fig:potion-overview}
+\end{figure}
 
-% (Maybe short about two stream networks? Need \cite{simonyan_two-stream_2014} \cite{carreira_quo_2017})
-% This could also be explained in P-CNN since it is basically a two stream approach
+% Intro + general approach
+Building on the work of \cite{simonyan_two-stream_2014} (see \sref{sec:two-stream}), \cite{choutas_potion:_2018} propose a complementary pose-based feature called \textit{Pose motion (PoTion)}.
+The idea is to track joint positions over time and displaying them in a single frame using a color gradient.
+The authors argue that such a compact representation, which tracks joint movements over time, can be used in combination to recent Two-Stream approaches to achieve state-of-the-art performance.
+See \fref{fig:potion-overview} for a visualization of this approach.
 
-% Method
+First, the authors compute joint positions in the form of heatmaps for each frame of a clip using a pose estimator proposed in \cite{cao_realtime_2017}.
+Then, the authors define $C$ colors to encode the movement for each joint.
+Using a gradient between these colors, the authors color each joint position based on the frame position in the video.
+For example, consider $C=2$ and let these two colors be red and green.
+Then, the joints in the first frame would be colored red.
+Analogously, the joints in the last frame would be colored green.
+In between, the authors define a function for interpolating between the different colors.
+Notice that the color is solely dependent on the frame position $t$.
+See \fref{fig:potion-color} for a visualization of these functions. 
+In their evaluation, the authors find that, initially, the accuracy on the datasets incrreases with the number of colors used.
+They find that this is the case until $C=6$, where the accuracy stops increasing.
+Thus, the authors choose $C=4$ in order to get both a high accuracy and remain a compact representation.
 
-% Evalution
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.7\textwidth]{potion-color.png}
+    \caption{Example of the color interpolation for two and three different colors. On the bottom, the resulting color for each frame $t$ is shown. Image taken from \cite{choutas_potion:_2018}. }
+    \label{fig:potion-color}
+\end{figure}
+
+Afterwards, the authors aggregate the colorized frames for each joint into a single RGB image.
+They evaluate different aggregation techniques.
+First, they compute the normalized sum $U_j$ for each joint $j$ by summing all colorized frames and dividing by the maximum pixel value over all pixels.
+The authors notice that, if a joint stays at any position for a period of time, that the intensity increases at this particular position.
+Thus, they first compute an intensity image $I_j = \sum_c U_j(c)$ by summing all color channels for all pixels in $U_j$.
+Then, they compute an additional representation $N_j = \frac{U_J}{\epsilon + I_j}$, which does not contain intensity information.
+In their evaluation, the authors find they achieve the highest accuracy by using all three representations.
+
+For evaluation, the authors also propose a shallow CNN for classification using only the precomputed representations discussed earlier.
+The network is made up of $6$ convolutional layers, followed by a single full-connected layer.
+However, the authors find that this shallow classification network alone does not achiveve high accuracies compared the the previous work.
+On the JHMDB dataset, the authors achieve $57.0$ percent accuracy (as compared to $61.1$ percent achieved by \cite{cheron_pcnn_2015} (see \sref{sec:pcnn})) and on HMDB, the authors achieve $43.7$ percent accuracy (as compared to $59.4$ and $61.7$ percent by \cite{simonyan_two-stream_2014} (see \sref{sec:two-stream}) and \cite{wang_action_2013} \sref{sec:improved-dense-trajectories} respectively).
+
+The authors also evaluate the effect of adding their representation to other previous approaches and find that adding it to the previous state-of-the-art approach by \cite{carreira_quo_2017} (see \sref{sec:two-stream}) they were able to improve the accuracy slightly by $0.5$ percentage points using estimated poses on the JHMDB dataset.
+When using ground truth annotation for the joint positions, the authors observe an improvement of $3$ percentage points upon \cite{carreira_quo_2017}, indicating that their representation is complementary to the Two-Stream approach and that it is worthwhile to improve upon the pose estimation component.
