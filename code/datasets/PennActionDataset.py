@@ -213,7 +213,6 @@ class PennActionDataset(BaseDataset):
         trans_matrices = []
         bounding_boxes = []
 
-
         for frame, pose in zip(images, poses):
             if self.use_gt_bb:
                 bbox, center, window_size = get_bbox_from_pose(pose, bbox_offset=30)

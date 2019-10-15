@@ -294,7 +294,7 @@ class JHMDBDataset(BaseDataset):
             bbox[1] = puppet_corners[current_frame, 2]
             bbox[2] = puppet_corners[current_frame, 1]
             bbox[3] = puppet_corners[current_frame, 3]
-            self.calc_bbox_and_center(image_width, image_height, pre_bb=bbox, offset=30)
+            self.calc_bbox_and_center(image_width, image_height, pre_bb=bbox, offset=30) # TODO: Mention offset in paper. As long as used everywhere: comparable
 
             current_frame = current_frame + 1
 
