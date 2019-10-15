@@ -812,17 +812,17 @@ Similar to before, they outperformed the state-of-the-art approaches, including 
 In particular, they achieved $90.9\%$ overall accuracy as compared to $88.5\%$ achieved by \cite{wei_convolutional_2016}.
 Also, they achieved significantly better results on each individual part, including a $3.5$ percentage point increase on the average over the most challenging joints (wrists, elbows, kness and ankles) in comparison to \cite{wei_convolutional_2016}. 
 
-\begin{itemize}
-    \item Cascade Feature Aggregation for Human Pose Estimation \cite{su_cascade_2019}
-\end{itemize}
+% \begin{itemize}
+%     \item Cascade Feature Aggregation for Human Pose Estimation \cite{su_cascade_2019}
+% \end{itemize}
 
 \section{Video-based Human Action Recognition}
 
-%TODO: Write introduction
-Different approaches.
-Some: frame-by-frame and just concatenate.
-Other: Use temporal information.
-Here: Only those who use temporal information.
+In the following chapter, approaches for Human Action Recognition on video data will be discussed.
+First, some prominent works utilizing hand-crafted features will be discusssed.
+These approaches still perform well in modern scenarios and are sometimes used in conjunction with modern, neural network based approaches.
+Second, the Two-Stream architecture will be discussed, as it is the foundation for many state-of-the-art approaches today.
+Finally, Human Action Recognition approaches explicitly utilizing pose feature information are presented, since they show promise for end-to-end learning of the Human Action Recognition pipeline by training the pose estimator in tandum with the action classification network. 
 
 \subsection{Shallow Methods}
 \label{sec:har_shallow}
