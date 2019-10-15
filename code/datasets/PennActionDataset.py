@@ -18,7 +18,7 @@ from skimage.transform import resize
 from datasets.BaseDataset import BaseDataset
 
 from deephar.image_processing import center_crop, rotate_and_crop, normalize_channels
-from deephar.utils import transform_2d_point, translate, scale, flip_h, superflatten, transform_pose, get_valid_joints, flip_lr_pose
+from deephar.utils import transform_2d_point, translate, scale, flip_h, superflatten, transform_pose, get_valid_joints, flip_lr_pose, get_bbox_from_pose
 
 actions = [
     "baseball_pitch",
@@ -40,7 +40,7 @@ actions = [
 
 class PennActionDataset(BaseDataset):
 
-    def __init__(self, root_dir, use_random_parameters=False, transform=None, train=True, val=False):
+    def __init__(self, root_dir, use_random_parameters=False, transform=None, train=True, val=False, use_gt_bb=False):
         super().__init__(root_dir, use_random_parameters=use_random_parameters, train=train, val=val)        
 
         self.mpii_mapping = np.array([
@@ -81,6 +81,8 @@ class PennActionDataset(BaseDataset):
             self.angles=np.array(range(-30, 30+1, 5))
             self.scales=np.array([0.7, 1.0, 1.3, 2.5])
             self.flip_horizontal = np.array([0, 1])
+
+        self.use_gt_bb = use_gt_bb
 
         self.items = sorted(os.listdir(self.root_dir + "frames"))
         self.indices = []
@@ -175,51 +177,6 @@ class PennActionDataset(BaseDataset):
 
         return final_pose
 
-
-    def calc_gt_bb(self, pose, offset=None):
-        min_x = 1e10
-        max_x = -1e10
-        min_y = 1e10
-        max_y = -1e10
-
-        bbox = torch.IntTensor(4)
-
-        for joint in poses:
-            x = joint[0]
-            y = joint[1]
-
-            if x < min_x:
-                min_x = x
-
-            if x > max_x:
-                max_x = x
-
-            if y < min_y:
-                min_y = y
-
-            if y > max_y:
-                max_y = y
-
-        bbox[0] = min_x
-        bbox[1] = min_y
-        bbox[2] = max_x
-        bbox[3] = min_y
-
-        bbox_width = torch.abs(bbox[0] - bbox[2]).item()
-        bbox_height = torch.abs(bbox[1] - bbox[3]).item()
-
-        if offset is not None:
-            window_size = torch.IntTensor([max(bbox_height, bbox_width) + offset, max(bbox_height, bbox_width) + offset])
-        else:
-            window_size = torch.IntTensor([max(bbox_height, bbox_width), max(bbox_height, bbox_width)])
-        self.window_size = window_size
-        center = torch.IntTensor([
-            bbox[2] - bbox_width / 2,
-            bbox[3] - bbox_height / 2
-        ])
-        self.bbox = bbox
-        self.center = center
-
     def __getitem__(self, idx):
         label_path = self.root_dir + "labels/" + self.items[self.indices[idx]]
 
@@ -258,8 +215,11 @@ class PennActionDataset(BaseDataset):
 
 
         for frame, pose in zip(images, poses):
-            if self.train:
-                self.calc_gt_bb(pose)
+            if self.use_gt_bb:
+                bbox, center, window_size = get_bbox_from_pose(pose, bbox_offset=30)
+                self.bbox = bbox
+                self.center = center
+                self.window_size = window_size
             else:
                 self.calc_bbox_and_center(image_width, image_height)
 
