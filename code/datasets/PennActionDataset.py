@@ -79,7 +79,7 @@ class PennActionDataset(BaseDataset):
 
         if self.use_random_parameters:
             self.angles=np.array(range(-30, 30+1, 5))
-            self.scales=np.array([0.7, 1.0, 1.3, 2.5])
+            self.scales=np.array([0.7, 1.0, 1.3])
             self.flip_horizontal = np.array([0, 1])
 
         self.use_gt_bb = use_gt_bb
@@ -87,6 +87,8 @@ class PennActionDataset(BaseDataset):
         self.items = sorted(os.listdir(self.root_dir + "frames"))
         self.indices = []
         self.classes = {}
+
+        self.skip_random = False
 
         np.random.seed(None)
         st0 = np.random.get_state()
@@ -206,7 +208,15 @@ class PennActionDataset(BaseDataset):
         image_height = len(images[0])
         image_width = len(images[0][0])
 
-        self.set_augmentation_parameters()
+        if not self.skip_random:
+            self.set_augmentation_parameters()
+        else:
+            self.aug_conf = {}
+            self.aug_conf["scale"] = torch.ones(1)
+            self.aug_conf["angle"] = torch.zeros(1)
+            self.aug_conf["flip"] = torch.zeros(1)
+            self.aug_conf["trans_x"] = torch.zeros(1)
+            self.aug_conf["trans_y"] = torch.zeros(1)
 
         processed_frames = []
         processed_poses = []
@@ -217,8 +227,8 @@ class PennActionDataset(BaseDataset):
             if self.use_gt_bb:
                 bbox, center, window_size = get_bbox_from_pose(pose, bbox_offset=30)
                 self.bbox = bbox
+                self.window_size = (window_size.float() * self.aug_conf["scale"]).int()
                 self.center = center
-                self.window_size = window_size
             else:
                 self.calc_bbox_and_center(image_width, image_height)
 

@@ -59,6 +59,8 @@ class MPIIDataset(BaseDataset):
         self.labels = []
         missing_annnotation_count = 0
 
+        self.skip_random = False
+
         for idx in train_indeces:
             label = annotations["annolist"][0][0][0][idx]
             image_name = label["image"]["name"][0][0][0]
@@ -203,7 +205,15 @@ class MPIIDataset(BaseDataset):
         full_image_path = self.root_dir + "images/" + label["image_name"]
         image = io.imread(full_image_path)
 
-        self.set_augmentation_parameters()
+        if not self.skip_random:
+            self.set_augmentation_parameters()
+        else:
+            self.aug_conf = {}
+            self.aug_conf["scale"] = torch.ones(1)
+            self.aug_conf["angle"] = torch.zeros(1)
+            self.aug_conf["flip"] = torch.zeros(1)
+            self.aug_conf["trans_x"] = torch.zeros(1)
+            self.aug_conf["trans_y"] = torch.zeros(1)
 
         new_scale = label["scale"] * 1.25 # magic value
         new_objpose = np.array([label["obj_pose"][0], label["obj_pose"][1] + 12 * new_scale]) # magic values, no idea where they are comming from
