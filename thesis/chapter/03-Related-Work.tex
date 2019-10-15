@@ -819,10 +819,10 @@ Also, they achieved significantly better results on each individual part, includ
 \section{Video-based Human Action Recognition}
 
 In the following chapter, approaches for Human Action Recognition on video data will be discussed.
-First, some prominent works utilizing hand-crafted features will be discusssed.
+First, some prominent works utilizing hand-crafted features will be discussed.
 These approaches still perform well in modern scenarios and are sometimes used in conjunction with modern, neural network based approaches.
 Second, the Two-Stream architecture will be discussed, as it is the foundation for many state-of-the-art approaches today.
-Finally, Human Action Recognition approaches explicitly utilizing pose feature information are presented, since they show promise for end-to-end learning of the Human Action Recognition pipeline by training the pose estimator in tandum with the action classification network. 
+Finally, Human Action Recognition approaches explicitly utilizing pose feature information are presented, since they show promise for end-to-end learning of the Human Action Recognition pipeline by training the pose estimator in tandem with the action classification network. 
 
 \subsection{Shallow Methods}
 \label{sec:har_shallow}
@@ -848,7 +848,7 @@ By using a small window $W$, which is moved over the image $I$, and displacing t
     f(\Delta x, \Delta y) = \sum_{x_i, y_i \in W} (I(x_i,y_i) - I(x_i + \Delta x, y_i + \Delta y))^2.
 \end{equation}
 
-By using the Taylor series to approximate the second term of the subtraction, the error formular simplifies to
+By using the Taylor series to approximate the second term of the subtraction, the error formula simplifies to
 
 \begin{equation}
     \begin{split}
@@ -865,7 +865,7 @@ M = \sum_{x_i, y_i \in W}
     I_x I_y & I_y^2
 \end{bmatrix}
 $ is the second-moment matrix, with $I_x, I_y$ being the partial derivatives of $I$ in $x$ and $y$ direction, respectively.
-According to \cite{laptev_harris3d}, $M$ can be interpreted to describe the the covariances around the window center.
+According to \cite{laptev_harris3d}, $M$ can be interpreted to describe the covariances around the window center.
 Using the eigenvalues $\lambda_1, \lambda_2$ of $M$, edges and corners can be detected in the following way.
 If $\lambda_1 >>\lambda_2$ or $\lambda_1 << \lambda_2$, then an edge has been detected, since large change is only detected in one direction.
 Similarly, if both eigenvalues are small, then very little change is detected in both directions, meaning that the patch does neither contain an edge nor a corner.
@@ -897,10 +897,10 @@ An example of detected spatio-temporal interest points are shown in \fref{fig:sp
 \end{figure}
 
 Using the computed spatio-temporal interest points, the authors proceed to extract image descriptors around them.
-First, they define a volume around each interest point, the size of which is dependend upon the image scale since they compute features for multiple scales of the original image.
-Each of those volumes is then further partitioned into subvolumes of size $3 \times 3 \times 2$, where $2$ referres to the number of consecutive frames.
+First, they define a volume around each interest point, the size of which is dependent upon the image scale since they compute features for multiple scales of the original image.
+Each of those volumes is then further partitioned into subvolumes of size $3 \times 3 \times 2$, where $2$ refers to the number of consecutive frames.
 On each of those subvolumes, the authors compute \textit{Histogram of Oriented Gradients (HoG)} as well as \textit{Histogram of Oriented Flow (HoF)} descriptors.
-Similar to HoG, Histogram of Oriented Flow discretizes and clusters the values of a optical flow image into bins.
+Similar to HoG, Histogram of Oriented Flow discretises and clusters the values of a optical flow image into bins.
 Then, a histogram is created, containing the number of items for each bin.
 The authors, however, do not mention which algorithm was used to compute the optical flow.
 The histograms of all subvolumes are first normalized and then concatenated, resulting in a single HoG and HoF descriptor per volume.
@@ -912,7 +912,7 @@ The number of clusters was chosen because the authors claim that, empirically, t
 \begin{figure}[htb!]
     \centering
     \includegraphics[width=0.7\textwidth]{spatio-temporal-grid.png}
-    \caption{Four examples of spatio-temporal grid evaluated by the authors. \textbf{From left to right}: \textbf{(1)} Using the whole clip to compute the histogram. , \textbf{(2)} Split the number of frames in half, compute separate histograms and concatenate afterwads, \textbf{(3)} Split the clip horizontally into three subvolumes, spanning the whole temporal dimension, \textbf{(4)} Choose overlapping subvolumes in the spatial dimensions. The authors found \textbf{(3)} to achieve the best results. Image taken from \cite{laptev_learning_2008}. }
+    \caption{Four examples of spatio-temporal grid evaluated by the authors. \textbf{From left to right}: \textbf{(1)} Using the whole clip to compute the histogram. , \textbf{(2)} Split the number of frames in half, compute separate histograms and concatenate afterwards, \textbf{(3)} Split the clip horizontally into three subvolumes, spanning the whole temporal dimension, \textbf{(4)} Choose overlapping subvolumes in the spatial dimensions. The authors found \textbf{(3)} to achieve the best results. Image taken from \cite{laptev_learning_2008}. }
     \label{fig:spatio-temporal-grid}
 \end{figure}
 
@@ -920,7 +920,7 @@ To compute the descriptor for a video clip, the authors divide the whole volume 
 They refer to this as the spatio-temporal grid.
 For each subvolume, the descriptors computed are assigned to the nearest of the $4,000$ cluster centers and a histogram is computed over the cluster centers.
 Finally, the histograms of all subvolumes are concatenated and normalized, resulting in the final descriptor of the video clip.
-The authors evaluated different methods of subdiving the video clip and found the approach using three horizontal subvolumes to perform the best.
+The authors evaluated different methods of subdividing the video clip and found the approach using three horizontal subvolumes to perform the best.
 They argue that this is due to the nature of the dataset, where (mostly upright) subjects perform actions, and thus distinctions in horizontal direction are more important than in vertical direction.
 See \fref{fig:spatio-temporal-grid} for a visualization of some spatio-temporal grids evaluated by the authors.
 The grid described above is shown at position \textbf{(3)}.
@@ -952,17 +952,17 @@ Afterwards, image descriptors are computed along these dense trajectories.
 
 % Trajectory
 They start by sampling the initial interest points in a $5$ pixel grid.
-Afterwads, they decide to prune the grid to reduce the amount of computation necessary.
-This is achieved by removing sample points which are located inside homogenous areas, e.g., walls in the background or other flat surfaces.
-This is necessary because reliably tracking points over homogenous areas using optical flow is impossible \cite{wang_action_2013}.
+Afterwards, they decide to prune the grid to reduce the amount of computation necessary.
+This is achieved by removing sample points which are located inside homogeneous areas, e.g., walls in the background or other flat surfaces.
+This is necessary because reliably tracking points over homogeneous areas using optical flow is impossible \cite{wang_action_2013}.
 Also, optical flow is computed on all consecutive frame pairs using the optical flow algorithm provided by the OpenCV library \cite{bradski_opencv_2000}.
-Then, they procede to track each interest point using the optical flow field for $15$ frames, which results in a trajectory $(P_1, P_2, \dots, P_t)$ with $t \in [1, 15]$.
+Then, they proceed to track each interest point using the optical flow field for $15$ frames, which results in a trajectory $(P_1, P_2, \dots, P_t)$ with $t \in [1, 15]$.
 This process is repeated for different scales of the image in order to extract local and global image features.
 See \fref{fig:dense-trajectories-overview} for visualization of the process.
 The authors argue that limiting the length of a trajectory is necessary in order to avoid the trajectory from drifting away from the initial interest point too much.
 In the case where a trajectory is too stationary the authors prune it afterwards because they argue that such a trajectory does not contain sufficient motion information to be useful.
 Analogously, in the case where a trajectory contains a jump which is higher than $70$ percent of the overall displacement since the initial interest point the trajectory is also pruned, since, according to the authors, such a large displacement is usually present due to errors.
-Also, in the case where an interest point vanishes from one frame to another or a displacement larger than a certain threshold is occuring they decide to start a new trajectory by sampling a new initial point in the area where the last point was.
+Also, in the case where an interest point vanishes from one frame to another or a displacement larger than a certain threshold is occurring they decide to start a new trajectory by sampling a new initial point in the area where the last point was.
 The authors do not, however, specify how large this threshold is.
 
 % Descriptors
@@ -974,7 +974,7 @@ This vector is further normalized by the sum over all relative displacements, re
     T = \frac{(\Delta P_t, \dots, \Delta P_{t + L -1})}{\sum_t^{t+L-1} \lVert \Delta P_t \rVert}
 \end{equation}
 
-The authors use \textit{Histogram of Oriented Gradients (HoG)} \cite{dalal_histograms_2005}, \textit{Histogram of Optical Flow (HoF)} \cite{laptev_learning_2008} (see \sref{sec:laptev-shallow} for more information) as well as \textit{Motion Boundary Histograms (MBH)} \cite{dalal_human_2006} to extract features along the trajectoties, similar to the approach of \cite{laptev_learning_2008} \sref{sec:laptev-shallow}.
+The authors use \textit{Histogram of Oriented Gradients (HoG)} \cite{dalal_histograms_2005}, \textit{Histogram of Optical Flow (HoF)} \cite{laptev_learning_2008} (see \sref{sec:laptev-shallow} for more information) as well as \textit{Motion Boundary Histograms (MBH)} \cite{dalal_human_2006} to extract features along the trajectories, similar to the approach of \cite{laptev_learning_2008} \sref{sec:laptev-shallow}.
 Centered at each interest point along a trajectory, a $N \times N$ pixel area is defined with $N = 32$.
 These areas are then again subdivided into $n_\sigma \times n_\sigma$ subareas with $n_\sigma = 2$.
 The descriptors are then computed on each of these subareas and descriptors over $n_\tau = 3$ timesteps are then summed to form a single descriptor for each $n_\sigma \times n_\sigma \times n_\tau$ subvolume.
@@ -987,13 +987,13 @@ Afterwards, gradients are computed on both $x$ and $y$ flow images.
 On these gradient images, a histogram is computed analogously to HoG using eight bins.
 It is argued that MBH is highly robust to camera motion since this kind of motion is mostly constant in a movie context and thus results in the gradient of the optical flow being close to zero. 
 The authors decide to compute separate descriptors for $x$ and $y$, resulting in MBHx and MBHy.
-For HoG and HoF, they also chose to use eight bins for quanization.
+For HoG and HoF, they also chose to use eight bins for quantization.
 Additionally, for HoF, a ninth bin is added in cases where the flow magnitude is lower than a not specified threshold.
 
 The authors evaluate the contribution of each of the four descriptor types to the overall accuracy on multiple datasets.
 First, they find that the trajectory descriptor using the relative displacement vectors outperforms HoG on datasets where the background is not complex, i.e., in a laboratory environment.
 They argue that this is because tracking is significantly easier in such a environment.
-On datasets which focus on sport acitivies, HoG consistently outperforms HoF.
+On datasets which focus on sport activities, HoG consistently outperforms HoF.
 The authors argue that this is due to the importance of spatial context in sports actions since they often involve objects, i.e., a ball or a javelin, and specific environmental scenarios, such as arenas or track fields.
 Additionally, the authors find that MBH outperforms all other descriptors on most datasets.
 Especially in videos which are recorded by private individuals using cheap cameras or mobile phones MBH gains an advantage over other descriptors because it suppresses camera motion.
@@ -1035,8 +1035,8 @@ This procedure is further referred to as warping.
     \label{fig:idt-stages}
 \end{figure}
 
-The authors argue that the homography assumption, requiring the motion between frames to be planar, holds in their scenarios most of the times since the movement by independent subjects in the frame, such as actors, is small enough to be negligable.
-To compute $H$, the authors first compute SURF detectors \cite{bay_surf:_2006}, which are then used to compute point correspondenses in consecutive frames by using the nearest neighbour algorithm.
+The authors argue that the homography assumption, requiring the motion between frames to be planar, holds in their scenarios most of the times since the movement by independent subjects in the frame, such as actors, is small enough to be negligible.
+To compute $H$, the authors first compute SURF detectors \cite{bay_surf:_2006}, which are then used to compute point correspondences in consecutive frames by using the nearest neighbour algorithm.
 %TODO: Maybe short thing about surf detectors?
 They argue that SURF detectors robust to motion blur and are thus more useful for this task than other descriptors.
 Additionally, they track points using the optical flow by sampling points and tracking them in the consecutive frame.
@@ -1071,11 +1071,11 @@ Also, if they remove background trajectories, they gain an additional $1$ percen
 When investigating the individual contributions of the descriptors, the first thing the authors notices was that the HoG descriptors do not significantly increase over the baseline.
 However, this is to be expected, since HoG is a static descriptor.
 The authors attribute the small accuracy increase in HoG to the removal of background trajectories.
-Also, they notice that the HoF descriptor is comparable to MBH if the warped flow field is used, whereas MBH in the original Dense Trajectories approach significantly outperfomred HoF.
+Also, they notice that the HoF descriptor is comparable to MBH if the warped flow field is used, whereas MBH in the original Dense Trajectories approach significantly outperformed HoF.
 
-The authors additionaly investigated the contribution of the human detector.
+The authors additionally investigated the contribution of the human detector.
 For the experiment, they annotated a subset of the datasets with ground truth human bounding boxes and compared the accuracy gain over the baseline, which does not use human bounding boxes, and the bounding boxes computed by \cite{prest_weakly_2012}.
-They found that, using the computed bounding box, accuracy increases uppon the baseline by $1.8$ percentage points.
+They found that, using the computed bounding box, accuracy increases upon the baseline by $1.8$ percentage points.
 Using the ground truth, an additional increase in accuracy of $1.2$ percentage points was observed.
 The authors argue that the accuracy increases because the homography $H$ is more accurate when using a human bounding box, which then leads to a better approximation of the camera motion and in turn to better motion descriptors like HoF and MBH.
 
@@ -1086,7 +1086,7 @@ Recently, many approaches for action recognition in videos incorporate a concept
 For a better understanding of the approaches discussed later, a short overview over this concept is provided.
 
 As discussed previously (see \sref{sec:har_shallow}), the combination of spatial features, such as the HoG descriptor, and temporal features, such as the HoF descriptor, yielded significant improvements over the individual components.
-Many methods utilizied precomputed optical flow fields for computing temporal features (see \sref{sec:laptev-shallow} and \sref{sec:dense-trajectories}).
+Many methods utilized precomputed optical flow fields for computing temporal features (see \sref{sec:laptev-shallow} and \sref{sec:dense-trajectories}).
 With the success that CNNs achieved in computer vision tasks on still images, such as image classification and image segmentation, \cite{karpathy_large-scale_2014} proposed a similar approach for use in video action recognition.
 The authors, however, did not incorporate temporal information in form of optical flow fields into their architecture.
 Instead, they relied solely on passing multiple consecutive frames to 2D convolutional layers.
@@ -1095,14 +1095,14 @@ The authors were not able to achieve comparable results to the hand-crafted feat
 \begin{figure}[htb!]
     \centering
     \includegraphics[width=0.99\textwidth]{two-stream-architecture.png}
-    \caption{The Two-Stream architecture used by \cite{simonyan_two-stream_2014}. Notice that the spatial and temporal networks have nearly identical architecture, with the difference that the sencond convolutional layer in the temporal network does not have batch normalization to reduce memory consumption. Image taken from \cite{simonyan_two-stream_2014}. }
+    \caption{The Two-Stream architecture used by \cite{simonyan_two-stream_2014}. Notice that the spatial and temporal networks have nearly identical architecture, with the difference that the second convolutional layer in the temporal network does not have batch normalization to reduce memory consumption. Image taken from \cite{simonyan_two-stream_2014}. }
     \label{fig:two-stream-architecture}
 \end{figure}
 
 In order to improve upon this first approach, \cite{simonyan_two-stream_2014} proposed the \textit{Two-Stream Convolutional neural network}.
 Such a network is comprised of two individual networks.
 The first network extracts features from a single RGB frame of the video and, by using a softmax layer, classifies the present action.
-Simultaniously, the second network processes $L$ consecutive optical flow images and also outputs a classification using a softmax layer.
+Simultaneously, the second network processes $L$ consecutive optical flow images and also outputs a classification using a softmax layer.
 Both classification outputs are then fed to a multiclass linear Support Vector machine which then outputs the final action prediction.
 In \cite{simonyan_two-stream_2014}, the networks have almost the same, shallow architecture, consisting of $5$ convolutional and $2$ fully-connected layers, followed by a softmax layer.
 See \fref{fig:two-stream-architecture} for a visualization of the used architecture.
@@ -1117,7 +1117,7 @@ The authors evaluated the length of consecutive optical flow frames $L$ of an RG
 They noticed that $L=5$ and $L=10$ flow frames lead to similar performance, with $L=10$ being slightly better.
 Thus, they decided to set $L=10$.
 Additionally, they found that subtracting the mean flow image from every flow frame significantly improved the overall accuracy.
-They argue that this is due to the fact that such a subtrraction reduces the camera motion, similar to the homography approach by \cite{wang_action_2013} (see \sref{sec:improved-dense-trajectories}).
+They argue that this is due to the fact that such a subtraction reduces the camera motion, similar to the homography approach by \cite{wang_action_2013} (see \sref{sec:improved-dense-trajectories}).
 
 % Multi Task learning
 To train their model, the authors utilized \textit{multi task learning}.
@@ -1134,7 +1134,7 @@ They argue that this is the case because the Two-Stream network can generalise t
 \begin{figure}[htb!]
     \centering
     \includegraphics[width=0.99\textwidth]{five-architectures.png}
-    \caption{The five architecture types compared in \cite{carreira_quo_2017}. \textbf{e)} is a novel approach propsed by the authors, while \textbf{c)} is the Two-Stream approach proposed by \cite{simonyan_two-stream_2014}. Image taken from \cite{carreira_quo_2017}. }
+    \caption{The five architecture types compared in \cite{carreira_quo_2017}. \textbf{e)} is a novel approach proposed by the authors, while \textbf{c)} is the Two-Stream approach proposed by \cite{simonyan_two-stream_2014}. Image taken from \cite{carreira_quo_2017}. }
     \label{fig:five-architectures}
 \end{figure}
 
@@ -1144,10 +1144,10 @@ Recently, \cite{carreira_quo_2017} published a video dataset called \textit{Kine
 To inspect how much impact such pretraining in the domain of video has the authors reimplemented $5$ popular action recognition architecture types.
 
 First, an architecture where each frame of a video is fed through a 2D convolutional network, whose outputs get aggregated over time using a LSTM layer \cite{hochreiter_long_1997}.
-Second, the authors implement a model which uses 3D convolutional layer to process $k$ frames of a video simultaniously.
+Second, the authors implement a model which uses 3D convolutional layer to process $k$ frames of a video simultaneously.
 The idea is that such a model would not need additional temporal components as the 3D layers already capture temporal information.
 The architecture is based on \cite{tran_learning_2015}, however, the authors add additional batch normalization to allow for an accurate comparison to other architectures who use batch normalization.
-Third, the authors took the Two-Stream architecutre by \cite{simonyan_two-stream_2014}.
+Third, the authors took the Two-Stream architecture by \cite{simonyan_two-stream_2014}.
 Fourth, an extension to the Two-Stream architecture by \cite{feichtenhofer_convolutional_2016} is added.
 The extension exchanges the fusion stage of the traditional Two-Stream network with 3D convolutional layers.
 Also, this approach achieved state-of-the-art results on both UCF101 as well as HMDB51.
@@ -1223,8 +1223,8 @@ See \fref{fig:joint-angle-computation} for a visualization of this procedure.
 Besides this, they encode temporal information by computing the change in the previously mentioned values for consecutive frames.
 They find that the accuracy improves by $19$ percentage points over the baseline, suggesting that pose information is by far the most discriminative feature to use for action recognition \cite{jhuang_towards_2013}. 
 Also, adding the image features to the pose features does not significantly improve upon the accuracy. 
-The authors thus argue that, once pose features are used, the image feature contribution is negligable.
-Additionaly, they evaluate the use of estimated poses using the approach presented by \cite{yang_articulated_2011} (see \sref{sec:yangramanan} for a detailed explanation). 
+The authors thus argue that, once pose features are used, the image feature contribution is negligible.
+Additionally, they evaluate the use of estimated poses using the approach presented by \cite{yang_articulated_2011} (see \sref{sec:yangramanan} for a detailed explanation). 
 They find that, while the estimated pose is of low quality compared to the ground truth, this approach still outperforms the baseline approach, suggesting that even low quality pose information is highly relevant as a feature for action recognition.
 
 \subsubsection{Pose-CNN}
@@ -1256,7 +1256,7 @@ Afterwards, using the precomputed joint positions, they extract subimages around
 After passing all subimages through the network, the resulting feature vectors $f_t^p$ for time step $t$ and body part $p$ are aggregated by first computing minimum and maximum values $m_i, M_i$ for each descriptor dimension $i$.
 Then, the minimum values for each dimension are concatenated, followed by another concatenation of the maximum values.
 The authors refer to this vector as the static video descriptor since it is computed per frame without taking future or past frames into account.
-They compute another descriptor, called the dynamic video descriptor, where the original feature descpritors $f_t^p$ get subtracted by $f_{(t-4)}^p$, thus encoding temporal information.
+They compute another descriptor, called the dynamic video descriptor, where the original feature descriptors $f_t^p$ get subtracted by $f_{(t-4)}^p$, thus encoding temporal information.
 The aggregation of minimum and maximum values following that is identical to the aggregation for the static video descriptor.
 Finally, both descriptors are normalized and again concatenated, yielding the final video descriptor.
 The resulting feature vector is then used as input for a linear Support Vector Machine, used for action classification.
@@ -1269,11 +1269,11 @@ However, when using estimated pose, their approach significantly outperforms \te
 While the authors give no explanation for why this might be the case, one possibility would be that the conclusion of \cite{jhuang_towards_2013} that visual features and flow do not significantly improve upon accuracy when also utilizing pose might not hold in all situations.
 For example, consider two actions like \textit{military salute} and \textit{talking on the phone}, which have similar poses.
 When also considering image features, the distinction between an empty hand (\textit{military salute}) and a hand containing an object (\textit{talking on the phone}) can aid in the decision process.
-Also, since the authors use a different approach for estimating pose as opossed to \cite{jhuang_towards_2013} and they do not evaluate the accuracy of the pose estimator individually it might be the case that the pose information itself is not of sufficient quality for the pose features computed by \textit{HLPF} to be discriminative enough.
+Also, since the authors use a different approach for estimating pose as opposed to \cite{jhuang_towards_2013} and they do not evaluate the accuracy of the pose estimator individually it might be the case that the pose information itself is not of sufficient quality for the pose features computed by \textit{HLPF} to be discriminative enough.
 
 Interestingly, the authors find that, while their approach does not outperform \textit{IDT}, a combination of their descriptor with \textit{IDT} significantly outperforms \textit{IDT} on its own.
 The authors argue that, because \textit{IDT} uses a larger time window for feature aggregation, actions like \textit{kick ball} achieve higher accuracy while on actions like \textit{shoot gun} and \textit{waving} the image features extracted by their method provide more information and thus higher accuracy.
-A combination thus improves the accuracy in both scenarios simultaniously.
+A combination thus improves the accuracy in both scenarios simultaneously.
 %- TODO: Explain Fisher Vector (Improving the Fisher kernel for large-scale image classification)
 
 \subsubsection{PoTion}
@@ -1322,7 +1322,7 @@ In their evaluation, the authors find they achieve the highest accuracy by using
 
 For evaluation, the authors also propose a shallow CNN for classification using only the precomputed representations discussed earlier.
 The network is made up of $6$ convolutional layers, followed by a single full-connected layer.
-However, the authors find that this shallow classification network alone does not achiveve high accuracies compared the the previous work.
+However, the authors find that this shallow classification network alone does not achieve high accuracies compared to the previous work.
 On the JHMDB dataset, the authors achieve $57.0$ percent accuracy (as compared to $61.1$ percent achieved by \cite{cheron_pcnn_2015} (see \sref{sec:pcnn})) and on HMDB, the authors achieve $43.7$ percent accuracy (as compared to $59.4$ and $61.7$ percent by \cite{simonyan_two-stream_2014} (see \sref{sec:two-stream}) and \cite{wang_action_2013} \sref{sec:improved-dense-trajectories} respectively).
 
 The authors also evaluate the effect of adding their representation to other previous approaches and find that adding it to the previous state-of-the-art approach by \cite{carreira_quo_2017} (see \sref{sec:quovadis}) they were able to improve the accuracy slightly by $0.5$ ($87.9$ percent as opposed to $87.4$ percent) percentage points using estimated poses on the JHMDB dataset.
@@ -1343,7 +1343,7 @@ They propose two different interpolation strategies, referred to as \textit{temp
 Let $f_l$ be the frame where the joint was last visible.
 This frame is then followed by $n$ frames, where it is not visible, followed by $f_k$, where it becomes visible again.
 Then, the authors linearly interpolate the position of the missing joint for each frame $f_{l+1}, \dots, f_{l+n}$ using the positions in $f_l$ and $f_k$.
-They do, however, not specify what constitues as a \textit{small number of frames}, i.e., how small $n$ has to be in order for this approach to lead to good results.
+They do, however, not specify what constitutes as a \textit{small number of frames}, i.e., how small $n$ has to be in order for this approach to lead to good results.
 \textit{Spatial interpolation} is used for long-term occlusion, i.e., for large $n$.
 The authors argue that this is necessary since \textit{temporal interpolation} leads to worse results the bigger $n$ gets.
 Again, they do not specify for which value of $n$ \textit{spatial interpolation} becomes necessary.
