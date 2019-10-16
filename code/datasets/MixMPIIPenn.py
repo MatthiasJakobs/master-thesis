@@ -3,69 +3,101 @@ import torch.utils.data as data
 
 from datasets.PennActionDataset import PennActionDataset
 from datasets.MPIIDataset import MPIIDataset
+from datasets.BaseDataset import BaseDataset
+
+import random
+import math
 
 import glob
 import random
 
-class MixMPIIPenn(data.Dataset):
-    def __init__(self, transform=None, use_random_parameters=False, train=True, val=False, augmentation_amount=1):
+class MixMPIIPenn(BaseDataset):
+    def __init__(self, root_dir, transform=None, use_random_parameters=False, use_saved_tensors=False, train=True, val=False, augmentation_amount=1):
 
-        assert train
+        super().__init__(root_dir, use_random_parameters=use_random_parameters, use_saved_tensors=use_saved_tensors, train=train, val=val)
 
-        self.pennaction = PennActionDataset("/data/mjakobs/data/pennaction/", use_random_parameters=use_random_parameters, train=train, val=val)
-        self.mpii = MPIIDataset("/data/mjakobs/data/mpii/", use_random_parameters=use_random_parameters, use_saved_tensors=True, train=train, val=val)
+        assert train # should not be used for testing
+
+        self.pennaction = PennActionDataset("/data/mjakobs/data/pennaction/", use_random_parameters=use_random_parameters, train=train, val=val, use_gt_bb=True)
+        self.mpii = MPIIDataset("/data/mjakobs/data/mpii/", use_random_parameters=use_random_parameters, use_saved_tensors=False, train=train, val=val)
 
         self.padding_amount = 8
 
-        self.train = train
-        self.val = val
+        self.sample_amount = 11 # this leads to a approximate 2/3 mpii 1/3 pennaction mix
 
         assert augmentation_amount > 0
         self.augmentation_amount = augmentation_amount
 
     def __len__(self):
-        return len(self.pennaction) + len(self.mpii)
+        return len(self.mpii) + len(self.pennaction) * self.sample_amount
 
     def __getitem__(self, idx):
-        dice_roll_dataset = random.randint(0, 3)
-        # if dice_roll == 0 or 1 or 2 then use MPII, else PennAction
-        
 
-        if self.use_random_parameters:
+        if self.val:
+            train_test_folder = "val/"
+        else:
+            train_test_folder = "train/"
+
+        if not self.val and self.use_random_parameters:
             dice_roll = random.randint(0, self.augmentation_amount)
             if dice_roll == 0:
-                self.set_prefix("")
+                self.mpii.skip_random = True
+                self.pennaction.skip_random = True
             else:
-                self.set_prefix("rand{}_".format(dice_roll))
+                self.mpii.skip_random = False
+                self.pennaction.skip_random = False
+                train_test_folder = "rand_train/"
 
-        padded_indice = str(idx).zfill(self.padding_amount)
+        name_path = self.root_dir + train_test_folder
+        item_name = str(idx).zfill(self.padding_amount)
 
-        t_indices = torch.load(self.indices_folder + self.train_test_folder + str(self.split) + "/" + padded_indice + ".indices.pt")
+        if idx > len(self.mpii):
+            # pennaction
+            real_index = math.floor((idx - len(self.mpii)) / self.sample_amount)
+            if self.use_saved_tensors:
+                image = torch.load(name_path + "images/" + item_name + ".image.pt")
+                pose = torch.load(name_path + "annotations/" + item_name + ".pose.pt")
+                matrix = torch.load(name_path + "annotations/" + item_name + ".matrix.pt")
+                bbox = torch.load(name_path + "annotations/" + item_name + ".bbox.pt")
+            else:
+                entry = self.pennaction[real_index]
+                clip_length = len(entry["normalized_frames"])
+                frame_idx = random.randint(0, clip_length)
 
-        padded_filename = str(int(t_indices[-1].item())).zfill(self.padding_amount)
+                image = entry["normalized_frames"][frame_idx]
+                pose = entry["normalized_poses"][frame_idx]
+                matrix = entry["trans_matrices"][frame_idx]
+                bbox = entry["bbox"][frame_idx]
+                
+                torch.save(image, name_path + "images/" + item_name + ".image.pt")
+                torch.save(pose, name_path + "annotations/" + item_name + ".pose.pt")
+                torch.save(matrix, name_path + "annotations/" + item_name + ".matrix.pt")
+                torch.save(bbox, name_path + "annotations/" + item_name + ".bbox.pt")
+        else:
+            # mpii
+            self.mpii.skip_random = True
 
-        t_poses = torch.load(self.annotation_folder + padded_filename + ".poses.pt")
-        t_action = torch.load(self.annotation_folder + padded_filename + ".action_1h.pt")
-        t_bbox = torch.load(self.annotation_folder + padded_filename + ".bbox.pt")
-        t_index = torch.load(self.annotation_folder + padded_filename + ".index.pt")
-        t_parameters = torch.load(self.annotation_folder + padded_filename + ".parameters.pt")
-        t_frames = torch.load(self.images_folder + padded_filename + ".frames.pt")
-        t_matrices = torch.load(self.annotation_folder + padded_filename + ".matrices.pt")
-
-        start = int(t_indices[0].item())
-        end = int(t_indices[1].item())
-
-        t_frames = t_frames[start:end]
-        t_poses = t_poses[start:end]
-        t_matrices = t_matrices[start:end]
-        t_bboxes = t_bbox[start:end]
+            if self.use_saved_tensors:
+                image = torch.load(name_path + "images/" + item_name + ".image.pt")
+                pose = torch.load(name_path + "annotations/" + item_name + ".pose.pt")
+                matrix = torch.load(name_path + "annotations/" + item_name + ".matrix.pt")
+                bbox = torch.load(name_path + "annotations/" + item_name + ".bbox.pt")                
+            else:
+                entry = self.mpii[idx]
+                image = entry["normalized_image"]
+                pose = entry["normalized_pose"]
+                matrix = entry["trans_matrix"]
+                bbox = entry["bbox"]
+                
+                torch.save(image, name_path + "images/" + item_name + ".image.pt")
+                torch.save(pose, name_path + "annotations/" + item_name + ".pose.pt")
+                torch.save(matrix, name_path + "annotations/" + item_name + ".matrix.pt")
+                torch.save(bbox, name_path + "annotations/" + item_name + ".bbox.pt")
 
         return {
-            "frames": t_frames,
-            "poses": t_poses,
-            "action_1h": t_action,
-            "trans_matrices": t_matrices,
-            "indices": t_indices,
-            "bbox": t_bboxes,
-            "parameters": t_parameters
+            "normalized_image": image,
+            "normalized_pose": pose,
+            "trans_matrix": matrix,
+            "bbox": bbox
         }
+
