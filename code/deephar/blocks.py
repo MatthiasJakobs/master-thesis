@@ -3,6 +3,8 @@ import numpy as np
 from deephar.layers import *
 from deephar.utils import spatial_softmax
 
+import time
+
 class Stem(nn.Module):
 
     def __init__(self):
@@ -32,13 +34,26 @@ class Stem(nn.Module):
 
 
     def forward(self, x):
+        #print("size beginning of stem", torch.cuda.max_memory_allocated() / 1024 / 1024)
         out = self.cba1(x)
+        # for layer in self.cba1:
+        #     try:
+        #         print(layer.weight.size())
+        #     except AttributeError:
+        #         print(layer, "has no weights")
+        #
+        # print("output size of stem object", out.nelement() * out.element_size() / 1024 / 1024)
+        # print("size after grad calc", torch.cuda.max_memory_allocated() / 1024 / 1024)
         out = self.cba2(out)
         out = self.cba3(out)
 
         a = self.cba4(out) #96, 61, 61
         b = self.maxpool1(out) #64,61,61
         out = torch.cat((a,b), 1)
+        # del a
+        # del b
+        # if torch.cuda.is_available():
+        #     torch.cuda.empty_cache()
 
         a = self.cba5(out)
         a = self.cb1(a)
@@ -49,18 +64,36 @@ class Stem(nn.Module):
         b = self.cb2(b)
 
         out = torch.cat((a,b), 1)
+        # del a
+        # del b
+        # if torch.cuda.is_available():
+        #     torch.cuda.empty_cache()
 
         a = self.acb1(out)
         b = self.maxpool2(out)
 
         out = torch.cat((a,b), 1)
+        # del a
+        # del b
+        # if torch.cuda.is_available():
+        #     torch.cuda.empty_cache()
 
         # sep_conv_residual
         a = self.acb2(out)
+        # print("size before sepconf", torch.cuda.max_memory_allocated() / 1024 / 1024)
         b = self.sep_acb1(out)
+        # print("size after sepconf", torch.cuda.max_memory_allocated() / 1024 / 1024)
+        # print(torch.cuda.memory_allocated() / 1024 / 1024)
+        # time.sleep(1000)
 
         out = a + b
-
+        # del a
+        # del b
+        # if torch.cuda.is_available():
+        #     torch.cuda.empty_cache()
+        #
+        # print("output size of stem object", out.nelement() * out.element_size() / 1024 / 1024)
+        # print(out.shape)
         return out
 
 class BlockA(nn.Module):
@@ -98,6 +131,10 @@ class BlockA(nn.Module):
         b = nn.functional.interpolate(b, scale_factor=2, mode="nearest")
 
         out = b + self.sacb6(x)
+        # del a
+        # del b
+        # if torch.cuda.is_available():
+        #     torch.cuda.empty_cache()
         return out
 
 class BlockB(nn.Module):
@@ -207,9 +244,9 @@ class PoseRegressionWithContext(nn.Module):
         # Context aggregation
         pxi = yc[:, :, 0].unsqueeze(-1)
         pyi = yc[:, :, 1].unsqueeze(-1)
-        
-        pxi = pxi * pc 
-        pyi = pyi * pc 
+
+        pxi = pxi * pc
+        pyi = pyi * pc
 
         context_sum = self.create_context_sum_layer()
 

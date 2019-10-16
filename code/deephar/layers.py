@@ -35,9 +35,9 @@ class Residual_Sep_ACB(nn.Module):
 
         self.acb1 = ACB(input_filters=input_filters, output_filters=output_filters, kernel_size=(1,1), padding=0)
         self.acb2 = ACB(input_filters=input_filters, output_filters=output_filters, kernel_size=(1,1), padding=0)
-    
+
         self.relu = nn.ReLU()
-        self.sep_conv = SeparableConv2D(input_filters=input_filters, output_filters=output_filters, kernel_size=kernel_size, padding=padding) 
+        self.sep_conv = SeparableConv2D(input_filters=input_filters, output_filters=output_filters, kernel_size=kernel_size, padding=padding)
         self.batch_norm = nn.BatchNorm2d(output_filters, momentum=0.99, eps=0.001)
 
     def forward(self, x):
@@ -70,7 +70,7 @@ def Sep_ACB(input_filters=384, output_filters=576, kernel_size=(3,3), stride=(1,
         nn.ReLU(),
         SeparableConv2D(input_filters=input_filters, output_filters=output_filters, kernel_size=kernel_size, padding=padding),
         nn.BatchNorm2d(output_filters, momentum=0.99, eps=0.001)
-    )     
+    )
 
 def CB(input_filters=3, output_filters=32, kernel_size=(3,3), stride=(1,1), padding=1):
     return nn.Sequential(
@@ -105,7 +105,7 @@ class Softargmax(nn.Module):
         w2 = torch.zeros((input_filters, input_filters, 1, 1), dtype=torch.float32)
         if dim == 1:
             self.w_copy = w1
-        
+
         for i in range(input_filters):
             for idx in range(2):
                 if idx == 0:
@@ -116,7 +116,7 @@ class Softargmax(nn.Module):
         conv = SeparableConv2D(input_filters=input_filters, output_filters=output_filters, kernel_size=kernel_size, padding=0, custom_weights=[nn.Parameter(w1, requires_grad=False), nn.Parameter(w2, requires_grad=False)])
 
         return conv
-    
+
     def __init__(self, input_filters=5, output_filters=5, kernel_size=(3,3)):
         super(Softargmax, self).__init__()
 
@@ -132,7 +132,7 @@ class Softargmax(nn.Module):
         x_x = torch.squeeze(x_x, dim=-1)
         x_x = torch.squeeze(x_x, dim=-1)
         x_x = x_x.reshape((-1, self.output_filters, 1))
-        
+
         x_y = self.xy(x)
         x_y = torch.squeeze(x_y, dim=-1)
         x_y = torch.squeeze(x_y, dim=-1)
@@ -155,35 +155,29 @@ class JointProbability(nn.Module):
         x = self.sigmoid(x)
         x = torch.squeeze(x, dim=-1)
         x = torch.squeeze(x, dim=-1)
-  
+
         return x.reshape((-1, self.filters, 1))
 
 # based on https://discuss.pytorch.org/t/any-pytorch-function-can-work-as-keras-timedistributed/1346/4
 class TimeDistributedPoseEstimation(nn.Module):
     def __init__(self, module):
         super(TimeDistributedPoseEstimation, self).__init__()
-        self.module = module
+        self.pose_estimator = module
 
     def forward(self, x):
 
         # Squash samples and timesteps into a single axis
         size_before = x.size()
 
-        print("before reshape")
-        print(torch.cuda.max_memory_allocated(device=0))
-
         x = x.contiguous().view(size_before[0] * size_before[1], 3, 255, 255)  # (samples * timesteps, input_size)
-        print("after reshape")
-        print(torch.cuda.max_memory_allocated(device=0))
 
-        train_poses, poses, heatmaps, features = self.module(x)
+        train_poses, poses, heatmaps, features = self.pose_estimator(x)
         train_poses = train_poses.permute(1, 0, 2, 3)
         poses = poses.squeeze(0)
 
         features = features.contiguous().view((size_before[0], size_before[1], 576, 32, 32))
         poses = poses.contiguous().view((size_before[0], size_before[1], 16, 3))
-        train_poses = train_poses.contiguous().view((size_before[0], size_before[1], self.module.blocks, 16, 3))
+        train_poses = train_poses.contiguous().view((size_before[0], size_before[1], self.pose_estimator.blocks, 16, 3))
         heatmaps = heatmaps.contiguous().view((size_before[0], size_before[1], 16, 32, 32))
-
 
         return train_poses, poses, heatmaps, features

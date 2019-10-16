@@ -402,13 +402,19 @@ class HAR_E2E(HAR_Testing_Experiment):
     def train(self, train_objects):
         self.model.train()
         frames = train_objects["frames"].to(self.device)
+
+        batch_size = len(frames)
+
+        predicted_poses, _, pose_predicted_actions, vis_predicted_actions, _ = self.model(frames, finetune=True)
+        del frames
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
         actions = train_objects["action_1h"].to(self.device)
         ground_poses = train_objects["poses"].to(self.device)
 
         actions = actions.unsqueeze(1)
         actions = actions.expand(-1, self.conf["num_blocks"], -1)
-
-        predicted_poses, _, pose_predicted_actions, vis_predicted_actions, _ = self.model(frames, finetune=True)
 
         partial_loss_pose = torch.sum(categorical_cross_entropy(pose_predicted_actions, actions))
         partial_loss_action = torch.sum(categorical_cross_entropy(vis_predicted_actions, actions))
@@ -431,10 +437,10 @@ class HAR_E2E(HAR_Testing_Experiment):
 
         binary_crossentropy = nn.BCELoss()
 
-        pred_pose = pred_pose.contiguous().view(len(frames) * 16, self.conf["num_blocks"], 16, 2)
-        ground_poses = ground_poses.contiguous().view(len(frames) * 16, self.conf["num_blocks"], 16, 2)
-        pred_vis = pred_vis.contiguous().view(len(frames) * 16, self.conf["num_blocks"], 16)
-        ground_vis = ground_vis.contiguous().view(len(frames) * 16, self.conf["num_blocks"], 16)
+        pred_pose = pred_pose.contiguous().view(batch_size * 16, self.conf["num_blocks"], 16, 2)
+        ground_poses = ground_poses.contiguous().view(batch_size * 16, self.conf["num_blocks"], 16, 2)
+        pred_vis = pred_vis.contiguous().view(batch_size * 16, self.conf["num_blocks"], 16)
+        ground_vis = ground_vis.contiguous().view(batch_size * 16, self.conf["num_blocks"], 16)
 
         vis_loss = binary_crossentropy(pred_vis, ground_vis)
 
@@ -443,7 +449,6 @@ class HAR_E2E(HAR_Testing_Experiment):
 
         loss = pose_loss + har_loss
 
-        del frames
         del actions
         del ground_poses
         del pose_predicted_actions
@@ -720,6 +725,7 @@ class MPIIExperiment(ExperimentBase):
         else:
             aug_amount = 1
 
+        print(self.conf["use_saved_tensors"])
         self.ds_train = MPIIDataset("/data/mjakobs/data/mpii/", train=True, val=False, use_random_parameters=self.conf["use_random_parameters"], use_saved_tensors=self.conf["use_saved_tensors"], augmentation_amount=aug_amount)
         self.ds_val = MPIIDataset("/data/mjakobs/data/mpii/", train=True, val=True, use_random_parameters=False, use_saved_tensors=self.conf["use_saved_tensors"])
 
