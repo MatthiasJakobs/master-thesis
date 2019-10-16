@@ -37,6 +37,8 @@ class PennActionFragmentsDataset(data.Dataset):
         else:
             self.train_test_folder = "test/"
 
+        self.set_prefix("")
+
         self.number_of_fragments = len(glob.glob("{}{}indices/{}*".format(self.root_dir, self.prefix, self.train_test_folder)))
 
     def set_prefix(self, path):
@@ -58,7 +60,7 @@ class PennActionFragmentsDataset(data.Dataset):
                 self.set_prefix("rand{}_".format(dice_roll))
 
         padded_indice = str(idx).zfill(self.padding_amount)
-        
+
         t_indices = torch.load(self.indices_folder + self.train_test_folder + padded_indice + ".indices.pt")
         print(self.indices_folder + self.train_test_folder + padded_indice + ".indices.pt")
 
