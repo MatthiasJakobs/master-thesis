@@ -602,9 +602,7 @@ class Pose_JHMDB(ExperimentBase):
                 trans_matrices = trans_matrices.contiguous().view(val_data["trans_matrices"].size()[0] * val_data["trans_matrices"].size()[1], 3, 3)
 
                 _, predictions, _, _ = self.model(val_images)
-                print("before squeeze", predictions.shape)
                 predictions = predictions.squeeze(dim=0)
-                print("after squeeze", predictions.shape)
 
                 if predictions.dim() == 2:
                     predictions = predictions.unsqueeze(0)
