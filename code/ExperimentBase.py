@@ -476,7 +476,16 @@ class Pose_JHMDB(ExperimentBase):
 
     def preparation(self):
 
-        self.model = Mpii_4(num_context=0).to(self.device)
+        nr_blocks = self.conf["num_blocks"]
+        context = self.conf["nr_context"]
+        
+        if nr_blocks == 2:
+            self.model = Mpii_2(num_context=context).to(self.device)    
+        if nr_blocks == 4:
+            self.model = Mpii_4(num_context=context).to(self.device)    
+        if nr_blocks == 8:
+            self.model = Mpii_8(num_context=context).to(self.device)    
+
         if self.use_pretrained:
             print("Using pretrained model")
             self.model.load_state_dict(torch.load("/data/mjakobs/data/pretrained_weights_4", map_location=self.device))
