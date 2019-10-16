@@ -145,9 +145,65 @@ def create_heatmap(x, y, covariance, width=255, height=255):
     img = zz.reshape((yres,xres))
     return img
 
-def get_bbox_from_pose(pose):
-    print(pose.shape)
+def get_bbox_from_pose(pose, bbox_offset=None):
+    # Assumption: pose in int32
+    min_x = 1e10
+    max_x = -1e10
+    min_y = 1e10
+    max_y = -1e10
 
-    valid = get_valid_joints(pose, need_sum=False)
+    bbox = torch.IntTensor(4)
 
+    for joint in pose:
+        x = joint[0].item()
+        y = joint[1].item()
+        try:
+            vis = joint[2].item()
+        except:
+            vis = 1
+
+        if vis == 0:
+            continue
+
+        if x < 0 or y < 0:
+            continue
+
+        if x < min_x:
+            min_x = x
+
+        if x > max_x:
+            max_x = x
+
+        if y < min_y:
+            min_y = y
+
+        if y > max_y:
+            max_y = y
+
+    bbox[0] = min_x
+    bbox[1] = min_y
+    bbox[2] = max_x
+    bbox[3] = max_y
+
+    if bbox_offset is not None:
+        half_offset = int(bbox_offset / 2.0)
+        bbox[0] = bbox[0] - half_offset
+        bbox[1] = bbox[1] - half_offset
+        bbox[2] = bbox[2] + half_offset
+        bbox[3] = bbox[3] + half_offset
+
+    bbox_width = torch.abs(bbox[0] - bbox[2]).item()
+    bbox_height = torch.abs(bbox[1] - bbox[3]).item()
+
+    # if windo_size_offset is not None:
+    #     window_size = torch.IntTensor([max(bbox_height, bbox_width) + windo_size_offset, max(bbox_height, bbox_width) + windo_size_offset])
+    # else:
+    #     window_size = torch.IntTensor([max(bbox_height, bbox_width), max(bbox_height, bbox_width)])
+    window_size = torch.IntTensor([max(bbox_height, bbox_width), max(bbox_height, bbox_width)])
+    center = torch.IntTensor([
+        bbox[2] - bbox_width / 2,
+        bbox[3] - bbox_height / 2
+    ])
+
+    return bbox, center, window_size
     

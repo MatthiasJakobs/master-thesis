@@ -28,7 +28,7 @@ class MPIIDataset(BaseDataset):
         - When I do it like below, almost exactly size(me) = size(train_luvizon) + size(val_luvizon)
     '''
 
-    def __init__(self, root_dir, transform=None, use_random_parameters=True, train=True, val=False, use_saved_tensors=False):
+    def __init__(self, root_dir, transform=None, use_random_parameters=True, train=True, val=False, use_saved_tensors=False, augmentation_amount=1):
         super().__init__(root_dir, use_random_parameters=use_random_parameters, use_saved_tensors=use_saved_tensors, train=train, val=val)
 
         assert train == True # no test set available
@@ -39,6 +39,9 @@ class MPIIDataset(BaseDataset):
 
         train_binary = annotations["img_train"][0][0][0]
         train_indeces = np.where(np.array(train_binary))[0]
+
+        assert augmentation_amount > 0
+        self.augmentation_amount = augmentation_amount
 
         if self.use_random_parameters:
             self.prefix = "rand_"
@@ -55,6 +58,8 @@ class MPIIDataset(BaseDataset):
 
         self.labels = []
         missing_annnotation_count = 0
+
+        self.skip_random = False
 
         for idx in train_indeces:
             label = annotations["annolist"][0][0][0][idx]
@@ -164,11 +169,11 @@ class MPIIDataset(BaseDataset):
                 train_test_folder = "train/"
 
             if self.use_random_parameters:
-                dice_roll = random.randint(0, 1)
+                dice_roll = random.randint(0, self.augmentation_amount)
                 if dice_roll == 0:
-                    prefix = "rand1_"
-                else:
                     prefix = ""
+                else:
+                    prefix = "rand{}_".format(dice_roll)
             else:
                 prefix = ""
 
@@ -200,7 +205,15 @@ class MPIIDataset(BaseDataset):
         full_image_path = self.root_dir + "images/" + label["image_name"]
         image = io.imread(full_image_path)
 
-        self.set_augmentation_parameters()
+        if not self.skip_random:
+            self.set_augmentation_parameters()
+        else:
+            self.aug_conf = {}
+            self.aug_conf["scale"] = torch.ones(1)
+            self.aug_conf["angle"] = torch.zeros(1)
+            self.aug_conf["flip"] = torch.zeros(1)
+            self.aug_conf["trans_x"] = torch.zeros(1)
+            self.aug_conf["trans_y"] = torch.zeros(1)
 
         new_scale = label["scale"] * 1.25 # magic value
         new_objpose = np.array([label["obj_pose"][0], label["obj_pose"][1] + 12 * new_scale]) # magic values, no idea where they are comming from
@@ -274,27 +287,6 @@ class MPIIDataset(BaseDataset):
         output["head_size"] = headsize
         output["trans_matrix"] = trans_matrix
         output["parameters"] = t_parameters
-
-        # if not self.use_saved_tensors:
-        #     name_path = self.root_dir + "{}tensors/{}".format(self.prefix, label["image_name"])
-        #     if not os.path.exists(name_path + ".image_path.pt"):
-        #         torch.save(t_filepath, name_path + ".image_path.pt")
-        #     if not os.path.exists(name_path + ".normalized_image.pt"):
-        #         torch.save(t_normalized_image, name_path + ".normalized_image.pt")
-        #     if not os.path.exists(name_path + ".normalized_pose.pt"):
-        #         torch.save(t_normalized_pose, name_path + ".normalized_pose.pt")
-        #     if not os.path.exists(name_path + ".original_pose.pt"):
-        #         torch.save(t_original_pose, name_path + ".original_pose.pt")
-        #     if not os.path.exists(name_path + ".headsize.pt"):
-        #         torch.save(t_headsize, name_path + ".headsize.pt")
-        #     if not os.path.exists(name_path + ".trans_matrix.pt"):
-        #         torch.save(t_trans_matrix, name_path + ".trans_matrix.pt")
-        #     # if not os.path.exists(name_path + ".original_size.pt"):
-        #     #     torch.save(t_original_size, name_path + ".original_size.pt")
-        #     if not os.path.exists(name_path + ".bbox.pt"):
-        #         torch.save(t_bbox, name_path + ".bbox.pt")            
-        #     if not os.path.exists(name_path + ".parameters.pt"):
-        #         torch.save(t_parameters, name_path + ".parameters.pt")
 
         return output
 

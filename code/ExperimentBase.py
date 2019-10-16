@@ -204,7 +204,9 @@ class HAR_Testing_Experiment(ExperimentBase):
 
         print("Fine Tuning: " + str(self.fine_tune))
 
+
         self.model = DeepHar(num_actions=21, use_gt=True, model_path="/data/mjakobs/data/pretrained_jhmdb").to(self.device)
+
         self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False, use_random_parameters=True)
         self.ds_val = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=True)
         self.ds_test = JHMDBDataset("/data/mjakobs/data/jhmdb/", train=False)
@@ -246,6 +248,9 @@ class HAR_Testing_Experiment(ExperimentBase):
         frames = train_objects["frames"].to(self.device)
         actions = train_objects["action_1h"].to(self.device)
 
+        print("after train data batch")
+        print(torch.cuda.max_memory_allocated(device=0))
+
         actions = actions.unsqueeze(1)
         actions = actions.expand(-1, 4, -1)
 
@@ -255,12 +260,25 @@ class HAR_Testing_Experiment(ExperimentBase):
         partial_loss_action = torch.sum(categorical_cross_entropy(vis_predicted_actions, actions))
         losses = partial_loss_pose + partial_loss_action
 
+        del frames
+        del actions
+
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
+        print("before backward")
+        print(torch.cuda.max_memory_allocated(device=0))
+
         losses.backward()
 
         self.train_writer.write([self.iteration, losses.item()])
 
         self.optimizer.step()
         self.optimizer.zero_grad()
+
+        print("after zero_grad")
+        print(torch.cuda.max_memory_allocated(device=0))
+
 
         self.iteration = self.iteration + 1
 
@@ -304,6 +322,14 @@ class HAR_Testing_Experiment(ExperimentBase):
                 total = total + len(pred_class)
                 correct = correct + torch.sum(pred_class == ground_class).item()
 
+            del frames
+            del actions
+            del predicted_poses
+            del prediction
+
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+
             accuracy = correct / float(total)
 
             self.val_writer.write([self.iteration, accuracy])
@@ -337,11 +363,12 @@ class HAR_Testing_Experiment(ExperimentBase):
                 assert len(single_clip[0]) == 16
 
                 spacing = 8
-                nr_multiple_clips = int((sequence_length - 16) / spacing)
+                nr_multiple_clips = int((sequence_length - 16) / spacing) + 1
                 multi_clip = torch.zeros(nr_multiple_clips, 16, 3, 255, 255)
                 for i in range(nr_multiple_clips):
                     multi_clip[i] = frames[0, i * spacing : i * spacing + 16]
 
+                multi_clip = multi_clip.to(self.device)
                 _, _, _, _, single_result = self.model(single_clip)
                 _, _, _, _, multi_result = self.model(multi_clip)
 
@@ -375,43 +402,64 @@ class HAR_E2E(HAR_Testing_Experiment):
     def train(self, train_objects):
         self.model.train()
         frames = train_objects["frames"].to(self.device)
-        actions = train_objects["action_1h"].to(self.device)
 
+        batch_size = len(frames)
+
+        predicted_poses, _, pose_predicted_actions, vis_predicted_actions, _ = self.model(frames, finetune=True)
+        del frames
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
+        actions = train_objects["action_1h"].to(self.device)
         ground_poses = train_objects["poses"].to(self.device)
 
         actions = actions.unsqueeze(1)
         actions = actions.expand(-1, self.conf["num_blocks"], -1)
 
-        predicted_poses, _, pose_predicted_actions, vis_predicted_actions, _ = self.model(frames, finetune=True)
-
         partial_loss_pose = torch.sum(categorical_cross_entropy(pose_predicted_actions, actions))
         partial_loss_action = torch.sum(categorical_cross_entropy(vis_predicted_actions, actions))
-        
+
         har_loss = partial_loss_pose + partial_loss_action
 
         pred_pose = predicted_poses[:, :, :, :, 0:2]
-        ground_pose = ground_poses[:, :, :, 0:2]
-        ground_pose = ground_pose.unsqueeze(2)
-        ground_pose = ground_pose.expand(-1, -1, self.conf["num_blocks"], -1, -1)
+        ground_poses = ground_poses[:, :, :, 0:2]
+        ground_poses = ground_poses.unsqueeze(2)
+        ground_poses = ground_poses.expand(-1, -1, self.conf["num_blocks"], -1, -1)
 
         pred_vis = predicted_poses[:, :, :, :, 2]
         ground_vis = ground_poses[:, :, :, 2]
         ground_vis = ground_vis.unsqueeze(2)
         ground_vis = ground_vis.expand(-1, -1, self.conf["num_blocks"], -1)
 
+        del predicted_poses
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
         binary_crossentropy = nn.BCELoss()
 
-        pred_pose = pred_pose.contiguous().view(len(frames) * 16, self.conf["num_blocks"], 16, 2)
-        ground_pose = ground_pose.contiguous().view(len(frames) * 16, self.conf["num_blocks"], 16, 2)
-        pred_vis = pred_vis.contiguous().view(len(frames) * 16, self.conf["num_blocks"], 16)
-        ground_vis = ground_vis.contiguous().view(len(frames) * 16, self.conf["num_blocks"], 16)
+        pred_pose = pred_pose.contiguous().view(batch_size * 16, self.conf["num_blocks"], 16, 2)
+        ground_poses = ground_poses.contiguous().view(batch_size * 16, self.conf["num_blocks"], 16, 2)
+        pred_vis = pred_vis.contiguous().view(batch_size * 16, self.conf["num_blocks"], 16)
+        ground_vis = ground_vis.contiguous().view(batch_size * 16, self.conf["num_blocks"], 16)
 
         vis_loss = binary_crossentropy(pred_vis, ground_vis)
 
-        pose_loss = elastic_net_loss_paper(pred_pose, ground_pose)
+        pose_loss = elastic_net_loss_paper(pred_pose, ground_poses)
         pose_loss = vis_loss * 0.01 + pose_loss
 
         loss = pose_loss + har_loss
+
+        del actions
+        del ground_poses
+        del pose_predicted_actions
+        del vis_predicted_actions
+        del pred_pose
+        del ground_poses
+        del pred_vis
+        del ground_vis
+
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
         loss.backward()
 
@@ -545,7 +593,9 @@ class Pose_JHMDB(ExperimentBase):
                 trans_matrices = trans_matrices.contiguous().view(val_data["trans_matrices"].size()[0] * val_data["trans_matrices"].size()[1], 3, 3)
 
                 _, predictions, _, _ = self.model(val_images)
-                #predictions = predictions[-1, :, :, :].squeeze(dim=0)
+                print("before squeeze", predictions.shape)
+                predictions = predictions.squeeze(dim=0)
+                print("after squeeze", predictions.shape)
 
                 if predictions.dim() == 2:
                     predictions = predictions.unsqueeze(0)
@@ -623,7 +673,7 @@ class Pose_JHMDB(ExperimentBase):
                 trans_matrices = trans_matrices.contiguous().view(test_data["trans_matrices"].size()[0] * test_data["trans_matrices"].size()[1], 3, 3)
 
                 _, predictions, _, _ = self.model(test_images)
-                #predictions = predictions[-1, :, :, :].squeeze(dim=0)
+                predictions = predictions.squeeze(dim=0)
 
                 if predictions.dim() == 2:
                     predictions = predictions.unsqueeze(0)
@@ -669,7 +719,14 @@ class Pose_JHMDB(ExperimentBase):
 class MPIIExperiment(ExperimentBase):
 
     def preparation(self):
-        self.ds_train = MPIIDataset("/data/mjakobs/data/mpii/", train=True, val=False, use_random_parameters=self.conf["use_random_parameters"], use_saved_tensors=self.conf["use_saved_tensors"])
+
+        if "augmentation_amount" in self.conf:
+            aug_amount = self.conf["augmentation_amount"]
+        else:
+            aug_amount = 1
+
+        print(self.conf["use_saved_tensors"])
+        self.ds_train = MPIIDataset("/data/mjakobs/data/mpii/", train=True, val=False, use_random_parameters=self.conf["use_random_parameters"], use_saved_tensors=self.conf["use_saved_tensors"], augmentation_amount=aug_amount)
         self.ds_val = MPIIDataset("/data/mjakobs/data/mpii/", train=True, val=True, use_random_parameters=False, use_saved_tensors=self.conf["use_saved_tensors"])
 
         if self.conf["num_blocks"] == 1:

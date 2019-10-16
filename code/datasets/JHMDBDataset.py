@@ -173,7 +173,7 @@ class JHMDBDataset(BaseDataset):
                 # train
                 lower_limit = math.ceil(self.val_split_amount * len(self.classes[action]))
                 upper_limit = len(self.classes[action])
-            
+
             new_indices.extend(self.classes[action][lower_limit:upper_limit])
 
         self.indices = new_indices
@@ -215,7 +215,7 @@ class JHMDBDataset(BaseDataset):
             assert bboxes.shape[1] == 4, print(bboxes.shape)
             blanks = torch.zeros((self.clip_length - number_of_frames, 4)).int()
             bboxes = torch.cat((bboxes, blanks))
-        
+
         return trans_matrices, frames, poses, bboxes
 
     def create_puppet_mask(self, idx):
@@ -223,7 +223,7 @@ class JHMDBDataset(BaseDataset):
         relative_path_split = item_path[len(self.root_dir):].split("/")
         action = relative_path_split[0]
 
-        puppet_mask_file = self.root_dir + "puppet_mask/" + relative_path_split[0] + "/" + relative_path_split[1] + "/puppet_mask" 
+        puppet_mask_file = self.root_dir + "puppet_mask/" + relative_path_split[0] + "/" + relative_path_split[1] + "/puppet_mask"
         puppet_mask = sio.loadmat(puppet_mask_file)
         binary_masks = torch.from_numpy(puppet_mask["part_mask"]).int()
         binary_masks = binary_masks.permute(2, 1, 0)
@@ -248,7 +248,7 @@ class JHMDBDataset(BaseDataset):
                             min_y = y
                         if y > max_y:
                             max_y = y
-            
+
             puppet_corners[i][0] = min_x
             puppet_corners[i][1] = max_x
             puppet_corners[i][2] = min_y
@@ -289,15 +289,12 @@ class JHMDBDataset(BaseDataset):
         for frame, pose in zip(images, poses):
 
 
-            if not self.train:
-                self.calc_bbox_and_center(image_width, image_height)
-            else:
-                bbox = torch.IntTensor(4)
-                bbox[0] = puppet_corners[current_frame, 0]
-                bbox[1] = puppet_corners[current_frame, 2]
-                bbox[2] = puppet_corners[current_frame, 1]
-                bbox[3] = puppet_corners[current_frame, 3]
-                self.calc_bbox_and_center(image_width, image_height, pre_bb=bbox, offset=30)
+            bbox = torch.IntTensor(4)
+            bbox[0] = puppet_corners[current_frame, 0]
+            bbox[1] = puppet_corners[current_frame, 2]
+            bbox[2] = puppet_corners[current_frame, 1]
+            bbox[3] = puppet_corners[current_frame, 3]
+            self.calc_bbox_and_center(image_width, image_height, pre_bb=bbox, offset=30) # TODO: Mention offset in paper. As long as used everywhere: comparable
 
             current_frame = current_frame + 1
 

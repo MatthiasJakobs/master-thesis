@@ -275,8 +275,10 @@ create_fragments_jhmdb(train=True, val=True, split=split) # val
 ######
 #  MPII
 #####
-create_fragments_mpii(train=True, val=False, use_random=False) # Train nrandom
-create_fragments_mpii(train=True, val=False, use_random=True) # train random
+create_fragments_mpii(train=True, val=False, use_random=False) # Train no random
+create_fragments_mpii(train=True, val=False, use_random=True, subprefix="1") # train random 1
+create_fragments_mpii(train=True, val=False, use_random=True, subprefix="2") # train random 2
+create_fragments_mpii(train=True, val=False, use_random=True, subprefix="3") # train random 3
 create_fragments_mpii(train=True, val=True, use_random=False) # val
 
 ######
