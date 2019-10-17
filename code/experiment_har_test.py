@@ -14,14 +14,13 @@ conf["project_dir"] = "har_initial"
 conf["total_iterations"] = 160000
 conf["evaluate_rate"] = 5000
 
-conf["name"] = "no_finetune"
-conf["fine_tune"] = False
-har = HAR_Testing_Experiment(conf)
-har.run_experiment()
-
-del har
+# conf["name"] = "no_finetune"
+# conf["fine_tune"] = False
+# har = HAR_Testing_Experiment(conf)
+# har.run_experiment()
 
 conf["name"] = "with_finetune"
+conf["start_finetuning"] = 1
 conf["fine_tune"] = True
 har = HAR_Testing_Experiment(conf)
 har.run_experiment()

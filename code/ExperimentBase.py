@@ -256,7 +256,10 @@ class HAR_Testing_Experiment(ExperimentBase):
         actions = actions.unsqueeze(1)
         actions = actions.expand(-1, 4, -1)
 
-        _, _, pose_predicted_actions, vis_predicted_actions, _ = self.model(frames, finetune=self.fine_tune)
+        if "start_finetuning" in self.conf and self.iteration < self.conf["start_finetuning"]:
+            _, _, pose_predicted_actions, vis_predicted_actions, _ = self.model(frames, finetune=False)
+        else:
+            _, _, pose_predicted_actions, vis_predicted_actions, _ = self.model(frames, finetune=self.fine_tune)
 
         partial_loss_pose = torch.sum(categorical_cross_entropy(pose_predicted_actions, actions))
         partial_loss_action = torch.sum(categorical_cross_entropy(vis_predicted_actions, actions))
