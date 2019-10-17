@@ -62,6 +62,7 @@ class JHMDBFragmentsDataset(data.Dataset):
         t_parameters = torch.load(self.annotation_folder + padded_filename + ".parameters.pt")
         t_frames = torch.load(self.images_folder + padded_filename + ".frames.pt")
         t_matrices = torch.load(self.annotation_folder + padded_filename + ".matrices.pt")
+        t_original_window_size = torch.load(self.annotation_folder + padded_filename + ".original_window_size.pt")
 
         start = int(t_indices[0].item())
         end = int(t_indices[1].item())
@@ -70,6 +71,7 @@ class JHMDBFragmentsDataset(data.Dataset):
         t_poses = t_poses[start:end]
         t_matrices = t_matrices[start:end]
         t_bboxes = t_bbox[start:end]
+        t_original_window_sizes = t_original_window_size[start:end]
 
         return {
             "frames": t_frames,
@@ -78,5 +80,6 @@ class JHMDBFragmentsDataset(data.Dataset):
             "trans_matrices": t_matrices,
             "indices": t_indices,
             "bbox": t_bboxes,
-            "parameters": t_parameters
+            "parameters": t_parameters,
+            "original_window_size": t_original_window_sizes
         }

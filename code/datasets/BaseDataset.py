@@ -85,12 +85,9 @@ class BaseDataset(data.Dataset):
 
         bbox_width = torch.abs(bbox[0] - bbox[2]).item()
         bbox_height = torch.abs(bbox[1] - bbox[3]).item()
-
+        window_size = torch.IntTensor([max(bbox_height, bbox_width), max(bbox_height, bbox_width)])
         if offset is not None:
-            window_size = torch.IntTensor([max(bbox_height, bbox_width) + offset, max(bbox_height, bbox_width) + offset])
-        else:
-            window_size = torch.IntTensor([max(bbox_height, bbox_width), max(bbox_height, bbox_width)])
-
+            window_size = window_size + offset
 
         self.window_size = window_size
         center = torch.IntTensor([

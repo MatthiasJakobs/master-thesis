@@ -225,7 +225,11 @@ class PennActionDataset(BaseDataset):
 
         for frame, pose in zip(images, poses):
             if self.use_gt_bb:
-                bbox, center, window_size = get_bbox_from_pose(pose, bbox_offset=30)
+                # TODO: Maybe use original_size?
+                bbox_parameters = get_bbox_from_pose(pose, bbox_offset=30)
+                bbox = bbox_parameters["offset_bbox"]
+                window_size = bbox_parameters["offset_window_size"]
+                center = bbox_parameters["offset_center"]
                 self.bbox = bbox
                 self.window_size = (window_size.float() * self.aug_conf["scale"]).int()
                 self.center = center

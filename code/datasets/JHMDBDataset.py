@@ -192,7 +192,7 @@ class JHMDBDataset(BaseDataset):
 
         return final_pose
 
-    def apply_padding(self, trans_matrices, frames, poses, bboxes):
+    def apply_padding(self, trans_matrices, frames, poses, bboxes, original_window_sizes):
         number_of_frames = len(frames)
         if number_of_frames < self.clip_length:
 
@@ -216,7 +216,12 @@ class JHMDBDataset(BaseDataset):
             blanks = torch.zeros((self.clip_length - number_of_frames, 4)).int()
             bboxes = torch.cat((bboxes, blanks))
 
-        return trans_matrices, frames, poses, bboxes
+            # padding for original_window_sizes
+            assert original_window_sizes.shape[1] == 2, print(original_window_sizes.shape)
+            blanks = torch.zeros((self.clip_length - number_of_frames, 2)).int()
+            original_window_sizes = torch.cat((original_window_sizes, blanks))
+
+        return trans_matrices, frames, poses, bboxes, original_window_sizes
 
     def create_puppet_mask(self, idx):
         item_path = self.items[self.indices[idx]]
@@ -284,17 +289,24 @@ class JHMDBDataset(BaseDataset):
         processed_poses = []
         trans_matrices = []
         bounding_boxes = []
+        original_window_sizes = []
 
         current_frame = 0
         for frame, pose in zip(images, poses):
-
-
             bbox = torch.IntTensor(4)
             bbox[0] = puppet_corners[current_frame, 0]
             bbox[1] = puppet_corners[current_frame, 2]
             bbox[2] = puppet_corners[current_frame, 1]
             bbox[3] = puppet_corners[current_frame, 3]
-            self.calc_bbox_and_center(image_width, image_height, pre_bb=bbox, offset=30) # TODO: Mention offset in paper. As long as used everywhere: comparable
+            
+            bbox_width = torch.abs(bbox[0] - bbox[2]).item()
+            bbox_height = torch.abs(bbox[1] - bbox[3]).item()
+            self.original_window_size = torch.IntTensor([max(bbox_height, bbox_width), max(bbox_height, bbox_width)])
+
+            if not self.train:
+                self.calc_bbox_and_center(image_width, image_height)
+            else:
+                self.calc_bbox_and_center(image_width, image_height, pre_bb=bbox, offset=30) # TODO: Mention offset in paper. As long as used everywhere: comparable
 
             current_frame = current_frame + 1
 
@@ -310,6 +322,7 @@ class JHMDBDataset(BaseDataset):
             processed_poses.append(norm_pose.unsqueeze(0))
             processed_frames.append(norm_frame.unsqueeze(0))
             trans_matrices.append(trans_matrix.clone().unsqueeze(0))
+            original_window_sizes.append(self.original_window_size.clone().unsqueeze(0))
 
         number_of_frames = len(processed_frames)
 
@@ -317,8 +330,9 @@ class JHMDBDataset(BaseDataset):
         poses = torch.cat(processed_poses)
         trans_matrices = torch.cat(trans_matrices)
         t_bounding_boxes = torch.cat(bounding_boxes)
+        original_window_sizes = torch.cat(original_window_sizes)
 
-        trans_matrices, frames, poses, t_bounding_boxes = self.apply_padding(trans_matrices, frames, poses, t_bounding_boxes)
+        trans_matrices, frames, poses, t_bounding_boxes, original_window_sizes = self.apply_padding(trans_matrices, frames, poses, t_bounding_boxes, original_window_sizes)
 
         frames = frames.permute(0, 3, 1, 2)
 
@@ -345,6 +359,7 @@ class JHMDBDataset(BaseDataset):
             "sequence_length": t_sequence_length,
             "trans_matrices": trans_matrices,
             "parameters": t_parameters,
+            "original_window_size": original_window_sizes,
             "index": t_index,
             "bbox": t_bounding_boxes
         }

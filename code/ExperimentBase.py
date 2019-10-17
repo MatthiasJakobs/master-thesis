@@ -19,15 +19,17 @@ import math
 import pdb
 
 from skimage import io
+from skimage.transform import resize
 
 from datasets.MPIIDataset import *
 from datasets.JHMDBFragmentsDataset import JHMDBFragmentsDataset
 from datasets.JHMDBDataset import actions as jhmdb_actions
 from datasets.JHMDBDataset import JHMDBDataset
 from deephar.models import DeepHar, Mpii_1, Mpii_2, Mpii_4, Mpii_8, TimeDistributedPoseEstimation
-from deephar.utils import get_valid_joints
+from deephar.utils import get_valid_joints, get_bbox_from_pose, transform_2d_point, transform_pose
 from deephar.measures import elastic_net_loss_paper, categorical_cross_entropy
 from deephar.evaluation import *
+from deephar.image_processing import center_crop
 
 from visualization import show_predictions_ontop, visualize_heatmaps, show_prediction_jhmbd
 
@@ -661,7 +663,7 @@ class Pose_JHMDB(ExperimentBase):
         self.val_writer.write([self.iteration, mean_bb_02, mean_upper_02])
         return mean_bb_02
 
-    def test(self, pretrained_model=None):
+    def test(self, pretrained_model=None, refine_bounding_box=False):
         with torch.no_grad():
             if pretrained_model is not None:
                 self.preparation()
@@ -678,28 +680,61 @@ class Pose_JHMDB(ExperimentBase):
                 test_poses = test_data["poses"].to(self.device)
                 test_poses = test_poses.contiguous().view(test_data["poses"].size()[0] * test_data["poses"].size()[1], 16, 3)
 
-                trans_matrices = test_data["trans_matrices"].to(self.device)
+                trans_matrices = test_data["trans_matrices"].clone().to(self.device)
                 trans_matrices = trans_matrices.contiguous().view(test_data["trans_matrices"].size()[0] * test_data["trans_matrices"].size()[1], 3, 3)
 
+                original_window_sizes = test_data["original_window_size"]
+                original_window_sizes = original_window_sizes.contiguous().view(test_data["original_window_size"].size()[0] * test_data["original_window_size"].size()[1], 2)
+
+                distance_meassures = torch.FloatTensor(len(original_window_sizes))
+
+                for i in range(len(original_window_sizes)):
+                    distance_meassures[i] = original_window_sizes[i][0]
+
+                # initial pose estimation to get more refined bounding box
                 _, predictions, _, _ = self.model(test_images)
                 predictions = predictions.squeeze(dim=0)
 
                 if predictions.dim() == 2:
                     predictions = predictions.unsqueeze(0)
 
-                bboxes = test_data["bbox"]
-                bboxes = bboxes.contiguous().view(test_data["bbox"].size()[0] * test_data["bbox"].size()[1], 4)
+                if refine_bounding_box:
+                    side_lenghts = []
+                    for idx, prediction in enumerate(predictions):
+                        prediction[:, 0:2] = prediction[:, 0:2] * 255.0
+                        frame = test_images[idx]
+                        
+                        bbox_parameter = get_bbox_from_pose(prediction, bbox_offset=30) # TODO: change in other places
 
-                distance_meassures = torch.FloatTensor(len(bboxes))
+                        #prediction[:, 0:2] = prediction[:, 0:2] / 255.0
+                        center = bbox_parameter["original_center"]
+                        window_size = bbox_parameter["original_window_size"] + 1
+                        side_lenghts.append(window_size)
 
-                for i in range(len(bboxes)):
-                    width = torch.abs(bboxes[i, 0] - bboxes[i, 2])
-                    height = torch.abs(bboxes[i, 1] - bboxes[i, 3])
+                        new_matrix = torch.eye(3)
+                        matrix, frame = center_crop(frame.permute(1, 2, 0), center, window_size, new_matrix)
 
-                    distance_meassures[i] = torch.max(width, height).item()
+                        frame = torch.from_numpy(resize(frame, (255, 255), preserve_range=True)).permute(2, 0, 1)
 
-                pck_bb_02.extend(eval_pck_batch(predictions[:, :, 0:2], test_poses[:, :, 0:2], trans_matrices, distance_meassures))
-                pck_upper_02.extend(eval_pcku_batch(predictions[:, :, 0:2], test_poses[:, :, 0:2], trans_matrices))
+                        trans_matrices[idx] = torch.from_numpy(matrix).clone()
+                        test_images[idx] = frame
+
+                    _, predictions, _, _ = self.model(test_images)
+                    predictions = predictions.squeeze(dim=0)
+
+                    for idx, prediction in enumerate(predictions):
+                        coordinates = prediction[:, 0:2] * float(side_lenghts[idx][0].item())
+                        back_transformed = transform_pose(trans_matrices[idx], coordinates, inverse=True)
+                        predictions[idx, :, 0:2] = torch.from_numpy(back_transformed) / 255.0
+
+                    trans_matrices = test_data["trans_matrices"].clone().to(self.device)
+                    trans_matrices = trans_matrices.contiguous().view(test_data["trans_matrices"].size()[0] * test_data["trans_matrices"].size()[1], 3, 3)
+
+                try:
+                    pck_bb_02.extend(eval_pck_batch(predictions[:, :, 0:2], test_poses[:, :, 0:2], trans_matrices, distance_meassures))
+                    pck_upper_02.extend(eval_pcku_batch(predictions[:, :, 0:2], test_poses[:, :, 0:2], trans_matrices))
+                except np.linalg.linalg.LinAlgError:
+                    print("hello")
 
                 if batch_idx % 10 == 0:
                     image = test_images[0].permute(1, 2, 0)
@@ -712,7 +747,11 @@ class Pose_JHMDB(ExperimentBase):
                         prediction = prediction.cpu()
                         test_poses = test_poses.cpu()
 
-                    folder_path = 'experiments/{}/test_images/{}'.format(self.experiment_name, self.iteration)
+                    qualifier = "not_refined"
+                    if refine_bounding_box:
+                        qualifier = "refined"
+
+                    folder_path = 'experiments/{}/test_images/{}_{}'.format(self.experiment_name, self.iteration, qualifier)
                     if not exists(folder_path):
                         makedirs(folder_path)
                     path = 'experiments/{}/test_images/{}/{}.png'.format(self.experiment_name, self.iteration, batch_idx)

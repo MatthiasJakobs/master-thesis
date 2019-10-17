@@ -162,7 +162,7 @@ def get_bbox_from_pose(pose, bbox_offset=None):
         except:
             vis = 1
 
-        if vis == 0:
+        if vis < 0.001:
             continue
 
         if x < 0 or y < 0:
@@ -185,6 +185,16 @@ def get_bbox_from_pose(pose, bbox_offset=None):
     bbox[2] = max_x
     bbox[3] = max_y
 
+    original_bbox = bbox.clone()
+
+    original_bbox_width = torch.abs(bbox[0] - bbox[2]).item()
+    original_bbox_height = torch.abs(bbox[1] - bbox[3]).item()
+    original_window_size = torch.IntTensor([max(original_bbox_height, original_bbox_width), max(original_bbox_height, original_bbox_width)])
+    original_center = torch.IntTensor([
+        original_bbox[2] - original_bbox_width / 2,
+        original_bbox[3] - original_bbox_height / 2
+    ])
+
     if bbox_offset is not None:
         half_offset = int(bbox_offset / 2.0)
         bbox[0] = bbox[0] - half_offset
@@ -195,15 +205,20 @@ def get_bbox_from_pose(pose, bbox_offset=None):
     bbox_width = torch.abs(bbox[0] - bbox[2]).item()
     bbox_height = torch.abs(bbox[1] - bbox[3]).item()
 
-    # if windo_size_offset is not None:
-    #     window_size = torch.IntTensor([max(bbox_height, bbox_width) + windo_size_offset, max(bbox_height, bbox_width) + windo_size_offset])
-    # else:
-    #     window_size = torch.IntTensor([max(bbox_height, bbox_width), max(bbox_height, bbox_width)])
     window_size = torch.IntTensor([max(bbox_height, bbox_width), max(bbox_height, bbox_width)])
     center = torch.IntTensor([
         bbox[2] - bbox_width / 2,
         bbox[3] - bbox_height / 2
     ])
 
-    return bbox, center, window_size
+    to_return = {
+        "original_bbox": original_bbox,
+        "original_center": original_center,
+        "original_window_size": original_window_size,
+        "offset_bbox": bbox,
+        "offset_center": center,
+        "offset_window_size": window_size
+    }
+
+    return to_return
     
