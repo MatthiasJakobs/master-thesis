@@ -24,6 +24,7 @@ conf["name"] = "without_context_4"
 ft = Pose_JHMDB(conf, use_pretrained=False, nr_aug=1)
 ft.run_experiment()
 
+conf["batch_size"] = 1
 conf["total_iterations"] = 190000
 conf["num_blocks"] = 8
 conf["name"] = "without_context_8"
@@ -43,7 +44,8 @@ conf["name"] = "with_context_4"
 ft = Pose_JHMDB(conf, use_pretrained=False, nr_aug=1)
 ft.run_experiment()
 
-conf["total_iterations"] = 190000
+conf["total_iterations"] = 2200000
+conf["batch_size"] = 1
 conf["num_blocks"] = 8
 conf["name"] = "with_context_8"
 ft = Pose_JHMDB(conf, use_pretrained=False, nr_aug=1)

@@ -483,13 +483,13 @@ class Pose_JHMDB(ExperimentBase):
 
         nr_blocks = self.conf["num_blocks"]
         context = self.conf["nr_context"]
-        
+
         if nr_blocks == 2:
-            self.model = Mpii_2(num_context=context).to(self.device)    
+            self.model = Mpii_2(num_context=context).to(self.device)
         if nr_blocks == 4:
-            self.model = Mpii_4(num_context=context).to(self.device)    
+            self.model = Mpii_4(num_context=context).to(self.device)
         if nr_blocks == 8:
-            self.model = Mpii_8(num_context=context).to(self.device)    
+            self.model = Mpii_8(num_context=context).to(self.device)
 
         if self.use_pretrained:
             print("Using pretrained model")
@@ -540,11 +540,13 @@ class Pose_JHMDB(ExperimentBase):
     def train(self, train_objects):
 
         self.model.train()
-        images = train_objects["frames"].to(self.device)
+        images = train_objects["frames"]
         train_poses = train_objects["poses"].to(self.device)
 
         images = images.contiguous().view(images.size()[0] * images.size()[1], 3, 255, 255)
         train_poses = train_poses.contiguous().view(train_poses.size()[0] * train_poses.size()[1], 16, 3)
+
+        images = images.to(self.device)
 
         poses, _, _, _ = self.model(images)
 

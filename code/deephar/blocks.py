@@ -206,6 +206,8 @@ class PoseRegressionWithContext(nn.Module):
         self.probability_joints = JointProbability(filters=self.num_joints, kernel_size=(32,32))
         self.probability_context = JointProbability(filters=(self.nr_heatmaps - self.num_joints), kernel_size=(32,32))
 
+        self.context_sum = self.create_context_sum_layer()
+
     def create_context_sum_layer(self):
         context_sum_layer = nn.Linear((self.nr_heatmaps - self.num_joints), self.num_joints, bias=False)
 
@@ -248,16 +250,14 @@ class PoseRegressionWithContext(nn.Module):
         pxi = pxi * pc
         pyi = pyi * pc
 
-        context_sum = self.create_context_sum_layer()
-
         # since liner layer expects [batch_size, num_features]: reduce 1-dimension
         pxi = torch.squeeze(pxi, -1)
         pyi = torch.squeeze(pyi, -1)
         pc = torch.squeeze(pc, -1)
 
-        pxi_sum = context_sum(pxi)
-        pyi_sum = context_sum(pyi)
-        pc_sum = context_sum(pc)
+        pxi_sum = self.context_sum(pxi)
+        pyi_sum = self.context_sum(pyi)
+        pc_sum = self.context_sum(pc)
 
         pxi_div = pxi_sum / pc_sum
         pyi_div = pyi_sum / pc_sum
