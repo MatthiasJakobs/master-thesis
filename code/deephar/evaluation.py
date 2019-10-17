@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-from deephar.utils import transform_pose, get_valid_joints, get_bbox_from_pose
+from deephar.utils import transform_pose, get_valid_joints
 
 def pckh(y_true, y_pred, head_size, distance_threshold=0.5):
     # from paper: only use joints which are valid, i.e. have a minimum value

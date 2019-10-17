@@ -658,7 +658,7 @@ class Pose_JHMDB(ExperimentBase):
         self.val_writer.write([self.iteration, mean_bb_02, mean_upper_02])
         return mean_bb_02
 
-    def test(self, pretrained_model=None):
+    def test(self, pretrained_model=None, refine_bounding_box=False):
         with torch.no_grad():
             if pretrained_model is not None:
                 self.preparation()
@@ -675,7 +675,7 @@ class Pose_JHMDB(ExperimentBase):
                 test_poses = test_data["poses"].to(self.device)
                 test_poses = test_poses.contiguous().view(test_data["poses"].size()[0] * test_data["poses"].size()[1], 16, 3)
 
-                trans_matrices = test_data["trans_matrices"].to(self.device)
+                trans_matrices = test_data["trans_matrices"].clone().to(self.device)
                 trans_matrices = trans_matrices.contiguous().view(test_data["trans_matrices"].size()[0] * test_data["trans_matrices"].size()[1], 3, 3)
 
                 original_window_sizes = test_data["original_window_size"]
@@ -693,43 +693,37 @@ class Pose_JHMDB(ExperimentBase):
                 if predictions.dim() == 2:
                     predictions = predictions.unsqueeze(0)
 
-                for idx, prediction in enumerate(predictions):
-                    prediction[:, 0:2] = prediction[:, 0:2] * 255.0
-                    frame = test_images[idx]
-                    
-                    bbox_parameter = get_bbox_from_pose(prediction, bbox_offset=30) # TODO: change in other places
+                if refine_bounding_box:
+                    side_lenghts = []
+                    for idx, prediction in enumerate(predictions):
+                        prediction[:, 0:2] = prediction[:, 0:2] * 255.0
+                        frame = test_images[idx]
+                        
+                        bbox_parameter = get_bbox_from_pose(prediction, bbox_offset=30) # TODO: change in other places
 
-                    center = bbox_parameter["original_center"]
-                    window_size = bbox_parameter["original_window_size"] + 1
+                        #prediction[:, 0:2] = prediction[:, 0:2] / 255.0
+                        center = bbox_parameter["original_center"]
+                        window_size = bbox_parameter["original_window_size"] + 1
+                        side_lenghts.append(window_size)
 
-                    test_point = center - (window_size / 2.0)
+                        new_matrix = torch.eye(3)
+                        matrix, frame = center_crop(frame.permute(1, 2, 0), center, window_size, new_matrix)
 
-                    new_matrix = torch.eye(3)
-                    matrix, frame = center_crop(frame.permute(1, 2, 0), center, window_size, new_matrix)
-                    #assert np.sum(transform_2d_point(matrix, test_point) != np.array([0., 0.])) == 0
+                        frame = torch.from_numpy(resize(frame, (255, 255), preserve_range=True)).permute(2, 0, 1)
 
-                    frame = torch.from_numpy(resize(frame, (255, 255), preserve_range=True)).permute(2, 0, 1)
-                    x_scale_factor = 255 / window_size[0].item()
-                    y_scale_factor = 255 / window_size[1].item()
-                    matrix = scale(matrix, x_scale_factor, y_scale_factor)
-                    #assert np.sum(transform_2d_point(matrix, test_point) != np.array([0., 0.])) == 0
+                        trans_matrices[idx] = torch.from_numpy(matrix).clone()
+                        test_images[idx] = frame
 
-                    trans_matrices[idx] = torch.from_numpy(matrix).clone()
-                    test_images[idx] = frame
-                    #assert np.sum(transform_2d_point(trans_matrices[idx].numpy(), test_point) != np.array([0., 0.])) == 0
+                    _, predictions, _, _ = self.model(test_images)
+                    predictions = predictions.squeeze(dim=0)
 
+                    for idx, prediction in enumerate(predictions):
+                        coordinates = prediction[:, 0:2] * float(side_lenghts[idx][0].item())
+                        back_transformed = transform_pose(trans_matrices[idx], coordinates, inverse=True)
+                        predictions[idx, :, 0:2] = torch.from_numpy(back_transformed) / 255.0
 
-                del predictions
-                
-                _, predictions, _, _ = self.model(test_images)
-                predictions = predictions.squeeze(dim=0)
-
-                for idx, prediction in enumerate(predictions):
-                    coordinates = prediction[:, 0:2]
-                    predictions[idx, :, 0:2] = torch.from_numpy(transform_pose(trans_matrices[idx], coordinates, inverse=True))
-
-                trans_matrices = test_data["trans_matrices"].to(self.device)
-                trans_matrices = trans_matrices.contiguous().view(test_data["trans_matrices"].size()[0] * test_data["trans_matrices"].size()[1], 3, 3)
+                    trans_matrices = test_data["trans_matrices"].clone().to(self.device)
+                    trans_matrices = trans_matrices.contiguous().view(test_data["trans_matrices"].size()[0] * test_data["trans_matrices"].size()[1], 3, 3)
 
                 try:
                     pck_bb_02.extend(eval_pck_batch(predictions[:, :, 0:2], test_poses[:, :, 0:2], trans_matrices, distance_meassures))
@@ -748,7 +742,11 @@ class Pose_JHMDB(ExperimentBase):
                         prediction = prediction.cpu()
                         test_poses = test_poses.cpu()
 
-                    folder_path = 'experiments/{}/test_images/{}'.format(self.experiment_name, self.iteration)
+                    qualifier = "not_refined"
+                    if refine_bounding_box:
+                        qualifier = "refined"
+
+                    folder_path = 'experiments/{}/test_images/{}_{}'.format(self.experiment_name, self.iteration, qualifier)
                     if not exists(folder_path):
                         makedirs(folder_path)
                     path = 'experiments/{}/test_images/{}/{}.png'.format(self.experiment_name, self.iteration, batch_idx)
