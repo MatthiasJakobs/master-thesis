@@ -247,43 +247,42 @@ class HAR_Testing_Experiment(ExperimentBase):
 
     def train(self, train_objects):
         self.model.train()
-        frames = train_objects["frames"].to(self.device)
-        actions = train_objects["action_1h"].to(self.device)
 
-        print("after train data batch")
-        print(torch.cuda.max_memory_allocated(device=0))
-
-        actions = actions.unsqueeze(1)
-        actions = actions.expand(-1, 4, -1)
-
-        if "start_finetuning" in self.conf and self.iteration < self.conf["start_finetuning"]:
-            _, _, pose_predicted_actions, vis_predicted_actions, _ = self.model(frames, finetune=False)
-        else:
-            _, _, pose_predicted_actions, vis_predicted_actions, _ = self.model(frames, finetune=self.fine_tune)
-
-        partial_loss_pose = torch.sum(categorical_cross_entropy(pose_predicted_actions, actions))
-        partial_loss_action = torch.sum(categorical_cross_entropy(vis_predicted_actions, actions))
-        losses = partial_loss_pose + partial_loss_action
-
-        del frames
-        del actions
-
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
-
-        print("before backward")
-        print(torch.cuda.max_memory_allocated(device=0))
-
-        losses.backward()
-
-        self.train_writer.write([self.iteration, losses.item()])
-
-        self.optimizer.step()
         self.optimizer.zero_grad()
 
-        print("after zero_grad")
-        print(torch.cuda.max_memory_allocated(device=0))
+        batch_size = len(train_objects)
 
+        batch_loss = 0
+        for i in range(batch_size):
+            train_object = train_objects[i]
+            frames = train_object["frames"].to(self.device)
+            actions = train_object["action_1h"].to(self.device)
+
+            actions = actions.unsqueeze(1)
+            actions = actions.expand(-1, 4, -1)
+
+            if "start_finetuning" in self.conf and self.iteration < self.conf["start_finetuning"]:
+                _, _, pose_predicted_actions, vis_predicted_actions, _ = self.model(frames, finetune=False)
+            else:
+                _, _, pose_predicted_actions, vis_predicted_actions, _ = self.model(frames, finetune=self.fine_tune)
+
+            partial_loss_pose = torch.sum(categorical_cross_entropy(pose_predicted_actions, actions))
+            partial_loss_action = torch.sum(categorical_cross_entropy(vis_predicted_actions, actions))
+            losses = partial_loss_pose + partial_loss_action
+
+            del frames
+            del actions
+
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+
+            losses.backward()
+
+            batch_loss += float(losses)
+
+        self.train_writer.write([self.iteration, batch_loss.item()])
+
+        self.optimizer.step()
 
         self.iteration = self.iteration + 1
 
