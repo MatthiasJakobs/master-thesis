@@ -62,7 +62,7 @@ class MixMPIIPenn(BaseDataset):
             else:
                 entry = self.pennaction[real_index]
                 clip_length = len(entry["normalized_frames"])
-                frame_idx = random.randint(0, clip_length)
+                frame_idx = random.randint(0, clip_length-1)
 
                 image = entry["normalized_frames"][frame_idx]
                 pose = entry["normalized_poses"][frame_idx]
