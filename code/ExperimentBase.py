@@ -227,7 +227,7 @@ class HAR_Testing_Experiment(ExperimentBase):
 
         self.val_loader = data.DataLoader(
             self.ds_val,
-            batch_size=self.conf["batch_size"],
+            batch_size=self.conf["val_batch_size"],
             sampler=val_sampler
         )
 
@@ -244,26 +244,36 @@ class HAR_Testing_Experiment(ExperimentBase):
 
         self.create_experiment_folders(heatmaps=False)
 
+        self.shrunk = False
+
 
     def train(self, train_objects):
         self.model.train()
 
         self.optimizer.zero_grad()
 
-        batch_size = len(train_objects)
+        batch_size = len(train_objects["frames"])
 
         batch_loss = 0
         for i in range(batch_size):
-            train_object = train_objects[i]
-            frames = train_object["frames"].to(self.device)
-            actions = train_object["action_1h"].to(self.device)
+            frames = train_objects["frames"][i].to(self.device)
+            actions = train_objects["action_1h"][i].to(self.device)
 
-            actions = actions.unsqueeze(1)
-            actions = actions.expand(-1, 4, -1)
+            actions = actions.unsqueeze(0)
+            actions = actions.expand(4, -1)
+
+            frames = frames.unsqueeze(0)
+            actions = actions.unsqueeze(0)
 
             if "start_finetuning" in self.conf and self.iteration < self.conf["start_finetuning"]:
                 _, _, pose_predicted_actions, vis_predicted_actions, _ = self.model(frames, finetune=False)
             else:
+                if self.iteration == self.conf["start_finetuning"] and not self.shrunk:
+                    # make learning rate smaller
+                    print("shrink learning rate")
+                    self.optimizer = optim.SGD(self.model.parameters(), lr=self.conf["learning_rate"] / 10.0, momentum=0.98, nesterov=True)
+                    self.shrunk = True
+
                 _, _, pose_predicted_actions, vis_predicted_actions, _ = self.model(frames, finetune=self.fine_tune)
 
             partial_loss_pose = torch.sum(categorical_cross_entropy(pose_predicted_actions, actions))
@@ -280,7 +290,7 @@ class HAR_Testing_Experiment(ExperimentBase):
 
             batch_loss += float(losses)
 
-        self.train_writer.write([self.iteration, batch_loss.item()])
+        self.train_writer.write([self.iteration, batch_loss])
 
         self.optimizer.step()
 
@@ -705,7 +715,7 @@ class Pose_JHMDB(ExperimentBase):
                     for idx, prediction in enumerate(predictions):
                         prediction[:, 0:2] = prediction[:, 0:2] * 255.0
                         frame = test_images[idx]
-                        
+
                         bbox_parameter = get_bbox_from_pose(prediction, bbox_offset=30) # TODO: change in other places
 
                         #prediction[:, 0:2] = prediction[:, 0:2] / 255.0
