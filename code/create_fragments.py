@@ -157,6 +157,7 @@ def create_fragments_jhmdb(train=False, val=False, split=1, use_random=False, su
                 bbox = entry["bbox"]
                 index = entry["index"]
                 parameters = entry["parameters"]
+                original_window_size = entry["original_window_size"]
 
                 assert len(frames) == 40
                 assert len(poses) == 40
@@ -179,7 +180,7 @@ def create_fragments_jhmdb(train=False, val=False, split=1, use_random=False, su
                 torch.save(index, root_dir + prefix + "annotations/" + padded_original_image + ".index.pt")
                 torch.save(bbox, root_dir + prefix + "annotations/" + padded_original_image + ".bbox.pt")
                 torch.save(parameters, root_dir + prefix + "annotations/" + padded_original_image + ".parameters.pt")
-
+                torch.save(original_window_size, root_dir + prefix + "annotations/" + padded_original_image + ".original_window_size.pt")
 
                 indices = torch.zeros((num_frames_total - num_frames), 2)
 
