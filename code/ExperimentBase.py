@@ -25,6 +25,7 @@ from datasets.MPIIDataset import *
 from datasets.JHMDBFragmentsDataset import JHMDBFragmentsDataset
 from datasets.JHMDBDataset import actions as jhmdb_actions
 from datasets.JHMDBDataset import JHMDBDataset
+from datasets.MixMPIIPenn import MixMPIIPenn
 from deephar.models import DeepHar, Mpii_1, Mpii_2, Mpii_4, Mpii_8, TimeDistributedPoseEstimation
 from deephar.utils import get_valid_joints, get_bbox_from_pose, transform_2d_point, transform_pose
 from deephar.measures import elastic_net_loss_paper, categorical_cross_entropy
@@ -774,6 +775,151 @@ class Pose_JHMDB(ExperimentBase):
             upper_mean = torch.mean(torch.FloatTensor(pck_upper_02)).item()
             print("bb, upper")
             return [bb_mean, upper_mean]
+
+class Pose_Mixed(ExperimentBase):
+
+    def __init__(self, conf, validate=False):
+        super().__init__(conf, validate=validate)
+
+    def preparation(self):
+
+        nr_blocks = self.conf["num_blocks"]
+        context = self.conf["nr_context"]
+
+        if nr_blocks == 2:
+            self.model = Mpii_2(num_context=context).to(self.device)
+        if nr_blocks == 4:
+            self.model = Mpii_4(num_context=context).to(self.device)
+        if nr_blocks == 8:
+            self.model = Mpii_8(num_context=context).to(self.device)
+
+        self.model.train()
+
+        self.ds_train = MixMPIIPenn("/data/mjakobs/data/mix_mpii_penn/", train=True, val=False, use_random_parameters=True, use_saved_tensors=False) # TODO: Use saved on server
+        self.ds_val = MixMPIIPenn("/data/mjakobs/data/mix_mpii_penn/", train=True, val=True, use_random_parameters=False, use_saved_tensors=False) #TODO: Use saved on server
+
+        train_indices, val_indices = self.limit_dataset(include_test=False)
+
+        train_sampler = SubsetRandomSampler(train_indices)
+        val_sampler = SubsetRandomSampler(val_indices)
+
+        self.train_loader = data.DataLoader(
+            self.ds_train,
+            batch_size=self.conf["batch_size"],
+            sampler=train_sampler
+        )
+
+        self.val_loader = data.DataLoader(
+            self.ds_val,
+            batch_size=self.conf["batch_size"],
+            sampler=val_sampler
+        )
+
+        self.optimizer = optim.RMSprop(self.model.parameters(), lr=self.conf["learning_rate"])
+
+        self.train_writer.write(["iteration", "loss"])
+        self.val_writer.write(["iteration", "pck_bb_0.2", "pck_upper_0.2"])
+
+        self.create_experiment_folders()
+
+
+    def train(self, train_objects):
+
+        self.model.train()
+        images = train_objects["normalized_image"].to(self.device)
+        poses = train_objects["normalized_pose"].to(self.device)
+
+        predictions, _, _, _ = self.model(images)
+
+        predictions = predictions.permute(1, 0, 2, 3)
+
+        pred_pose = predictions[:, :, :, 0:2]
+        ground_pose = poses[:, :, 0:2]
+        ground_pose = ground_pose.unsqueeze(1)
+        ground_pose = ground_pose.expand(-1, self.conf["num_blocks"], -1, -1)
+
+        pred_vis = predictions[:, :, :, 2]
+        ground_vis = poses[:, :, 2]
+        ground_vis = ground_vis.unsqueeze(1)
+        ground_vis = ground_vis.expand(-1, self.conf["num_blocks"], -1)
+
+        binary_crossentropy = nn.BCELoss()
+
+        vis_loss = binary_crossentropy(pred_vis, ground_vis)
+
+        pose_loss = elastic_net_loss_paper(pred_pose, ground_pose)
+
+        loss = vis_loss * 0.01 + pose_loss
+
+        loss.backward()
+
+        self.optimizer.step()
+        self.optimizer.zero_grad()
+
+        self.train_writer.write([self.iteration, loss.item()])
+        self.iteration = self.iteration + 1
+
+        print("iteration {} loss {}".format(self.iteration, loss.item()))
+
+    def evaluate(self):
+        self.model.eval()
+
+        with torch.no_grad():
+            pck_bb_02 = []
+            pck_upper_02 = []
+
+            self.create_dynamic_folders()
+
+            for batch_idx, val_data in enumerate(self.val_loader):
+                val_images = val_data["normalized_image"].to(self.device)
+                val_poses = val_data["normalized_pose"].to(self.device)
+
+                trans_matrices = val_data["trans_matrix"].to(self.device)
+
+                _, predictions, _, _ = self.model(val_images)
+                predictions = predictions.squeeze(dim=0)
+
+                if predictions.dim() == 2:
+                    predictions = predictions.unsqueeze(0)
+
+                # save predictions
+                image = val_images[0].permute(1, 2, 0)
+                gt_poses = val_poses
+
+                # get distance meassures
+                bboxes = val_data["bbox"]
+                distance_meassures = torch.FloatTensor(len(bboxes))
+
+                for i in range(len(bboxes)):
+                    width = torch.abs(bboxes[i, 0] - bboxes[i, 2])
+                    height = torch.abs(bboxes[i, 1] - bboxes[i, 3])
+
+                    distance_meassures[i] = torch.max(width, height).item()
+
+                pck_bb_02.append(eval_pck_batch(predictions[:, :, 0:2], gt_poses[:, :, 0:2], trans_matrices, distance_meassures))
+                #pck_upper_02.append(eval_pcku_batch(predictions[:, :, 0:2], gt_poses[:, :, 0:2], trans_matrices))
+
+                if batch_idx % 10 == 0:
+                    prediction = predictions[0, :, 0:2]
+                    gt_pose = gt_poses[0]
+                    matrix = trans_matrices[0]
+
+                    if torch.cuda.is_available():
+                        image = image.cpu()
+                        prediction = prediction.cpu()
+                        gt_pose = gt_pose.cpu()
+
+                    path = 'experiments/{}/val_images/{}/{}.png'.format(self.experiment_name, self.iteration, batch_idx)
+
+                    show_prediction_jhmbd(image, gt_pose, prediction, matrix, path=path)
+
+        torch.save(self.model.state_dict(), "experiments/{}/weights/weights_{:08d}".format(self.experiment_name, self.iteration))
+
+        mean_bb_02 = torch.mean(torch.FloatTensor(pck_bb_02)).item()
+        #mean_upper_02 = torch.mean(torch.FloatTensor(pck_upper_02)).item()
+        mean_upper_02 = 0.0
+        self.val_writer.write([self.iteration, mean_bb_02, mean_upper_02])
+        return mean_bb_02
 
 
 class MPIIExperiment(ExperimentBase):
