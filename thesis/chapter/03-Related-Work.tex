@@ -711,7 +711,7 @@ Their results are visualized in \fref{fig:pose-machine-vanishing-gradient}.
 The authors argue that the reason why intermediate supervision does help against the vanishing gradient problem is because it replenishes the gradient after each stage and thus keeps the gradient from decreasing when propagating back towards the network.
 
 \subsubsection{Stacked Hourglass}
-
+\label{sec:stacked_hourglass}
 % Introduction
 Building on \cite{toshev_deeppose:_2014}, \cite{newell_stacked_2016} proposed the \textit{Stacked hourglass network}.
 Similar to \cite{wei_convolutional_2016}, the authors compute \textit{belief maps} encoding joint probabilities instead of regressing the coordinates directly.
@@ -1180,7 +1180,7 @@ Overall, the authors argue that using Kinetics for pretraining and transfer lear
 In \cite{jhuang_towards_2013}, the authors evaluate the effect of different parts of a state-of-the-art action recognition pipeline \cite{wang_dense_2013} in order to gain a deeper understanding of the problem (see \sref{sec:dense-trajectories} for a detailed explanation of the algorithm).
 
 In order to evaluate the impact of different parts of an action recognition pipeline they needed a fully annotated dataset.
-They took a subset of the HMDB dataset \cite{kuehne_hmdb:_2011}, which they argue is a challenging dataset, and additionally annotated pose and created binary human segmentation maps, which they refer to as Puppet masks (see TODO for more information on the dataset). %TODO: Referenz nach vorne
+They took a subset of the HMDB dataset \cite{kuehne_hmdb:_2011}, which they argue is a challenging dataset, and additionally annotated pose and created binary human segmentation maps, which they refer to as Puppet masks (see \sref{sec:exp-jhmdb} for more information on the dataset).
 
 In addition to the annotated poses and Puppet masks, they computed optical flow on consecutive frames for each video clip as well as annotate a rectangular bounding box around the subject.
 By substituting ground truth pose, optical flow and bounding boxes into the pipeline of \cite{wang_dense_2013} the authors studied how much these individual features contribute to classification accuracy.
