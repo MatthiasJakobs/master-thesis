@@ -303,10 +303,8 @@ class JHMDBDataset(BaseDataset):
             bbox_height = torch.abs(bbox[1] - bbox[3]).item()
             self.original_window_size = torch.IntTensor([max(bbox_height, bbox_width), max(bbox_height, bbox_width)])
 
-            if not self.train:
-                self.calc_bbox_and_center(image_width, image_height)
-            else:
-                self.calc_bbox_and_center(image_width, image_height, pre_bb=bbox, offset=30) # TODO: Mention offset in paper. As long as used everywhere: comparable
+            #TODO: Here, I use puppet mask for testing too
+            self.calc_bbox_and_center(image_width, image_height, pre_bb=bbox, offset=30) # TODO: Mention offset in paper. As long as used everywhere: comparable
 
             current_frame = current_frame + 1
 
