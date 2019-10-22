@@ -518,6 +518,7 @@ Using the chain rule for derivation
 the partial derivative can be broken down :
 
 \begin{equation}
+    \label{eq:vanishing_1}
     \begin{split}
         \frac{\partial ~ SSE(\bm{x}, \bm{w})}{\partial w_{jk}}
         &= \frac{\partial}{\partial w_{jk}} ~ (g_k(\bm{x},\bm{w_k}) - \hat{y}_{k})^2 \\
@@ -550,6 +551,7 @@ However, while running Backpropagation, the partial derivatives of all nodes in 
 Generally, the error signal $\delta$ can be computed for all layer $L_g$ in the network using:
 
 \begin{equation}
+    \label{eq:vanishing_3}
     \delta_j =
     \begin{cases}
         y_j \cdot (1 - y_j) \cdot (y_j - \hat{y}_j) & ~ \text{if} ~ L_g ~ \text{is output layer} \\
@@ -567,22 +569,19 @@ After computing the error signal, the weight can be updated, similarly to \eref{
 \end{equation}
 
 \label{sec:vanishing-gradient}
-One problem that held the development of deep networks with many hidden layers back is the \textbf{vanishing gradient} problem \cite{hochreiter_untersuchungen_1991}.
+One problem that held the development of deep networks with many hidden layers back is the \textbf{vanishing gradient} problem \cite{hochreiter_untersuchungen_1991}\cite{hochreiter_vanishing_1998}.
 As seen previously, part of the gradient that gets propagated back through the network to update the parameters is the derivative of the activation function.
-When choosing Sigmoid as the activation function, the following holds for its derivative:
+When choosing Sigmoid as the activation function, the following was shown by \cite{hochreiter_vanishing_1998} for its derivative:
 
 \begin{equation}
     \frac{dS(x)}{dx} \leq 0.25
 \end{equation}
 
-This can be easily shown.
-Consider the sum of both parts of the first derivative of Sigmoid, $S(x) + (1 - S(x)) = 1$.
-
-%TODO: Proof
-
-Since this sum holds for all $x \in \mathbb{R}$  
-A similar behaviour is true for many other activation functions, e.g., $tanh(x)$.
-Thus, when multiplying many of such gradients together the overall gradient \textit{vanishes}, which means that the layers towards the beginning of the network are not trained efficiently.
+To compute the gradients of the weights in the first layer, all gradients of all following layer need to be known.
+When considering \eref{eq:vanishing_3} for a layer which is not the output layer, it becomes clear that the gradient of the next layers are mulitplied together to compute the error signal, and thus gradient, of the current layer.
+Since the gradient is limited by the derivative of the Sigmoid function, the gradient decreases exponentially with the number of layers.
+In the literature, this is then referred to as the gradient \textit{vanishing}, which means that the gradients towards the beginning of the network approach zero.
+This then means that the weights are not changed enough to further learn these layers.
 
 One way of dealing with this problem is using the \textbf{Rectified Linear Unit (ReLU)} non-linearity as activation function, as proposed in \cite{nair_rectified_2010}:
 
@@ -590,51 +589,44 @@ One way of dealing with this problem is using the \textbf{Rectified Linear Unit 
     \text{ReLU}(x) = \max (0, x)
 \end{equation}
 
-When computing the derivative of \textbf{ReLU}, it becomes clear that the vanishing gradient problem cannot occur because the gradient is either propagated or not opposed to being diminished with every layer:
+When computing the derivative of \textbf{ReLU}, it becomes clear that the vanishing gradient problem cannot occur because the gradient is either propagated or not as opposed to being diminished with every layer:
 
 \begin{equation}
-    \frac{d}{dx} \text{ReLU}(x) = \begin{cases}
+    \frac{d ReLU(x)}{dx} = \begin{cases}
         1 & if ~ x > 0 \\
         0 & if ~ x < 0
     \end{cases}
 \end{equation}
 
 \subsection{Convolutional Neural Networks}
-Suppose a task like image classification should be performed using traditional artificial neural networks like described previously.
-In image classification, images get sorted into classes based on what their content is, for example, an image of a cat should be classified to be of class \textit{cat} etc.
-For simplicity, consider the image to be greyscale, which means that each pixel $x$ contains the overall brightness information represented as a single byte (i.e. $x \in [0,255] \subset \mathbb{N}_0$).
-
-In order to use the image as an input, one would pass each pixel as one input into the neural network.
-For an image of size $n \times m$, this would mean a total of $n \cdot m$ neurons in the input layer.
-Let the following hidden layer consist of $h$ neurons.
-This then means that there need to be $(n \cdot m) \cdot h$ weights for the first hidden layer alone.
-One can see that, even for small images consisting of $32 \times 32$ pixels, the number of weights increase dramatically.
+Until now, the only kind of neural network layer discussed consisted of neurons, which take all inputs, compute the weighted sum using a weight matrix and then computing the activation.
+For certain input data, like images, this approach is not efficient, because each pixel intensity value would need a dedicated weight value, resulting in a large weight matrix.
+Instead, \textit{convolutional layers} were proposed, which drastically reduce the amount of weight values necessary to process image data.
 
 \subsubsection{Convolutional Layer}
 
-Instead of using traditional neural network layers for images, \textbf{convolutional layers} can be used.
-They relate to the mathematical process of convolution, where two real-valued functions are combined using the convolution operator $*$, resulting in a third real-valued function.
-In its most general form, the convolution operator over functions $x(t)$ and $w(a)$ is defined in \cite{goodfellow_deep_2016} as:
+\textit{Convolutional layers} relate to the mathematical process of convolution, where two real-valued functions are combined using the convolution operator $*$, resulting in a third real-valued function.
+In its most general form, the convolution operator over functions $x$ and $w$ is defined in \cite{goodfellow_deep_2016} as:
 
 \begin{equation}
-    s(t) = (x * w)(t) = \int x(a)w(t-a)da
+    s(t) = (x * w)(t) = \int_{a=-\infty}^{\infty} x(a)w(t-a)  da
 \end{equation}
 
 In convolutional layers, a discretized version is employed.
 The two operands are the input image $\bm{I}$ and a \textbf{kernel} (also referred to as a \textbf{filter}) $\bm{K}$.
-Typically, a kernel is a quadratic two dimensional matrix $(p \times p)$ of weights $w_{ij} \in \mathbb{R}$ with $p$ being odd \eref{eq:kernel_definition}.
+Typically, when processing images, a kernel is a two dimensional matrix $(p \times k)$ of weights $w_{ij} \in \mathbb{R}$\eref{eq:kernel_definition}.
 
 \begin{equation}
     \label{eq:kernel_definition}
     \bm{K} =
     \begin{pmatrix}
-        w_{00} & \dots  & w_{0p} \\
+        w_{00} & \dots  & w_{0k} \\
         \vdots & \ddots & \\
-        w_{p0} &        & w_{pp}
+        w_{p0} &        & w_{pk}
     \end{pmatrix}
 \end{equation}
 
-For each index $(i,j)$ in the input image, the output of the convolution is the weighted sum of the surrounding pixels of $(i,j)$:
+For each index $(i,j)$ in the input image, the output of the convolution is computed by summing over the product of the weights and the image:
 
 \begin{equation}
     \begin{split}
