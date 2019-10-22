@@ -107,7 +107,7 @@ See \fref{fig:luvizon_overview} for a visualization of the network and its separ
 The authors base their feature extraction network off of the \textit{Inception v4} network proposed by \cite{szegedy_inception-v4_2017}.
 One addition the authors made was to use a final \textit{depthwise separable convolutional layer} at the end of the network.
 
-A \textit{depthwise separable convolution} is used to reduce the number of parameters and matrix multiplications needed for convolutional layers with many channels.
+A \textit{depthwise separable convolution} \cite{sifre_rigid-motion_2014} \cite{chollet_xception:_2017} used to reduce the number of parameters and matrix multiplications needed for convolutional layers with many channels.
 Consider an input matrix (like an RGB image) to a convolutional layer of size $n \times n \times p$, where $p$ indicates the number of channels.
 Without loss of generality, a square input as well as a square kernel size is assumed.
 If a regular convolutional layer is used, and the desired number of output channels is given by $m$ with $m \gg p$, then one approach is to use $m$ kernels in the convolutional layer of size $a \times a \times p$.
