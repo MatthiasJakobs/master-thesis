@@ -224,7 +224,8 @@ class PennActionDataset(BaseDataset):
         bounding_boxes = []
 
         for frame, pose in zip(images, poses):
-            if self.use_gt_bb:
+            pose_invisible = torch.sum(pose != -1e9) == 0
+            if self.use_gt_bb and not pose_invisible:
                 # TODO: Maybe use original_size?
                 bbox_parameters = get_bbox_from_pose(pose, bbox_offset=30)
                 bbox = bbox_parameters["offset_bbox"]

@@ -51,7 +51,7 @@ class MixMPIIPenn(BaseDataset):
         name_path = self.root_dir + train_test_folder
         item_name = str(idx).zfill(self.padding_amount)
 
-        if idx > len(self.mpii):
+        if idx >= len(self.mpii):
             # pennaction
             real_index = math.floor((idx - len(self.mpii)) / self.sample_amount)
             if self.use_saved_tensors:

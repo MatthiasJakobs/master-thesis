@@ -97,7 +97,7 @@ class BaseDataset(data.Dataset):
 
         #assert bbox_width >= 32 and bbox_height >= 32
 
-        center += torch.IntTensor(self.aug_conf["scale"] * torch.IntTensor([self.aug_conf["trans_x"], self.aug_conf["trans_y"]]))
+        center += torch.IntTensor((self.aug_conf["scale"] * torch.IntTensor([self.aug_conf["trans_x"], self.aug_conf["trans_y"]]).float()).int())
 
         self.center = center
 
