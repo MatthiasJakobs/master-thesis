@@ -963,6 +963,13 @@ class MPIIExperiment(ExperimentBase):
 
         self.optimizer = optim.RMSprop(self.model.parameters(), lr=self.conf["learning_rate"])
 
+        if "lr_milestones" in  self.conf["lr_milestones"]:
+            milestones = self.conf["lr_milestones"]
+        else:
+            milestones = [20000000] # basically, never use lr scheduler
+
+        self.lr_scheduler = optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=milestones, gamma=0.1)
+
         self.train_writer.write(["iteration", "loss"])
         self.val_writer.write(["iteration", "pckh_0.5", "pckh_0.2"])
 
@@ -1000,8 +1007,7 @@ class MPIIExperiment(ExperimentBase):
         self.optimizer.zero_grad()
 
         self.train_writer.write([self.iteration, loss.item()])
-
-
+        self.lr_scheduler.step()
         self.iteration = self.iteration + 1
 
         print("iteration {} loss {}".format(self.iteration, loss.item()))
