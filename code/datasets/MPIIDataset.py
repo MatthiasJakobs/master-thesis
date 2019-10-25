@@ -190,6 +190,10 @@ class MPIIDataset(BaseDataset):
             t_bbox = torch.load(name_path + "annotations/" + padded_original_image + ".bbox.pt")
             t_parameters = torch.load(name_path + "annotations/" + padded_original_image + ".parameters.pt")
 
+            t_normalized_image = 2.0 * (t_normalized_image.float() / 255.0) + 1.0
+            t_normalized_pose = t_normalized_pose.float()
+            t_normalized_pose[:, 0:2] = t_normalized_pose[:, 0:2] / 255.0
+
             output["image_path"] = t_filepath
             output["normalized_image"] = t_normalized_image
             output["normalized_pose"] = t_normalized_pose

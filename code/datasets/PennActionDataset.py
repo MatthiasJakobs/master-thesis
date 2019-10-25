@@ -40,8 +40,8 @@ actions = [
 
 class PennActionDataset(BaseDataset):
 
-    def __init__(self, root_dir, use_random_parameters=False, transform=None, train=True, val=False, use_gt_bb=False):
-        super().__init__(root_dir, use_random_parameters=use_random_parameters, train=train, val=val)        
+    def __init__(self, root_dir, use_random_parameters=False, transform=None, train=True, val=False, use_saved_tensors=False, augmentation_amount=1, use_gt_bb=False):
+        super().__init__(root_dir, use_random_parameters=use_random_parameters, use_saved_tensors=use_saved_tensors, train=train, val=val)        
 
         self.mpii_mapping = np.array([
             [0, 8],  # head -> upper neck
@@ -89,6 +89,7 @@ class PennActionDataset(BaseDataset):
         self.classes = {}
 
         self.skip_random = False
+        self.augmentation_amount = augmentation_amount
 
         np.random.seed(None)
         st0 = np.random.get_state()
@@ -180,6 +181,50 @@ class PennActionDataset(BaseDataset):
         return final_pose
 
     def __getitem__(self, idx):
+        if self.use_saved_tensors:
+            if self.val:
+                train_test_folder = "val/"
+            else:
+                train_test_folder = "train/"
+
+            if self.use_random_parameters:
+                dice_roll = random.randint(0, self.augmentation_amount)
+                if dice_roll == 0:
+                    prefix = ""
+                else:
+                    prefix = "rand{}_".format(dice_roll)
+            else:
+                prefix = ""
+
+            original_image = self.indices[idx]
+            padded_original_image = str(original_image).zfill(8)
+
+            name_path = self.root_dir + train_test_folder + prefix
+            
+            frames = torch.load(self.root_dir + prefix + "images/" + padded_original_image + ".frames.pt")
+            actions = torch.load(self.root_dir + prefix + "annotations/" + padded_original_image + ".action_1h.pt")
+            poses = torch.load(self.root_dir + prefix + "annotations/" + padded_original_image + ".poses.pt")
+            matrices = torch.load(self.root_dir + prefix + "annotations/" + padded_original_image + ".matrices.pt")
+            bboxes = torch.load(self.root_dir + prefix + "annotations/" + padded_original_image + ".bbox.pt")
+            parameters = torch.load(self.root_dir + prefix + "annotations/" + padded_original_image + ".parameters.pt")
+
+            frames = 2.0 * (frames.float() / 255.0) + 1.0
+            poses = poses.float()
+            poses[:, :, 0:2] = poses[:,: , 0:2] / 255.0
+
+            t_index = torch.zeros(1).float()
+            t_index[0] = idx
+
+            return {
+                "action_1h": actions,
+                "normalized_frames": frames,
+                "normalized_poses": poses,
+                "trans_matrices": matrices,
+                "parameters": parameters,
+                "index": t_index,
+                "bbox": bboxes
+            }
+
         label_path = self.root_dir + "labels/" + self.items[self.indices[idx]]
 
         label = sio.loadmat(label_path)

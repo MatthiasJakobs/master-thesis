@@ -73,6 +73,10 @@ class JHMDBFragmentsDataset(data.Dataset):
         t_bboxes = t_bbox[start:end]
         t_original_window_sizes = t_original_window_size[start:end]
 
+        t_frames = 2.0 * (t_frames.float() / 255.0) + 1.0
+        t_poses = t_poses.float()
+        t_poses[:, :, 0:2] = t_poses[:, :, 0:2] / 255.0
+
         return {
             "frames": t_frames,
             "poses": t_poses,

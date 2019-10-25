@@ -64,7 +64,7 @@ class PennActionFragmentsDataset(data.Dataset):
         t_indices = torch.load(self.indices_folder + self.train_test_folder + padded_indice + ".indices.pt")
         print(self.indices_folder + self.train_test_folder + padded_indice + ".indices.pt")
 
-        padded_filename = str(int(t_indices[-1].item())).zfill(4)
+        padded_filename = str(int(t_indices[-1].item())).zfill(8)
 
         t_poses = torch.load(self.annotation_folder + padded_filename + ".poses.pt")
         t_action = torch.load(self.annotation_folder + padded_filename + ".action_1h.pt")
@@ -79,6 +79,10 @@ class PennActionFragmentsDataset(data.Dataset):
         t_frames = t_frames[start:end]
         t_poses = t_poses[start:end]
         t_matrices = t_matrices[start:end]
+
+        t_frames = 2.0 * (t_frames.float() / 255.0) + 1.0
+        t_poses = t_poses.float()
+        t_poses[:, :, 0:2] = t_poses[:, :, 0:2] / 255.0
 
         return {
             "frames": t_frames,

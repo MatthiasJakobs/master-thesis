@@ -12,14 +12,16 @@ import glob
 import random
 
 class MixMPIIPenn(BaseDataset):
-    def __init__(self, root_dir, transform=None, use_random_parameters=False, use_saved_tensors=False, train=True, val=False, augmentation_amount=1):
+    def __init__(self, transform=None, train=True, val=False, augmentation_amount=1):
 
-        super().__init__(root_dir, use_random_parameters=use_random_parameters, use_saved_tensors=use_saved_tensors, train=train, val=val)
+        # Decision: Always using random parameters and saved tensors
+
+        super().__init__("irrelevant", train=train, val=val)
 
         assert train # should not be used for testing
 
-        self.pennaction = PennActionDataset("/data/mjakobs/data/pennaction/", use_random_parameters=use_random_parameters, train=train, val=val, use_gt_bb=True)
-        self.mpii = MPIIDataset("/data/mjakobs/data/mpii/", use_random_parameters=use_random_parameters, use_saved_tensors=False, train=train, val=val)
+        self.pennaction = PennActionDataset("/data/mjakobs/data/pennaction/", use_random_parameters=True, train=train, val=val, use_gt_bb=True, use_saved_tensors=True, augmentation_amount=augmentation_amount)
+        self.mpii = MPIIDataset("/data/mjakobs/data/mpii/", use_random_parameters=True, use_saved_tensors=True, train=train, val=val, augmentation_amount=augmentation_amount)
 
         self.padding_amount = 8
 
@@ -33,66 +35,26 @@ class MixMPIIPenn(BaseDataset):
 
     def __getitem__(self, idx):
 
-        if self.val:
-            train_test_folder = "val/"
-        else:
-            train_test_folder = "train/"
-
-        if not self.val and self.use_random_parameters:
-            dice_roll = random.randint(0, self.augmentation_amount)
-            if dice_roll == 0:
-                self.mpii.skip_random = True
-                self.pennaction.skip_random = True
-            else:
-                self.mpii.skip_random = False
-                self.pennaction.skip_random = False
-                train_test_folder = "rand_train/"
-
-        name_path = self.root_dir + train_test_folder
-        item_name = str(idx).zfill(self.padding_amount)
-
         if idx >= len(self.mpii):
             # pennaction
             real_index = math.floor((idx - len(self.mpii)) / self.sample_amount)
-            if self.use_saved_tensors:
-                image = torch.load(name_path + "images/" + item_name + ".image.pt")
-                pose = torch.load(name_path + "annotations/" + item_name + ".pose.pt")
-                matrix = torch.load(name_path + "annotations/" + item_name + ".matrix.pt")
-                bbox = torch.load(name_path + "annotations/" + item_name + ".bbox.pt")
-            else:
-                entry = self.pennaction[real_index]
-                clip_length = len(entry["normalized_frames"])
-                frame_idx = random.randint(0, clip_length-1)
 
-                image = entry["normalized_frames"][frame_idx]
-                pose = entry["normalized_poses"][frame_idx]
-                matrix = entry["trans_matrices"][frame_idx]
-                bbox = entry["bbox"][frame_idx]
-                
-                torch.save(image, name_path + "images/" + item_name + ".image.pt")
-                torch.save(pose, name_path + "annotations/" + item_name + ".pose.pt")
-                torch.save(matrix, name_path + "annotations/" + item_name + ".matrix.pt")
-                torch.save(bbox, name_path + "annotations/" + item_name + ".bbox.pt")
+            entry = self.pennaction[real_index]
+            clip_length = len(entry["normalized_frames"])
+            frame_idx = random.randint(0, clip_length-1)
+
+            image = entry["normalized_frames"][frame_idx]
+            pose = entry["normalized_poses"][frame_idx]
+            matrix = entry["trans_matrices"][frame_idx]
+            bbox = entry["bbox"][frame_idx]
+            
         else:
             # mpii
-            self.mpii.skip_random = True
-
-            if self.use_saved_tensors:
-                image = torch.load(name_path + "images/" + item_name + ".image.pt")
-                pose = torch.load(name_path + "annotations/" + item_name + ".pose.pt")
-                matrix = torch.load(name_path + "annotations/" + item_name + ".matrix.pt")
-                bbox = torch.load(name_path + "annotations/" + item_name + ".bbox.pt")                
-            else:
-                entry = self.mpii[idx]
-                image = entry["normalized_image"]
-                pose = entry["normalized_pose"]
-                matrix = entry["trans_matrix"]
-                bbox = entry["bbox"]
-                
-                torch.save(image, name_path + "images/" + item_name + ".image.pt")
-                torch.save(pose, name_path + "annotations/" + item_name + ".pose.pt")
-                torch.save(matrix, name_path + "annotations/" + item_name + ".matrix.pt")
-                torch.save(bbox, name_path + "annotations/" + item_name + ".bbox.pt")
+            entry = self.mpii[idx]
+            image = entry["normalized_image"]
+            pose = entry["normalized_pose"]
+            matrix = entry["trans_matrix"]
+            bbox = entry["bbox"]
 
         return {
             "normalized_image": image,
