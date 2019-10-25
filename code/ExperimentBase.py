@@ -795,8 +795,8 @@ class Pose_Mixed(ExperimentBase):
 
         self.model.train()
 
-        self.ds_train = MixMPIIPenn("/data/mjakobs/data/mix_mpii_penn/", train=True, val=False, use_random_parameters=True, use_saved_tensors=False) # TODO: Use saved on server
-        self.ds_val = MixMPIIPenn("/data/mjakobs/data/mix_mpii_penn/", train=True, val=True, use_random_parameters=False, use_saved_tensors=False) #TODO: Use saved on server
+        self.ds_train = MixMPIIPenn(train=True, val=False)
+        self.ds_val = MixMPIIPenn(train=True, val=True)
 
         train_indices, val_indices = self.limit_dataset(include_test=False)
 
@@ -920,7 +920,6 @@ class Pose_Mixed(ExperimentBase):
         mean_upper_02 = 0.0
         self.val_writer.write([self.iteration, mean_bb_02, mean_upper_02])
         return mean_bb_02
-
 
 class MPIIExperiment(ExperimentBase):
 
