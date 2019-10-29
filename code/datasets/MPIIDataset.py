@@ -142,10 +142,14 @@ class MPIIDataset(BaseDataset):
             for idx in test_indeces:
                 label = annotations["annolist"][0][0][0][idx]
                 annorect = label["annorect"]
-                if len(annorect) == 0:
-                    continue
 
                 self.test_indices.append(idx)
+
+                if len(annorect) == 0:
+                    self.test_images.append(image_name)
+                    self.test_rects.append([])
+                    self.test_rectids.append([])                    
+                    continue
 
                 rect_ids_raw = annotations["single_person"][0][0][idx][0]
 
