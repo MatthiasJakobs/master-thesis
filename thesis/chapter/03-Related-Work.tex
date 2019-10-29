@@ -748,6 +748,7 @@ Thus, earlier features (in terms of network depth) can be reintroduced at a late
 One common use-case for skip-connections, which the authors used, is to reintroduce lower level features and add them to higher level features.
 This way, tasks like pose estimation can incorporate global, high level features like body shape with low level, local features like faces.
 
+\label{sec:residual_blocks}
 Skip-connections get used in \textit{residual blocks} \cite{he_deep_2016}, which are used for more efficient learning in deep networks.
 Consider two connected convolutional layer with input $x$.
 Let $f(x)$ be the output of the second convolutional layer.
@@ -1173,10 +1174,11 @@ Analogously, the performance improvement over \cite{wang_action_2013} is $11.6$ 
 Overall, the authors argue that using Kinetics for pretraining and transfer learning is a feasible approach to achieve similar transfer learning capabilities for video clips as with ImageNet and static images.
 
 \subsection{HAR using pose information}
-\label{sec:jhuang-towards}
+\label{sec:har_using_pose}
 % Towards ...
 %TODO: Here, they combine trajectories (positional features) with image features (HOG etc.). This is similar to how Luvizon combines pose and image features!. Can reference back.
 \subsubsection{Towards understanding action recognition}
+\label{sec:jhuang-towards}
 In \cite{jhuang_towards_2013}, the authors evaluate the effect of different parts of a state-of-the-art action recognition pipeline \cite{wang_dense_2013} in order to gain a deeper understanding of the problem (see \sref{sec:dense-trajectories} for a detailed explanation of the algorithm).
 
 In order to evaluate the impact of different parts of an action recognition pipeline they needed a fully annotated dataset.
