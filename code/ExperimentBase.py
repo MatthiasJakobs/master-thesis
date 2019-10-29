@@ -725,7 +725,7 @@ class Pose_JHMDB(ExperimentBase):
                         side_lenghts.append(window_size)
 
                         new_matrix = torch.eye(3)
-                        matrix, frame = center_crop(frame.permute(1, 2, 0).cpu(), center, window_size, new_matrix)
+                        matrix, frame = center_crop(frame.permute(1, 2, 0).cpu().numpy(), center, window_size, new_matrix)
 
                         frame = torch.from_numpy(resize(frame, (255, 255), preserve_range=True)).permute(2, 0, 1)
 
