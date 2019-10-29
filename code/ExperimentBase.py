@@ -350,6 +350,7 @@ class HAR_Testing_Experiment(ExperimentBase):
             self.val_writer.write([self.iteration, accuracy])
 
             torch.save(self.model.state_dict(), "experiments/{}/weights/weights_{:08d}".format(self.experiment_name, self.iteration))
+            torch.save(self.model.pose_estimator.pose_estimator.state_dict(), "experiments/{}/weights/pe_weights_{:08d}".format(self.experiment_name, self.iteration))
 
             return accuracy
 
