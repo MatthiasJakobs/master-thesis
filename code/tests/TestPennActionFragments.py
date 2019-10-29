@@ -36,7 +36,7 @@ if os.path.exists(output_folder):
 os.makedirs(output_folder)
 
 subfolders = ["train_norandom", "train_random", "test_norandom", "val_norandom"]
-scenarios = [[True, False, False], [True, False, True], [False, False, False], [False, True, False]]
+scenarios = [[True, False, False], [True, False, True], [False, False, False], [True, True, False]]
 
 for path in subfolders:
     os.makedirs(output_folder + "/" + path)
@@ -47,10 +47,8 @@ for scenario_idx, scenario in enumerate(scenarios):
     val = scenario[1]
     use_random_parameters = scenario[2]
     
-    ds = PennActionFragmentsDataset("/data/mjakobs/data/pennaction_fragments/", train=True, val=True, use_random_parameters=False)
-    print(len(ds))
-    ds_full = PennActionDataset("/data/mjakobs/data/pennaction/", train=train)
-    print(len(ds_full))
+    ds = PennActionFragmentsDataset("/data/mjakobs/data/pennaction_fragments/", train=train, val=val, use_random_parameters=use_random_parameters)
+    ds_full = PennActionDataset("/data/mjakobs/data/pennaction/", train=train, val=val)
 
     random.seed(1)
     np.random.seed(1)
@@ -58,30 +56,26 @@ for scenario_idx, scenario in enumerate(scenarios):
 
     all_indices = list(range(len(ds)))
     random.shuffle(all_indices)
-    test_indices = all_indices[:4]
+    test_indices = all_indices[:25]
 
     for idx in test_indices:
 
         entry = ds[idx]
-
         for frame in range(16):
 
-            image = entry["frames"][frame].reshape(256, 256, 3)
+            image = entry["frames"][frame].permute(1, 2, 0)
             action_label = actions[entry["action_1h"].argmax().item()]
 
-            image = ((image.float() / 255.0) * 2.0) - 1
-
             assert image.max() <= 1 and image.min() >= -1
-
             plt.subplot(121)
-            plt.imshow(image)
+            plt.imshow((image + 1) / 2.0)
 
             pose = entry["poses"][frame]
             vis = pose[:, 2]
             x = (pose[:, 0] * 255.0 * vis).numpy()
             y = (pose[:, 1] * 255.0 * vis).numpy()
 
-            assert pose.max() <= 1 and (pose.min() >= 0 or pose.min() == -1e9), print(entry["poses"][frame])
+            #assert pose.max() <= 1 and (pose.min() >= 0 or pose.min() == -1e9), print(entry["poses"][frame])
             for o in range(16):
                 vis_int = vis.numpy().astype(np.int)
                 assert vis_int[o] == 1 or vis_int[o] == 0 
@@ -103,9 +97,8 @@ for scenario_idx, scenario in enumerate(scenarios):
 
             matrix = entry["trans_matrices"][frame]
             indices = entry["indices"].int()
-            item_path = "/data/mjakobs/data/pennaction/frames/{}/*.jpg".format(str(indices[2].item()).zfill(4))
+            item_path = "/data/mjakobs/data/pennaction/frames/{}/*.jpg".format(str(ds_full.items[indices[2].item()]).zfill(4))
             all_frames = sorted(glob.glob(item_path))
-
             image_path = all_frames[indices[0].item() + frame]
             image = io.imread(image_path)
             plt.imshow(image)
@@ -126,7 +119,7 @@ for scenario_idx, scenario in enumerate(scenarios):
                 if vis[dst]:
                     plt.plot([x[src], x[dst]], [y[src], y[dst]], lw=1, c="#00FFFF")
 
-            bbox = entry["bbox"]
+            bbox = entry["bbox"][frame]
             bbox_rect = Rectangle((bbox[0], bbox[1]), abs(bbox[0] - bbox[2]), abs(bbox[1] - bbox[3]), linewidth=1, facecolor='none', edgecolor="#FF00FF", clip_on=False)
             ax = plt.gca()
             ax.add_patch(bbox_rect)

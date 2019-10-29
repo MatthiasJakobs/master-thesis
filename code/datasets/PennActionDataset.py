@@ -235,18 +235,21 @@ class PennActionDataset(BaseDataset):
         poses = []
         for i in range(len(all_images)):
             image = io.imread(frame_folder + all_images[i])
-            images.append(torch.from_numpy(image))
 
             joint_frame = []
             for o in range(13):
-                joint_coordinate = [label["x"][i][o], label["y"][i][o]]
-                visibility = bool(label["visibility"][i][o])
-                if visibility:
+                joint_coordinate = [label["x"][i][o], label["y"][i][o], int(label["visibility"][i][o])]
+                if joint_coordinate[-1]:
                     joint_frame.append(joint_coordinate)
                 else:
-                    joint_frame.append([-1e9, -1e9])
+                    joint_frame.append([-1e9, -1e9, 0])
 
-            poses.append(torch.FloatTensor(joint_frame))
+            joint_tensor = torch.FloatTensor(joint_frame)
+            joint_tensor = joint_tensor.unsqueeze(0)
+            _ , valid_sum = get_valid_joints(joint_tensor, need_sum=True)
+            if valid_sum.item() > 2:
+                images.append(torch.from_numpy(image))
+                poses.append(joint_tensor[0, :, 0:2])
 
         action = self.get_action(label)
 
@@ -280,6 +283,8 @@ class PennActionDataset(BaseDataset):
                 self.window_size = (window_size.float() * self.aug_conf["scale"]).int()
                 self.center = center
             else:
+                if pose_invisible:
+                    print("train {} val {} problem at {}".format(self.train, self.val, idx))
                 self.calc_bbox_and_center(image_width, image_height)
 
             trans_matrix, norm_frame, norm_pose = self.preprocess(frame, pose)
