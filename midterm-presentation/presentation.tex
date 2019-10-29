@@ -84,100 +84,138 @@
 
 \section{Motivation}
 \begin{myframe}[Motivation]
-    \begin{itemize}
-        \item Present problem
-        \item Approach by Luvizon
-    \end{itemize}
+    \begin{columns}[T]
+        \begin{column}{.45\textwidth}
+            \begin{itemize}
+                \item Often: Human Activity Recognition approached separately from pose estimation
+                \item Pose is used for HAR, but not learned jointly.
+                \begin{itemize}
+                    \item Shown to be very important feature
+                \end{itemize}
+                \item Idea: Both can benefit from each other
+                \item Luvizon et al. \footnotemark~ propose approach for jointly learning both
+            \end{itemize}
+        \end{column}
+        \footnotetext[1]{\cite{luvizon_2d/3d_2018}}
+        \footnotetext[2]{\cite{reining_towards_2018}}
+        \begin{column}{.45\textwidth}
+            \begin{figure}
+                \includegraphics[width=.99\textwidth]{skeleton_har_example.png}
+                \sourcefix{2}
+            \end{figure}
+        \end{column}
+    \end{columns}
 \end{myframe}
 
 \tableofcontents
 
 \section{Method}
 
-\begin{myframe}[Method - Joint methods]
-    \note[item]{Handlungserkennung und Posenbestimmung gemeinsam trainieren. Idee: Profitieren voneinander}
-    \note[item]{ Pretraining von Pose (Verschiedene Datensätze für Pose und Action)}
-    \note[item]{Optimierung (fine-tuning) passiert end-to-end}
-    \note[item]{}
-    \note[item]{Oft ist die Ausgabe von neuronalen Netzen zur Posenbestimmung eine Heatmap. Heatmap stellt Softmaxverteilung da}
-    \note[item]{\textbf{Argmax als postprocessing schritt nötig} damit exakte Koordinaten. Wenn man end-to-end trainieren will ist ein nicht-differentierbares Argmax aber problematisch.}
-    \note[item]{Normalisierte Version des Erwartungswerts des Softmax in x und y Dimension}
+\begin{myframe}[Method - Overview]
 	\begin{columns}[T]
-	\begin{column}{.45\textwidth}
-		\begin{itemize}
-			\item \textbf{Multitask Deep HAR}\footnotemark
-			\begin{itemize}
-                \item Jointly train pose and action recognition
-                \item Pre-train pose estimation part, then fine-tune end-to-end
-				\item \textit{Soft-argmax}\footnotemark~makes end-to-end learning possible
-			\end{itemize}
-		\end{itemize}
-        \begin{figure}
-            \includegraphics[width=0.99\textwidth]{softargmax.png}
-            \sourcefix{1}
-        \end{figure}
-	\end{column}
-    \footnotetext[1]{\cite{luvizon_2d/3d_2018}}
-    \footnotetext[2]{\cite{luvizon_human_2017}}
-	\begin{column}{.45\textwidth}
-		\begin{figure}
-			\includegraphics[width=.99\textwidth]{endtoend-concept.png}
-            \sourcefix{1}
-            %\caption{Complete network pipeline.}
-		\end{figure}
-	\end{column}
+        \begin{column}{.45\textwidth}
+            \begin{itemize}
+                \item \textbf{Multitask Deep HAR}\footnotemark
+                \begin{itemize}
+                    \item Jointly train pose and action recognition
+                    \item Pre-train pose estimation part, then fine-tune end-to-end
+                    \item \textit{Soft-argmax}\footnotemark~makes end-to-end learning possible
+                \end{itemize}
+            \end{itemize}
+            \begin{figure}
+                \includegraphics[width=0.99\textwidth]{softargmax.png}
+                \sourcefix{1}
+            \end{figure}
+        \end{column}
+        \footnotetext[1]{\cite{luvizon_2d/3d_2018}}
+        \footnotetext[2]{\cite{luvizon_human_2017}}
+        \begin{column}{.45\textwidth}
+            \begin{figure}
+                \includegraphics[width=.99\textwidth]{endtoend-concept.png}
+                \sourcefix{1}
+                %\caption{Complete network pipeline.}
+            \end{figure}
+        \end{column}
+        \end{columns}
+    \end{myframe}
+
+\begin{myframe}[Method - Softargmax]
+	\begin{columns}[T]
+        \begin{column}{.45\textwidth}
+            \begin{itemize}
+                \item According to authors: Postprocessing necessary
+                \item Propose \textbf{Soft-argmax} \footnotemark ~ in previous work
+                \item Computes expectations on probability maps
+                \item Fully differentiable
+            \end{itemize}
+            \begin{figure}
+                \includegraphics[width=0.99\textwidth]{softargmax.png}
+                \sourcefix{1}
+            \end{figure}
+        \end{column}
+        \footnotetext[1]{\cite{luvizon_human_2017}}
+        \footnotetext[2]{\cite{luvizon_2d/3d_2018}}
+        \begin{column}{.45\textwidth}
+            \begin{figure}
+                \includegraphics[width=.99\textwidth]{softargmax.png}
+                \sourcefix{1}
+                %\caption{Complete network pipeline.}
+            \end{figure}
+        \end{column}
 	\end{columns}
 \end{myframe}
 
-\begin{myframe}[Multitask Deep HAR - Architecture]
-    \note[item]{Basiert auf Inception v4 um Features zu extrahieren}
-    \note[item]{Prediction Blocks: Ähnlich zu Hourglasses von vorhin. Nach jedem Block ein Zwischenergebnis welches verfeinert wird.}
-    \note[item]{Nach \textbf{jedem} prediction block: Heatmap (Softargmax) und Wahrscheinlichkeitsvektor}
-    \note[item]{Loss: Elstic Net loss}
-
+\begin{myframe}[Method - Architecture]
     \begin{columns}[T]
         \begin{column}{.45\textwidth}
             \begin{itemize}
-                \item \textit{Multitask CNN}
+                \item \textit{Feature Extractor - Stem}
                 \begin{itemize}
-                    \item Blocks similar to hourglasses
-                    \item Refine prediction with each additional block
-                    \item In addition to providing visual features and heatmaps:
+                    \item Based on Inception v4 \footnotemark
+                    \item Uses \textbf{Depthwise separate convolutional layer}\footnotemark\footnotemark
                     \begin{itemize}
-                        \item Coordinates from Soft-argmax
-                        \item Join visibility vector using sigmoid
+                        \item Used when high number of filters needed
+                        \item Needs fewer parameters
+                        \item Needs fewer matrix multiplications
                     \end{itemize}
-                    \item Loss function $$L_p = \frac{1}{N_J}\sum_{n=1}^{N_J}(~ \lvert\lvert \hat{p}_n - p_n \rvert\rvert_1 ~+~ \lvert\lvert \hat{p}_n - p_n \rvert\rvert^2_2 ~ )$$
                 \end{itemize}
             \end{itemize}
         \end{column}
         \begin{column}{.45\textwidth}
             \begin{figure}
-                \includegraphics[width=.99\textwidth]{multitask-part.png}
-                \sourcefix{1}
+                \includegraphics[width=.99\textwidth]{luvizon_stem.png}
+                \sourcefix{4}
             \end{figure}
         \end{column}
 	\end{columns}
-    \footnotetext[1]{\cite{luvizon_2d/3d_2018}}
+    \footnotetext[1]{\cite{szegedy_inception-v4_2017}}
+    \footnotetext[2]{\cite{sifre_rigid-motion_2014}}
+    \footnotetext[3]{\cite{chollet_xception:_2017}}
+    \footnotetext[4]{\cite{luvizon_2d/3d_2018}}
 \end{myframe}
 
-\begin{myframe}[Multitask Deep HAR - Architecture]
-    \note[item]{Pipeline zu sehen.}
-    \note[item]{Auch hier: keine genauen Angaben zum Aufbau. Verweis auf Code}
-    \note[item]{Action Heatmap für jede Handlung. Mittles Pooling und Softmax dann Wahrscheinlichkeit}
-    \note[item]{Max+Min pooling: $f(x) = \text{MaxPooling}(x) - \text{MaxPooling}(-x)$}
+\begin{myframe}[Method - Architecture]
+    \begin{figure}
+        \includegraphics[width=.99\textwidth]{depthwise-visualization.png}
+        \sourcefix{1}
+    \end{figure}
 
+    \footnotetext[1]{\url{https://towardsdatascience.com/a-basic-introduction-to-separable-convolutions-b99ec3102728}}
+\end{myframe}
+
+
+\begin{myframe}[Method - Pose-based recognition]
 	\begin{columns}[T]
         \begin{column}{.45\textwidth}
             \begin{itemize}
-                \item \textit{Pose recognition}
+                \item Two paths in the network for action recognition
+                \item \textit{Pose-based recognition}
                 \begin{itemize}
                     \item Arrange joint values over time in 2D matrix
                     \item Action heatmaps
                     \begin{itemize}
                         \item Through softmax: action probabilities
                     \end{itemize}
-
                 \end{itemize}
             \end{itemize}
         \end{column}
@@ -191,14 +229,11 @@
     \footnotetext[1]{\cite{luvizon_2d/3d_2018}}
 \end{myframe}
 
-\begin{myframe}[Multitask Deep HAR - Architecture]
-    \note[item]{Im Prinzip gleicher Aufbau wie vorher, nur mit Visual Features statt Posen}
-    \note[item]{\textbf{Am Ende:}}
-    \note[item]{Durch FC-Layer aggregation und mit softmax dann finales Ergebnis}
-	\begin{columns}[T]
+\begin{myframe}[Method - Appearance-based recognition]
+    	\begin{columns}[T]
         \begin{column}{.45\textwidth}
             \begin{itemize}
-                \item \textit{Appearance recognition}
+                \item \textit{Appearance-based recognition}
                 \begin{itemize}
                     \item Combination of visual features and joint positions
                     \item Then: Identical architecture to pose recognition part
@@ -220,8 +255,7 @@
     \footnotetext[1]{\cite{luvizon_2d/3d_2018}}
 \end{myframe}
 
-\begin{myframe}[Method]
-    \note[item]{placeholder}
+\begin{myframe}[Method - Extensions]
     \begin{itemize}
         \item Reimplementation in PyTorch \fcite{paszke_automatic_2017}
         \begin{itemize}
@@ -230,15 +264,14 @@
         \item Experimentation
         \begin{itemize}
             %\item Better incorporation of temporal dimension \fcite{pavllo_3d_2019}
-            \item Compare with state-of-the-art methods not using pose \fcite{zhou_mict:_2018}
-            \item Different representation of temporal information (next slide)
+            \item Ablation study to determine the choice of certain parameters
             \item Combined loss function of pose and action for \emph{real} end-to-end training
+            \item Different representation of temporal information (next slide)
         \end{itemize}
     \end{itemize}
 \end{myframe}
 
-\begin{myframe}[Method]
-    \note[item]{Dadurch: Eine Repräsentation für Video features und IMU Datenströme. \textit{Kombination?}}
+\begin{myframe}[Method - Different temporal representation]
     \begin{figure}
         \includegraphics[width=.65\textwidth]{jointsovertime.png}
         \caption{Approach used by \footnotemark. Convolution over all sensors at once. \sourcefix{1}}
@@ -275,9 +308,7 @@
   \end{columns}
 \end{myframe}
 
-
 \begin{myframe}[Action Recognition Datasets]
-  \note[item]{placeholder}
   \begin{columns}[T]
       \begin{column}{.48\textwidth}
           \vspace{20px}
@@ -304,7 +335,6 @@
 \end{myframe}
 
 \begin{myframe}[Action Recognition Datasets]
-  \note[item]{placeholder}
   \begin{columns}[T]
       \begin{column}{.48\textwidth}
           \begin{itemize}
@@ -332,33 +362,33 @@
 \end{myframe}
 
 \section{Experiments}
-\begin{myframe}[Recreate experiments]
-    \begin{itemize}
-        \item MPII in all different kinds
-        \item Show example images and graphs
-    \end{itemize}
-\end{myframe}
+% \begin{myframe}[Recreate experiments]
+%     \begin{itemize}
+%         \item MPII in all different kinds
+%         \item Show example images and graphs
+%     \end{itemize}
+% \end{myframe}
 
-\begin{myframe}[Recreate experiments]
-    \begin{itemize}
-        \item Penn Action HAR
-        \item Show example images and graphs
-    \end{itemize}
-\end{myframe}
+% \begin{myframe}[Recreate experiments]
+%     \begin{itemize}
+%         \item Penn Action HAR
+%         \item Show example images and graphs
+%     \end{itemize}
+% \end{myframe}
 
 \section{Conclusion}
-%\note[item]{placeholder}
-\begin{myframe}[Conclusion]
-    \begin{itemize}
-        \item TODO
-    \end{itemize}
-\end{myframe}
+% \begin{myframe}[Conclusion]
+%     \begin{itemize}
+%          \item What is left to do
+%         \item TODO
+%     \end{itemize}
+% \end{myframe}
 
-\begin{myframe}[Thank you]
-    \note[item]{placeholder}
-    \centering \Large
-    \emph{Thank you for your time!}
-\end{myframe}
+% \begin{myframe}[Thank you]
+%     \note[item]{placeholder}
+%     \centering \Large
+%     \emph{Thank you for your time!}
+% \end{myframe}
 
 \end{document}
 
