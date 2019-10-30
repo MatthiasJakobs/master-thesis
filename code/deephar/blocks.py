@@ -312,6 +312,48 @@ class ActionPredictionBlock(nn.Module):
             x = a + b + heatmaps
         return x, y
 
+class PoseModelTimeSeries(nn.Module):
+    def __init__(self, num_frames, num_joints, num_actions):
+        super(PoseModelTimeSeries, self).__init__()
+
+        self.num_frames = num_frames
+        self.num_joints = num_joints
+        self.num_actions = num_actions
+
+        # feature extraction
+        self.cba1 = CBA(input_filters=2, output_filters=16, kernel_size=(1,4), padding=(1,0))
+        self.cba2 = CBA(input_filters=16, output_filters=32, kernel_size=(1,4))
+        self.cba3 = CBA(input_filters=32, output_filters=48, kernel_size=(3,3))
+        self.cba4 = CBA(input_filters=48, output_filters=56, kernel_size=(3,3))
+
+        self.pooling = MaxMinPooling(kernel_size=(2,2))
+
+        self.act_pred1 = ActionPredictionBlock(num_actions, 112) # TODO: Kind of a magic number
+        self.act_pred2 = ActionPredictionBlock(num_actions, 112)
+        self.act_pred3 = ActionPredictionBlock(num_actions, 112)
+        self.act_pred4 = ActionPredictionBlock(num_actions, 112, last=True)
+
+    def forward(self, x, p):
+        # prob = p[:, :, :, 2]
+        # prob = prob.unsqueeze(-1)
+        # prob = prob.expand(-1, -1, -1, 2)
+        # prob = prob.permute(0, 3, 1, 2)
+
+        # x = x * prob # I dont really know why they do that
+
+        x = self.cba1(x)
+        x = self.cba2(x)
+        x = self.cba3(x)
+
+        x = self.pooling(x)
+
+        x, y1 = self.act_pred1(x)
+        x, y2 = self.act_pred2(x)
+        x, y3 = self.act_pred3(x)
+        _, y4 = self.act_pred4(x)
+
+        return [y1, y2, y3, y4]
+
 
 class PoseModel(nn.Module):
     def __init__(self, num_frames, num_joints, num_actions):
@@ -338,13 +380,14 @@ class PoseModel(nn.Module):
         self.act_pred4 = ActionPredictionBlock(num_actions, 112, last=True)
 
     def forward(self, x, p):
-        prob = p[:, :, :, 2]
+        prob = p[:, :, 2]
         prob = prob.unsqueeze(-1)
-        prob = prob.expand(-1, -1, -1, 2)
-        prob = prob.permute(0, 3, 1, 2)
+        prob = prob.expand(-1, -1, 2)
+        prob = prob.permute(2, 0, 1)
 
         x = x * prob # I dont really know why they do that
 
+        x = x.unsqueeze(0)
         a = self.cba1(x)
         b = self.cba2(x)
         c = self.cba3(x)
@@ -384,6 +427,7 @@ class VisualModel(nn.Module):
         self.act_pred4 = ActionPredictionBlock(num_actions, 256, last=True)
 
     def forward(self, x):
+        x = x.unsqueeze(0)
         x = self.cb(x)
 
         x = self.pooling(x)
@@ -394,5 +438,24 @@ class VisualModel(nn.Module):
         _, y4 = self.act_pred4(x)
 
         return [y1, y2, y3, y4]
+
+class HeatmapWeighting(nn.Module):
+    def __init__(self, num_filters):
+        super(HeatmapWeighting, self).__init__()
+
+        self.filters = num_filters
+        kernel_size = (1,1)
+
+        w1 = torch.ones((num_filters, 1, kernel_size[1], kernel_size[0]), dtype=torch.float32)
+        w2 = torch.zeros((num_filters, num_filters, 1, 1), dtype=torch.float32)
+        
+        for i in range(num_filters):
+            w2[i, i, 0, 0] = 1.0
+
+        self.conv = SeparableConv2D(num_filters, num_filters, kernel_size=kernel_size, custom_weights=[nn.Parameter(w1, requires_grad=False), nn.Parameter(w2, requires_grad=False)])
+
+    def forward(self, x):
+        return self.conv(x)
+
 
 

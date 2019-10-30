@@ -262,8 +262,6 @@ class HAR_Testing_Experiment(ExperimentBase):
 
             actions = actions.unsqueeze(0)
             actions = actions.expand(4, -1)
-
-            frames = frames.unsqueeze(0)
             actions = actions.unsqueeze(0)
 
             if "start_finetuning" in self.conf and self.iteration < self.conf["start_finetuning"]:
@@ -311,6 +309,9 @@ class HAR_Testing_Experiment(ExperimentBase):
 
                 ground_class = torch.argmax(actions, 1)
 
+                assert len(frames) == 1
+                frames = frames.squeeze(0)
+
                 _, predicted_poses, _, _, prediction = self.model(frames)
 
                 if torch.cuda.is_available():
@@ -320,17 +321,16 @@ class HAR_Testing_Experiment(ExperimentBase):
 
                 if batch_idx % 10 == 0:
                     self.create_dynamic_folders(heatmaps=False)
-                    for i in range(len(frames)):
-                        for frame in range(len(frames[0])):
-                            path = 'experiments/{}/val_images/{}/{}_{}_{}.png'.format(self.experiment_name, self.iteration, batch_idx, i, frame)
-                            plt.imshow((frames[i, frame].reshape(255, 255, 3) + 1) / 2.0)
+                    for frame in range(len(frames)):
+                        path = 'experiments/{}/val_images/{}/{}_{}.png'.format(self.experiment_name, self.iteration, batch_idx, frame)
+                        plt.imshow((frames[frame].permute(1,2,0) + 1) / 2.0)
 
-                            pred_x = predicted_poses[i, frame, :, 0]
-                            pred_y = predicted_poses[i, frame, :, 1]
+                        pred_x = predicted_poses[frame, :, 0]
+                        pred_y = predicted_poses[frame, :, 1]
 
-                            plt.scatter(x=pred_x * 255.0, y=pred_y * 255.0, c="#FF00FF")
-                            plt.savefig(path)
-                            plt.close()
+                        plt.scatter(x=pred_x * 255.0, y=pred_y * 255.0, c="#FF00FF")
+                        plt.savefig(path)
+                        plt.close()
 
                 pred_class = torch.argmax(prediction.squeeze(1), 1)
 
@@ -350,7 +350,7 @@ class HAR_Testing_Experiment(ExperimentBase):
             self.val_writer.write([self.iteration, accuracy])
 
             torch.save(self.model.state_dict(), "experiments/{}/weights/weights_{:08d}".format(self.experiment_name, self.iteration))
-            torch.save(self.model.pose_estimator.pose_estimator.state_dict(), "experiments/{}/weights/pe_weights_{:08d}".format(self.experiment_name, self.iteration))
+            torch.save(self.model.pose_estimator.state_dict(), "experiments/{}/weights/pe_weights_{:08d}".format(self.experiment_name, self.iteration))
 
             return accuracy
 
@@ -375,36 +375,35 @@ class HAR_Testing_Experiment(ExperimentBase):
                 padding = int((sequence_length - 16) / 2.0)
 
                 ground_class = torch.argmax(actions, 1)
-                single_clip = frames[:, padding:(16 + padding)]
-                assert len(single_clip[0]) == 16
+                single_clip = frames[:, padding:(16 + padding)].squeeze(0)
+                assert len(single_clip) == 16
 
                 spacing = 8
                 nr_multiple_clips = int((sequence_length - 16) / spacing) + 1
-                multi_clip = torch.zeros(nr_multiple_clips, 16, 3, 255, 255)
-                for i in range(nr_multiple_clips):
-                    multi_clip[i] = frames[0, i * spacing : i * spacing + 16]
 
-                multi_clip = multi_clip.to(self.device)
+                single_clip = single_clip.to(self.device)
                 _, _, _, _, single_result = self.model(single_clip)
-                _, _, _, _, multi_result = self.model(multi_clip)
+
+                pred_class_multi = torch.IntTensor(nr_multiple_clips)
+                for i in range(nr_multiple_clips):
+                    multi_clip = frames[0, i * spacing : i * spacing + 16].to(self.device)
+                    _, _, _, _, estimated_class = self.model(multi_clip)
+                    pred_class_multi[i] = torch.argmax(estimated_class.squeeze(1), 1)
 
                 pred_class_single = torch.argmax(single_result.squeeze(1), 1)
-                pred_class_multi = torch.argmax(multi_result.squeeze(1), 1)
 
                 correct_single = correct_single + (pred_class_single == ground_class).item()
 
                 ground_class = ground_class.expand(nr_multiple_clips).long()
 
-                majority_correct = torch.sum((pred_class_multi == ground_class).float()) >= (nr_multiple_clips / 2.0)
+                majority_correct = torch.sum((pred_class_multi.long() == ground_class).float()) >= (nr_multiple_clips / 2.0)
 
                 correct_multi = correct_multi + majority_correct.int().item()
                 total = total + 1
 
                 accuracy_single = correct_single / float(total)
                 accuracy_multi = correct_multi / float(total)
-
-                #print("test {} / {}".format(current, length))
-                #print(accuracy_single, correct_multi / float(total))
+                
                 current = current + 1
 
             return accuracy_single, accuracy_multi
