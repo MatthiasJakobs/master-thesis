@@ -14,6 +14,10 @@ import skimage.io as io
 import os
 import glob
 
+def create_folder_if_not_present(filepath):
+        if not os.path.exists(filepath):
+                os.makedirs(filepath)       
+
 def delete_and_create(root_dir, use_random=False, split=1, subprefix="2"):
         base_list = []
 
@@ -217,7 +221,7 @@ def create_fragments_jhmdb(train=False, val=False, split=1, use_random=False, su
 
                 print("{} - {}: {} / {}".format(train_test_folder, split, counter+1, len(all_indices)))
 
-def create_fragments_mpii(train=False, val=False, use_random=False, subprefix="1"):
+def create_fragments_mpii(train=False, val=False, use_random=False, subprefix="1", split=1):
         ds = MPIIDataset("/data/mjakobs/data/mpii/", use_random_parameters=use_random, use_saved_tensors=False, train=train, val=val)
 
         print("-" * 50)
@@ -271,38 +275,55 @@ def create_fragments_mpii(train=False, val=False, use_random=False, subprefix="1
                 torch.save(parameters, root_dir + train_test_folder + prefix + "annotations/" + padded_original_image + ".parameters.pt")
                 torch.save(image_path, root_dir + train_test_folder + prefix + "annotations/" + padded_original_image + ".image_path.pt")
 
+def complete_jhmdb(split=1, amount_random=3):
+        ######
+        #  JHMDB
+        #####
+        for i in range(amount_random):
+                subprefix = "{}".format(i + 1)
 
-split = 1
-amount_random = 3
+                delete_and_create("/data/mjakobs/data/jhmdb_fragments/", use_random=True, subprefix=subprefix)
+                create_fragments_jhmdb(train=True, val=False, split=split, use_random=True, subprefix=subprefix)
 
-######
-#  JHMDB
-#####
-for i in range(amount_random):
-        subprefix = "{}".format(i + 1)
+        delete_and_create("/data/mjakobs/data/jhmdb_fragments/", use_random=False, subprefix="1")
+        create_fragments_jhmdb(train=True, val=False, split=split, use_random=False)
+        create_fragments_jhmdb(train=False, val=False, split=split) # test
+        create_fragments_jhmdb(train=True, val=True, split=split) # val
 
-        delete_and_create("/data/mjakobs/data/jhmdb_fragments/", use_random=True, subprefix=subprefix)
-        create_fragments_jhmdb(train=True, val=False, split=split, use_random=True, subprefix=subprefix)
+def complete_mpii():
+        ######
+        #  MPII
+        #####
+        create_folder_if_not_present("/data/mjakobs/data/mpii/train/annotations")
+        create_folder_if_not_present("/data/mjakobs/data/mpii/train/images")
+        
+        create_folder_if_not_present("/data/mjakobs/data/mpii/train/rand1_annotations")
+        create_folder_if_not_present("/data/mjakobs/data/mpii/train/rand1_images")
+        create_folder_if_not_present("/data/mjakobs/data/mpii/train/rand2_annotations")
+        create_folder_if_not_present("/data/mjakobs/data/mpii/train/rand2_images")
+        create_folder_if_not_present("/data/mjakobs/data/mpii/train/rand3_annotations")
+        create_folder_if_not_present("/data/mjakobs/data/mpii/train/rand3_images")
+        
+        create_folder_if_not_present("/data/mjakobs/data/mpii/val/annotations")
+        create_folder_if_not_present("/data/mjakobs/data/mpii/val/images")
 
-delete_and_create("/data/mjakobs/data/jhmdb_fragments/", use_random=False, subprefix="1")
-create_fragments_jhmdb(train=True, val=False, split=split, use_random=False)
-create_fragments_jhmdb(train=False, val=False, split=split) # test
-create_fragments_jhmdb(train=True, val=True, split=split) # val
+        create_fragments_mpii(train=True, val=False, use_random=False) # Train no random
+        create_fragments_mpii(train=True, val=False, use_random=True, subprefix="1") # train random 1
+        create_fragments_mpii(train=True, val=False, use_random=True, subprefix="2") # train random 2
+        create_fragments_mpii(train=True, val=False, use_random=True, subprefix="3") # train random 3
+        create_fragments_mpii(train=True, val=True, use_random=False) # val
 
-######
-#  MPII
-#####
-create_fragments_mpii(train=True, val=False, use_random=False) # Train no random
-create_fragments_mpii(train=True, val=False, use_random=True, subprefix="1") # train random 1
-create_fragments_mpii(train=True, val=False, use_random=True, subprefix="2") # train random 2
-create_fragments_mpii(train=True, val=False, use_random=True, subprefix="3") # train random 3
-create_fragments_mpii(train=True, val=True, use_random=False) # val
+def complete_pennaction():
+        ######
+        #  Penn Action
+        # #####
+        create_folder_if_not_present("/data/mjakobs/data/pennaction/annotations")
+        create_folder_if_not_present("/data/mjakobs/data/pennaction/images")
+        create_folder_if_not_present("/data/mjakobs/data/pennaction/rand1_annotations")
+        create_folder_if_not_present("/data/mjakobs/data/pennaction/rand1_images")
 
-######
-#  Penn Action
-# #####
-delete_and_create("/data/mjakobs/data/pennaction_fragments/")
-create_fragments_pennaction(train=False, val=False) # test
-create_fragments_pennaction(train=True, val=True) # val
-create_fragments_pennaction(train=True, val=False, use_random=False) # train, no random
-create_fragments_pennaction(train=True, val=False, use_random=True) # train, random
+        delete_and_create("/data/mjakobs/data/pennaction_fragments/")
+        create_fragments_pennaction(train=False, val=False) # test
+        create_fragments_pennaction(train=True, val=True) # val
+        create_fragments_pennaction(train=True, val=False, use_random=False) # train, no random
+        create_fragments_pennaction(train=True, val=False, use_random=True) # train, random
