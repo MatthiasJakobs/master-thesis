@@ -373,3 +373,8 @@ def complete_pennaction():
         create_fragments_pennaction(train=True, val=True) # val
         create_fragments_pennaction(train=True, val=False, use_random=False) # train, no random
         create_fragments_pennaction(train=True, val=False, use_random=True) # train, random
+
+def complete_recreation():
+        complete_jhmdb()
+        complete_mpii()
+        complete_pennaction()
