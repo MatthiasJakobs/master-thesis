@@ -107,13 +107,12 @@ class Mpii_8(nn.Module):
 
 
 class DeepHar(nn.Module):
-    def __init__(self, num_frames=16, num_joints=16, num_actions=10, use_gt=True, model_path=None):
+    def __init__(self, num_frames=16, num_joints=16, num_actions=10, use_gt=True, model_path=None, alternate_time=False):
         super(DeepHar, self).__init__()
 
-        self.use_gt = use_gt
-
+        self.use_gt = use_gt # use pretrained pose estimator
+        self.alternate_time = alternate_time
         self.pose_estimator = Mpii_4(num_context=0)
-        #print("overall usage after pe init", torch.cuda.max_memory_allocated() / 1024 / 1024)
 
         if use_gt:
             if torch.cuda.is_available():
@@ -122,12 +121,6 @@ class DeepHar(nn.Module):
                 device = "cpu"
 
             self.pose_estimator.load_state_dict(torch.load(model_path, map_location=device))
-            #print("overall usage after weight loading", torch.cuda.max_memory_allocated() / 1024 / 1024)
-
-            self.pose_estimator.eval()
-
-        self.pose_estimator = TimeDistributedPoseEstimation(self.pose_estimator)
-        #print("overall usage after TD", torch.cuda.max_memory_allocated() / 1024 / 1024)
 
         self.num_frames = num_frames
         self.num_joints = num_joints
@@ -136,62 +129,66 @@ class DeepHar(nn.Module):
         self.max_min_pooling = MaxMinPooling(kernel_size=(4,4))
         self.softmax = nn.Softmax2d()
 
-        self.pose_model = PoseModel(num_frames, num_joints, num_actions)
+        if self.alternate_time:
+            self.pose_model = PoseModelTimeSeries(num_frames, num_joints, num_actions)
+        else:
+            self.pose_model = PoseModel(num_frames, num_joints, num_actions)
         self.visual_model = VisualModel(num_frames, num_joints, num_actions)
+
+        self.heatmap_weighting = HeatmapWeighting(self.num_actions)
 
         #self.action_predictions = []
 
+    def extract_pose_for_frames(self, x):
+        train_poses, poses, heatmaps, features = self.pose_estimator(x)
+        poses = poses.squeeze(0)
+        train_poses = train_poses.permute(1, 0, 2, 3)
+
+        return train_poses, poses, heatmaps, features
+
     def forward(self, x, finetune=False):
 
-        batch_size = len(x)
-        #print("overall usage at beginning of forward", torch.cuda.max_memory_allocated() / 1024 / 1024)
-
         if finetune:
-            train_poses, poses, heatmaps, features = self.pose_estimator(x)
+            train_poses, poses, heatmaps, features = self.extract_pose_for_frames(x)
         else:
             with torch.no_grad():
-                train_poses, poses, heatmaps, features = self.pose_estimator(x)
+                train_poses, poses, heatmaps, features = self.extract_pose_for_frames(x)
 
-        nj = poses.size()[2]
-        nf = features.size()[2]
+        nj = poses.size()[1]
+        nf = features.size()[1]
 
         assert nj == self.num_joints
 
-        features = features.unsqueeze(2)
-        features = features.expand(-1, -1, nj, -1, -1, -1)
-        heatmaps = heatmaps.unsqueeze(3)
-        heatmaps = heatmaps.expand(-1, -1, -1, nf, -1, -1)
+        features = features.unsqueeze(1)
+        features = features.expand(-1, nj, -1, -1, -1)
+        heatmaps = heatmaps.unsqueeze(2)
+        heatmaps = heatmaps.expand(-1, -1, nf, -1, -1)
 
-        # print(features.shape)
-        # print("x", x.nelement() * x.element_size() / 1024 / 1024)
-        # print("features", features.nelement() * features.element_size() / 1024 / 1024)
-        # print("heatmaps", heatmaps.nelement() * heatmaps.element_size() / 1024 / 1024)
-        # print("train_poses", train_poses.nelement() * train_poses.element_size() / 1024 / 1024)
-        # print("poses", poses.nelement() * poses.element_size() / 1024 / 1024)
-        # print("poses", poses.nelement() * poses.element_size() / 1024 / 1024)
-        # print("overall usage", torch.cuda.max_memory_allocated() / 1024 / 1024)
-        # time.sleep(1000)
-        #
         assert heatmaps.size() == features.size()
         y = features * heatmaps
-        y = torch.sum(y, (4, 5))
+        y = torch.sum(y, (3, 4))
 
         del features
         del heatmaps
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
 
-        pose_cube = torch.from_numpy(np.empty((batch_size, self.num_frames, self.num_joints, 2)))
-        action_cube = torch.from_numpy(np.empty((batch_size, self.num_frames, self.num_joints, nf)))
+        action_cube = torch.from_numpy(np.empty((self.num_frames, self.num_joints, nf)))
 
         action_cube = y
         del y
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
-        pose_cube = poses[:, :, :, 0:2]
 
-        pose_cube = pose_cube.permute(0, 3, 1, 2).float()
-        action_cube = action_cube.permute(0, 3, 1, 2).float()
+        pose_cube = torch.from_numpy(np.empty((self.num_frames, self.num_joints, 2)))
+        pose_cube = poses[:, :, 0:2]
+
+        if self.alternate_time:
+            pose_cube = pose_cube.permute(2, 1, 0).float()
+        else:
+            pose_cube = pose_cube.permute(2, 0, 1).float()
+
+        action_cube = action_cube.permute(2, 0, 1).float()
 
         pose_action_predictions = []
         vis_action_predictions = []
@@ -218,10 +215,11 @@ class DeepHar(nn.Module):
 
             vis_action_predictions.append(y)
 
-        # TODO: Weighted matrix
-
         final_vis = intermediate_vis[-1]
         final_pose = intermediate_poses[-1]
+
+        final_vis = self.heatmap_weighting(final_vis)
+        final_pose = self.heatmap_weighting(final_pose)
 
         final_output = final_vis + final_pose
         final_output = self.max_min_pooling(final_output)
