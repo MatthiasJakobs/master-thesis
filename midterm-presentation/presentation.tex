@@ -122,10 +122,6 @@
                     \item \textit{Soft-argmax}\footnotemark~makes end-to-end learning possible
                 \end{itemize}
             \end{itemize}
-            \begin{figure}
-                \includegraphics[width=0.99\textwidth]{softargmax.png}
-                \sourcefix{1}
-            \end{figure}
         \end{column}
         \footnotetext[1]{\cite{luvizon_2d/3d_2018}}
         \footnotetext[2]{\cite{luvizon_human_2017}}
@@ -148,10 +144,6 @@
                 \item Computes expectations on probability maps
                 \item Fully differentiable
             \end{itemize}
-            \begin{figure}
-                \includegraphics[width=0.99\textwidth]{softargmax.png}
-                \sourcefix{1}
-            \end{figure}
         \end{column}
         \footnotetext[1]{\cite{luvizon_human_2017}}
         \footnotetext[2]{\cite{luvizon_2d/3d_2018}}
@@ -183,7 +175,7 @@
         \end{column}
         \begin{column}{.45\textwidth}
             \begin{figure}
-                \includegraphics[width=.99\textwidth]{luvizon_stem.png}
+                \includegraphics[width=.45\textwidth]{luvizon_stem.png}
                 \sourcefix{4}
             \end{figure}
         \end{column}
@@ -194,7 +186,17 @@
     \footnotetext[4]{\cite{luvizon_2d/3d_2018}}
 \end{myframe}
 
-\begin{myframe}[Method - Architecture]
+\begin{myframe}[Method - Depthwise separable convolution]
+    \begin{itemize}
+        \item Depthwise: $n$ filters of size $a \times a \times 1$
+        \item Pointwise: $m$ filters of size $1 \times 1 \times n$
+        \item Comparison:
+        \begin{itemize}
+            \item Regular convolution: $n \cdot m \cdot a^2$ parameters
+            \item DSC: $n \cdot (m + a^2)$ parameters
+        \end{itemize} 
+    \end{itemize}
+
     \begin{figure}
         \includegraphics[width=.99\textwidth]{depthwise-visualization.png}
         \sourcefix{1}
@@ -204,12 +206,12 @@
 \end{myframe}
 
 
-\begin{myframe}[Method - Pose-based recognition]
+\begin{myframe}[Method - Pose Model]
 	\begin{columns}[T]
         \begin{column}{.45\textwidth}
             \begin{itemize}
                 \item Two paths in the network for action recognition
-                \item \textit{Pose-based recognition}
+                \item \textit{Pose Model}
                 \begin{itemize}
                     \item Arrange joint values over time in 2D matrix
                     \item Action heatmaps
@@ -229,18 +231,18 @@
     \footnotetext[1]{\cite{luvizon_2d/3d_2018}}
 \end{myframe}
 
-\begin{myframe}[Method - Appearance-based recognition]
+\begin{myframe}[Method - Visual Model recognition]
     	\begin{columns}[T]
         \begin{column}{.45\textwidth}
             \begin{itemize}
-                \item \textit{Appearance-based recognition}
+                \item \textit{Visual Model recognition}
                 \begin{itemize}
                     \item Combination of visual features and joint positions
                     \item Then: Identical architecture to pose recognition part
                 \end{itemize}
                 \item \textit{Aggregation}
                 \begin{itemize}
-                    \item Combine pose recognition and appearance recognition for final result
+                    \item Combine Pose Model and Visual Model results for final result
                     \item \textit{Categorical cross-entropy}
                 \end{itemize}
             \end{itemize}
@@ -316,7 +318,7 @@
               \item \textbf{Penn Action\footnotemark}
               \begin{itemize}
                   \item 2,400 video clips of 15 actions
-                  \item Very limited number of actions (mainly sport)
+                  \item Limited number of actions (mainly sport)
               \end{itemize}
           \end{itemize}
       \end{column}
@@ -342,7 +344,9 @@
               \begin{itemize}
                   \item Fully-annotated subset of HMDB
                   \begin{itemize}
-                      \item 2D pose, person segmentation maps etc.
+                      \item 2D pose
+                      \item Subject segmentation maps
+                      \item Optical flow
                   \end{itemize}
                   \item 928 clips of 21 actions
                   \item Can be used for end-to-end training
@@ -362,33 +366,131 @@
 \end{myframe}
 
 \section{Experiments}
-% \begin{myframe}[Recreate experiments]
-%     \begin{itemize}
-%         \item MPII in all different kinds
-%         \item Show example images and graphs
-%     \end{itemize}
-% \end{myframe}
+\begin{myframe}[Recreate experiments - Meassurements]
+    % TODO: Cite all this
+    \begin{itemize}
+        \item 2D Pose estimation
+        \begin{itemize}
+            \item \textit{Probability of Correct Keypoints} with regards to head size (\textit{PCKh})
+            \begin{itemize}
+                \item Meassure distance between ground truth keypoint and estimation
+                \item If smaller than ($\alpha \cdot \text{head bbox size}$): correctly estimated
+                \item Used for highly articulated poses
+                \item In literature: $\alpha \in \{0.2, 0.5\}$
+            \end{itemize}    
+            \item \textit{PCK} with regards to subject bounding box
+            \begin{itemize}
+                \item Problem with highly articulated poses
+                \item Used whenever no head size given
+                \item Can be computed from all datasets used
+                \item $\alpha = 0.2$ used in literature
+            \end{itemize}
+        \end{itemize}
+        \item Action recognition
+        \begin{itemize}
+            \item Simple accuracy meassurement in literature
+            \item $F_1$ meassure not needed since all datasets are balanced w.r.t. classes
+        \end{itemize}
+    \end{itemize}
+\end{myframe}
 
-% \begin{myframe}[Recreate experiments]
-%     \begin{itemize}
-%         \item Penn Action HAR
-%         \item Show example images and graphs
-%     \end{itemize}
-% \end{myframe}
+\begin{myframe}[Recreate experiments - 2D Pose estimation]
+    \begin{itemize}
+        \item Recreate results for using different parameters
+        \item In general:
+        \begin{itemize}
+            \item More prediction blocks lead to higher accuracy
+            \item Context maps yield slighly higher accuracy for small network
+        \end{itemize}
+    \end{itemize}
+    \begin{figure}
+        \begin{table}[]
+            \small
+            \begin{tabular}{|l|c|c|c|c|}
+            \hline
+             & \textbf{nr\_blocks} & \textbf{nr\_context} & \textbf{PCKh @ 0.5 (validation)} & \textbf{PCKh @ 0.5 (test)} \\ \hline
+            \textbf{Own} & 2 & 0 & 80.96 &  \\
+            \textbf{} & 2 & 2 & 81.56 &  \\
+            \textbf{} & 4 & 0 & 83.22 &  \\
+            \textbf{} & 4 & 2 & 82.97 &  \\
+            \textbf{} & 8 & 0 & 84.67 &  \\
+            \textbf{} & 8 & 2 & 84.66 & tbd \\ \hline
+            \textbf{\footnotemark} & 8 & 2 & 89.00 & 91.2 \\ \hline
+            \end{tabular}
+        \end{table}
+    \end{figure}
+    \footnotetext[1]{\cite{luvizon_2d/3d_2018}}
+\end{myframe}
+
+\begin{myframe}[Recreate experiments - 2D pose estimation]
+    \begin{figure}
+        \includegraphics[height=.80\textheight]{mpii_8_positive.png}
+        \centering
+        \caption{\tugreen{Figure:} Positive example. Ground truth pose shown in red, estimated pose shown in blue.}
+    \end{figure}
+\end{myframe}
+
+\begin{myframe}[Recreate experiments - 2D pose estimation]
+    \begin{figure}
+        \includegraphics[height=.80\textheight]{mpii_8_negative.png}
+        \centering
+        \caption{\tugreen{Figure:} Negative example. Notice that the lower limbs are wrongly estimated due to the water.}
+    \end{figure}    
+\end{myframe}
+
+\begin{myframe}[Recreate experiments]
+    \begin{itemize}
+        \item Penn Action HAR
+        \item tbd
+    \end{itemize}
+\end{myframe}
+
+\begin{myframe}[2D pose estimation on JHMDB]
+    \begin{itemize}
+        \item Used ground truth bounding boxes as in \footnotemark
+        \item Additionally: \textit{PCK} w.r.t. upper body size (\textit{PCKu})
+        \item Dataset more challenging because of video artifacts
+    \end{itemize}
+    \begin{figure}
+        \begin{table}[]
+            \small
+            \begin{tabular}{|l|c|c|c|c|}
+            \hline
+             & \textbf{nr\_blocks} & \textbf{nr\_context} & \textbf{PCK @ 0.2 (test)} & \textbf{PCKu @ 0.2 (test)} \\ \hline
+            \textbf{Own} & 2 & 0 & TODO &  \\
+            \textbf{} & 2 & 2 & TODO &  \\
+            \textbf{} & 4 & 0 & TODO &  \\
+            \textbf{} & 4 & 2 & TODO &  \\
+            \textbf{} & 8 & 0 & TODO &  \\
+            \textbf{} & 8 & 2 & TODO &  \\ \hline
+            \textbf{\footnotemark} &  &  & 81.60 &  \\ \hline
+            \end{tabular}
+        \end{table}
+    \end{figure}
+    \footnotetext[1]{\cite{luvizon_2d/3d_2018}}
+    \footnotetext[2]{\cite{song_thin-slicing_2017}}
+\end{myframe}
+
+\begin{myframe}[HAR on JHMDB dataset]
+    \begin{itemize}
+        \item best jhmdb found: 87.9 percent \footnotemark
+    \end{itemize}
+    \footnotetext[1]{\cite{choutas_potion:_2018}}
+\end{myframe}
 
 \section{Conclusion}
-% \begin{myframe}[Conclusion]
-%     \begin{itemize}
-%          \item What is left to do
-%         \item TODO
-%     \end{itemize}
-% \end{myframe}
+\begin{myframe}[Conclusion]
+    \begin{itemize}
+         \item What is left to do
+        \item TODO
+    \end{itemize}
+\end{myframe}
 
-% \begin{myframe}[Thank you]
-%     \note[item]{placeholder}
-%     \centering \Large
-%     \emph{Thank you for your time!}
-% \end{myframe}
+\begin{myframe}[Thank you]
+    \note[item]{placeholder}
+    \centering \Large
+    \emph{Thank you for your time!}
+\end{myframe}
 
 \end{document}
 
