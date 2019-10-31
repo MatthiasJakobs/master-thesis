@@ -104,6 +104,12 @@ def create_fragments_pennaction(train=False, val=False, use_random=False, subpre
                 matrices_gt_bb = entry["trans_matrices"]
                 bbox_gt_bb = entry["bbox"]
 
+                frames_gt_bb = ((frames_gt_bb + 1) / 2.0) * 255.0
+                frames_gt_bb = frames_gt_bb.byte()
+
+                poses_gt_bb[:, :, 0:2] = poses_gt_bb[:, :, 0:2] * 255.0
+                poses_gt_bb = poses_gt_bb.int()
+
                 torch.save(frames_gt_bb, root_dir + prefix + "images/" + padded_original_image + ".frames_gt_bb.pt")
                 torch.save(poses_gt_bb, root_dir + prefix + "annotations/" + padded_original_image + ".poses_gt_bb.pt")
                 torch.save(matrices_gt_bb, root_dir + prefix + "annotations/" + padded_original_image + ".matrices_gt_bb.pt")
@@ -229,6 +235,12 @@ def create_fragments_jhmdb(train=False, val=False, split=1, use_random=False, su
                 poses_gt_bb = entry["normalized_poses"]
                 matrices_gt_bb = entry["trans_matrices"]
                 bbox_gt_bb = entry["bbox"]
+
+                frames_gt_bb = ((frames_gt_bb + 1) / 2.0) * 255.0
+                frames_gt_bb = frames_gt_bb.byte()
+
+                poses_gt_bb[:, :, 0:2] = poses_gt_bb[:, :, 0:2] * 255.0
+                poses_gt_bb = poses_gt_bb.int()
 
                 torch.save(frames_gt_bb, root_dir + prefix + "images/" + padded_original_image + ".frames_gt_bb.pt")
                 torch.save(poses_gt_bb, root_dir + prefix + "annotations/" + padded_original_image + ".poses_gt_bb.pt")
