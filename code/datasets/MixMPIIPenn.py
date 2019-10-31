@@ -14,14 +14,19 @@ import random
 class MixMPIIPenn(BaseDataset):
     def __init__(self, transform=None, train=True, val=False, augmentation_amount=1):
 
-        # Decision: Always using random parameters and saved tensors
+        # Decision: Always using random parameters (if not val) and saved tensors
 
         super().__init__("irrelevant", train=train, val=val)
 
         assert train # should not be used for testing
 
-        self.pennaction = PennActionDataset("/data/mjakobs/data/pennaction/", use_random_parameters=True, train=train, val=val, use_gt_bb=True, use_saved_tensors=True, augmentation_amount=augmentation_amount)
-        self.mpii = MPIIDataset("/data/mjakobs/data/mpii/", use_random_parameters=True, use_saved_tensors=True, train=train, val=val, augmentation_amount=augmentation_amount)
+        if val == True:
+            use_random = False
+        else:
+            use_random = True
+
+        self.pennaction = PennActionDataset("/data/mjakobs/data/pennaction/", use_random_parameters=use_random, train=train, val=val, use_gt_bb=True, use_saved_tensors=True, augmentation_amount=augmentation_amount)
+        self.mpii = MPIIDataset("/data/mjakobs/data/mpii/", use_random_parameters=use_random, use_saved_tensors=True, train=train, val=val, augmentation_amount=augmentation_amount)
 
         self.padding_amount = 8
 
