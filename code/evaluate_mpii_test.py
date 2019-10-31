@@ -47,8 +47,12 @@ def preprocess(old_scale, center_x, center_y, full_image_path):
 def main():
     ds = MPIIDataset("/data/mjakobs/data/mpii/", train=False, use_random_parameters=False, use_saved_tensors=False)
 
+    if torch.cuda.is_available():
+        device = "cuda"
+    else:
+        device = "cpu"
     model = Mpii_8(num_context=2)
-    model.load_state_dict(torch.load("mpii_8_trained", map_location="cpu"))
+    model.load_state_dict(torch.load("mpii_8_trained", map_location=device))
 
     if os.path.exists("mpii_test.csv"):
         os.remove("mpii_test.csv")
@@ -97,14 +101,13 @@ def main():
 
     for idx in range(len(ds)):
         entry = ds[idx]
-
+        print(idx)
+        if entry["rects"] == [[]]:
+            continue
         image_name = entry["image"]
         rects = entry["rects"]
         image_id = entry["imgidx"]
         rect_ids = entry["ridx"]
-
-        if rects == []:
-            continue
 
         full_image_path = "/data/mjakobs/data/mpii/images/" + image_name
 
@@ -120,17 +123,22 @@ def main():
             predictions = predictions.squeeze()
             
             transformed_pose = torch.FloatTensor(transform_pose(trans_matrix, predictions[:, 0:2], inverse=True))
-            # plt.scatter(x=transformed_pose[10:13, 0], y=transformed_pose[10:13, 1], c="#00FFFF")
-
+            #plt.scatter(x=transformed_pose[:, 0], y=transformed_pose[:, 1])
+            #plt.show()
+            del predictions
+            del model_input
+            
             # FLIP LR
             image_flipped = torch.FloatTensor(np.fliplr(image.clone().permute(1, 2, 0))+1) - 1.0
-            #plt.imshow((image_flipped + 1) /2.0)
             image_flipped = image_flipped.permute(2, 0, 1)
             model_input = image_flipped.unsqueeze(0)
             _, predictions, _, _ = model(model_input)
             predictions = predictions.squeeze()
 
             transformed_pose_flipped = predictions[:, 0:2]
+            del predictions
+            del model_input
+
             transformed_pose_flipped[:, 0] = 1.0 - transformed_pose_flipped[:, 0]  
             transformed_pose_flipped = torch.FloatTensor(transform_pose(trans_matrix, transformed_pose_flipped, inverse=True))
             transformed_pose_flipped = flip_lr_pose(transformed_pose_flipped)
@@ -158,7 +166,9 @@ def main():
 
             # Calculate mean pose
             mean_pose = transformed_pose.clone()
+            del transformed_pose
             mean_pose = mean_pose + transformed_pose_flipped.clone()
+            del transformed_pose_flipped
             # mean_pose = mean_pose + positive_displacement.clone()
             # mean_pose = mean_pose + negative_displacement.clone()
             mean_pose = mean_pose / 2.0
@@ -204,10 +214,6 @@ def main():
                     ]
                 )
                 csv_file.flush()
-            # plt.scatter(x=mean_pose[10:13, 0], y=mean_pose[10:13, 1], c="#FF00FF", s=10)
-            # plt.show()
-            # plt.close()
-
-
+            del mean_pose
 
 main()
