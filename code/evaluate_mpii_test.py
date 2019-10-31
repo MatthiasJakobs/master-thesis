@@ -118,6 +118,7 @@ def main():
 
             image, trans_matrix = preprocess(old_scale, center_x, center_y, full_image_path)
 
+            trans_matrix = torch.FloatTensor(trans_matrix)
             model_input = image.unsqueeze(0).to(device)
             _, predictions, _, _ = model(model_input)
             predictions = predictions.squeeze()
