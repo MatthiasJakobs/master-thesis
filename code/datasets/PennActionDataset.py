@@ -270,15 +270,20 @@ class PennActionDataset(BaseDataset):
         processed_poses = []
         trans_matrices = []
         bounding_boxes = []
+        original_window_sizes = []
 
         for frame, pose in zip(images, poses):
             pose_invisible = torch.sum(pose != -1e9) == 0
+            if self.use_random_parameters:
+                bbox_offset = 40
+            else:
+                bbox_offset = 30
+            bbox_parameters = get_bbox_from_pose(pose, bbox_offset=bbox_offset)
+            bbox = bbox_parameters["offset_bbox"]
+            window_size = bbox_parameters["offset_window_size"]
+            center = bbox_parameters["offset_center"]
+            self.original_window_size = bbox_parameters["original_window_size"]
             if self.use_gt_bb and not pose_invisible:
-                # TODO: Maybe use original_size?
-                bbox_parameters = get_bbox_from_pose(pose, bbox_offset=30)
-                bbox = bbox_parameters["offset_bbox"]
-                window_size = bbox_parameters["offset_window_size"]
-                center = bbox_parameters["offset_center"]
                 self.bbox = bbox
                 self.window_size = (window_size.float() * self.aug_conf["scale"]).int()
                 self.center = center
@@ -299,8 +304,9 @@ class PennActionDataset(BaseDataset):
             processed_poses.append(norm_pose.unsqueeze(0))
             processed_frames.append(norm_frame.unsqueeze(0))
             trans_matrices.append(trans_matrix.clone().unsqueeze(0))
+            original_window_sizes.append(self.original_window_size.clone().unsqueeze(0))
 
-
+        original_window_sizes = torch.cat(original_window_sizes)
         frames = torch.cat(processed_frames)
         poses = torch.cat(processed_poses)
         trans_matrices = torch.cat(trans_matrices)
@@ -332,5 +338,6 @@ class PennActionDataset(BaseDataset):
             "trans_matrices": trans_matrices,
             "parameters": t_parameters,
             "index": t_index,
+            "original_window_size": original_window_sizes,
             "bbox": t_bounding_boxes
         }

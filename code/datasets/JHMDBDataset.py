@@ -46,12 +46,13 @@ actions = [
 
 class JHMDBDataset(BaseDataset):
 
-    def __init__(self, root_dir, transform=None, use_random_parameters=False, use_saved_tensors=False, split=1, train=True, val=True):
+    def __init__(self, root_dir, transform=None, use_random_parameters=False, use_saved_tensors=False, split=1, train=True, val=True, use_gt_bb=False):
 
         super().__init__(root_dir, use_random_parameters=use_random_parameters, use_saved_tensors=use_saved_tensors, train=train, val=val)
 
         self.split = split
         self.clip_length = 40
+        self.use_gt_bb = use_gt_bb
 
         split_file_paths = "{}splits/*_test_split{}.txt".format(self.root_dir, split)
         split_files = glob.glob(split_file_paths)
@@ -303,8 +304,15 @@ class JHMDBDataset(BaseDataset):
             bbox_height = torch.abs(bbox[1] - bbox[3]).item()
             self.original_window_size = torch.IntTensor([max(bbox_height, bbox_width), max(bbox_height, bbox_width)])
 
-            #TODO: Here, I use puppet mask for testing too
-            self.calc_bbox_and_center(image_width, image_height, pre_bb=bbox, offset=30) # TODO: Mention offset in paper. As long as used everywhere: comparable
+            if self.use_random_parameters:
+                offset = 40
+            else:
+                offset = 30
+
+            if self.use_gt_bb:
+                self.calc_bbox_and_center(image_width, image_height, pre_bb=bbox, offset=offset)
+            else:
+                self.calc_bbox_and_center(image_width, image_height)
 
             current_frame = current_frame + 1
 

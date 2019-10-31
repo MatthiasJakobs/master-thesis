@@ -512,13 +512,13 @@ class Pose_JHMDB(ExperimentBase):
         self.model.train()
 
         if "use_random" in self.conf and self.conf["use_random"]:
-            self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False, augmentation_amount=self.nr_aug, use_random_parameters=True)
+            self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False, augmentation_amount=self.nr_aug, use_random_parameters=True, use_gt_bb=True)
         else:
-            self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False, augmentation_amount=self.nr_aug, use_random_parameters=False)
+            self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False, augmentation_amount=self.nr_aug, use_random_parameters=False, use_gt_bb=True)
 
 
-        self.ds_val = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=True)
-        self.ds_test = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=False)
+        self.ds_val = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=True, use_gt_bb=True)
+        self.ds_test = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=False, use_gt_bb=True)
 
         train_indices, val_indices, test_indices = self.limit_dataset(include_test=True)
 
@@ -687,17 +687,22 @@ class Pose_JHMDB(ExperimentBase):
 
             self.model.eval()
             for batch_idx, test_data in enumerate(self.test_loader):
+
                 test_images = test_data["frames"].to(self.device)
-                test_images = test_images.contiguous().view(test_data["frames"].size()[0] * test_data["frames"].size()[1], 3, 255, 255)
+                batch_size = len(test_images)
+                assert batch_size == 1
+                test_images = test_images.squeeze(0)
+                
+                #test_images = test_images.contiguous().view(test_data["frames"].size()[0] * test_data["frames"].size()[1], 3, 255, 255)
 
-                test_poses = test_data["poses"].to(self.device)
-                test_poses = test_poses.contiguous().view(test_data["poses"].size()[0] * test_data["poses"].size()[1], 16, 3)
+                test_poses = test_data["poses"].to(self.device).squeeze(0)
+                #test_poses = test_poses.contiguous().view(test_data["poses"].size()[0] * test_data["poses"].size()[1], 16, 3)
 
-                trans_matrices = test_data["trans_matrices"].clone().to(self.device)
-                trans_matrices = trans_matrices.contiguous().view(test_data["trans_matrices"].size()[0] * test_data["trans_matrices"].size()[1], 3, 3)
+                trans_matrices = test_data["trans_matrices"].clone().to(self.device).squeeze(0)
+                #trans_matrices = trans_matrices.contiguous().view(test_data["trans_matrices"].size()[0] * test_data["trans_matrices"].size()[1], 3, 3)
 
-                original_window_sizes = test_data["original_window_size"]
-                original_window_sizes = original_window_sizes.contiguous().view(test_data["original_window_size"].size()[0] * test_data["original_window_size"].size()[1], 2)
+                original_window_sizes = test_data["original_window_size"].squeeze(0)
+                #original_window_sizes = original_window_sizes.contiguous().view(test_data["original_window_size"].size()[0] * test_data["original_window_size"].size()[1], 2)
 
                 distance_meassures = torch.FloatTensor(len(original_window_sizes))
 
@@ -795,8 +800,8 @@ class Pose_Mixed(ExperimentBase):
 
         self.model.train()
 
-        self.ds_train = MixMPIIPenn(train=True, val=False)
-        self.ds_val = MixMPIIPenn(train=True, val=True)
+        self.ds_train = MixMPIIPenn(train=True, val=False, use_gt_bb=True)
+        self.ds_val = MixMPIIPenn(train=True, val=True, use_gt_bb=True)
 
         train_indices, val_indices = self.limit_dataset(include_test=False)
 

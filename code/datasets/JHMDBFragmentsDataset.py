@@ -5,10 +5,10 @@ import glob
 import random
 
 class JHMDBFragmentsDataset(data.Dataset):
-    def __init__(self, root_dir, transform=None, use_random_parameters=False, split=1, train=True, val=False, augmentation_amount=1):
+    def __init__(self, root_dir, transform=None, use_random_parameters=False, split=1, train=True, val=False, augmentation_amount=1, use_gt_bb=False):
         self.root_dir = root_dir
         self.padding_amount = 8
-
+        self.use_gt_bb = use_gt_bb
         self.split = split
         self.train = train
         self.val = val
@@ -55,13 +55,20 @@ class JHMDBFragmentsDataset(data.Dataset):
 
         padded_filename = str(int(t_indices[-1].item())).zfill(self.padding_amount)
 
-        t_poses = torch.load(self.annotation_folder + padded_filename + ".poses.pt")
+        if not self.use_gt_bb:
+            t_poses = torch.load(self.annotation_folder + padded_filename + ".poses.pt")
+            t_frames = torch.load(self.images_folder + padded_filename + ".frames.pt")
+            t_bbox = torch.load(self.annotation_folder + padded_filename + ".bbox.pt")
+            t_matrices = torch.load(self.annotation_folder + padded_filename + ".matrices.pt")
+        else:
+            t_poses = torch.load(self.annotation_folder + padded_filename + ".poses_gt_bb.pt")
+            t_frames = torch.load(self.images_folder + padded_filename + ".frames_gt_bb.pt")
+            t_bbox = torch.load(self.annotation_folder + padded_filename + ".bbox_gt_bb.pt")
+            t_matrices = torch.load(self.annotation_folder + padded_filename + ".matrices_gt_bb.pt")
+
         t_action = torch.load(self.annotation_folder + padded_filename + ".action_1h.pt")
-        t_bbox = torch.load(self.annotation_folder + padded_filename + ".bbox.pt")
         t_index = torch.load(self.annotation_folder + padded_filename + ".index.pt")
         t_parameters = torch.load(self.annotation_folder + padded_filename + ".parameters.pt")
-        t_frames = torch.load(self.images_folder + padded_filename + ".frames.pt")
-        t_matrices = torch.load(self.annotation_folder + padded_filename + ".matrices.pt")
         t_original_window_size = torch.load(self.annotation_folder + padded_filename + ".original_window_size.pt")
 
         start = int(t_indices[0].item())
@@ -73,7 +80,7 @@ class JHMDBFragmentsDataset(data.Dataset):
         t_bboxes = t_bbox[start:end]
         t_original_window_sizes = t_original_window_size[start:end]
 
-        t_frames = 2.0 * (t_frames.float() / 255.0) + 1.0
+        t_frames = 2.0 * (t_frames.float() / 255.0) - 1.0
         t_poses = t_poses.float()
         t_poses[:, :, 0:2] = t_poses[:, :, 0:2] / 255.0
 

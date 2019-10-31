@@ -45,6 +45,7 @@ def delete_and_create(root_dir, use_random=False, split=1, subprefix="2"):
 
 def create_fragments_pennaction(train=False, val=False, use_random=False, subprefix="1"):
         ds = PennActionDataset("/data/mjakobs/data/pennaction/", use_random_parameters=use_random, train=train, val=val)
+        ds_bbox_gt = PennActionDataset("/data/mjakobs/data/pennaction/", use_random_parameters=use_random, train=train, val=val, use_gt_bb=True)
 
         print("-" * 50)
         print("Train: {}, Val: {}".format(train, val))
@@ -77,6 +78,7 @@ def create_fragments_pennaction(train=False, val=False, use_random=False, subpre
                 matrices = entry["trans_matrices"]
                 bbox = entry["bbox"]
                 parameters = entry["parameters"]
+                original_window_size = entry["original_window_size"]
 
                 frames = ((frames + 1) / 2.0) * 255.0
                 frames = frames.byte()
@@ -94,6 +96,19 @@ def create_fragments_pennaction(train=False, val=False, use_random=False, subpre
                 torch.save(matrices, root_dir + prefix + "annotations/" + padded_original_image + ".matrices.pt")
                 torch.save(bbox, root_dir + prefix + "annotations/" + padded_original_image + ".bbox.pt")
                 torch.save(parameters, root_dir + prefix + "annotations/" + padded_original_image + ".parameters.pt")
+                torch.save(original_window_size, root_dir + prefix + "annotations/" + padded_original_image + ".original_window_size.pt")
+
+                entry = ds_bbox_gt[idx]
+                frames_gt_bb = entry["normalized_frames"]
+                poses_gt_bb = entry["normalized_poses"]
+                matrices_gt_bb = entry["trans_matrices"]
+                bbox_gt_bb = entry["bbox"]
+
+                torch.save(frames_gt_bb, root_dir + prefix + "images/" + padded_original_image + ".frames_gt_bb.pt")
+                torch.save(poses_gt_bb, root_dir + prefix + "annotations/" + padded_original_image + ".poses_gt_bb.pt")
+                torch.save(matrices_gt_bb, root_dir + prefix + "annotations/" + padded_original_image + ".matrices_gt_bb.pt")
+                torch.save(bbox_gt_bb, root_dir + prefix + "annotations/" + padded_original_image + ".bbox_gt_bb.pt")
+
                 num_frames = 16
 
                 num_frames_total = len(frames)
@@ -110,6 +125,12 @@ def create_fragments_pennaction(train=False, val=False, use_random=False, subpre
                 torch.save(matrices, root_dir + prefix + "annotations/" + padded_original_image + ".matrices.pt")
                 torch.save(bbox, root_dir + prefix + "annotations/" + padded_original_image + ".bbox.pt")
                 torch.save(parameters, root_dir + prefix + "annotations/" + padded_original_image + ".parameters.pt")
+                torch.save(original_window_size, root_dir + prefix + "annotations/" + padded_original_image + ".original_window_size.pt")
+
+                torch.save(frames_gt_bb, root_dir + prefix + "images/" + padded_original_image + ".frames_gt_bb.pt")
+                torch.save(poses_gt_bb, root_dir + prefix + "annotations/" + padded_original_image + ".poses_gt_bb.pt")
+                torch.save(matrices_gt_bb, root_dir + prefix + "annotations/" + padded_original_image + ".matrices_gt_bb.pt")
+                torch.save(bbox_gt_bb, root_dir + prefix + "annotations/" + padded_original_image + ".bbox_gt_bb.pt")
                 
                 indices = torch.zeros((num_frames_total - num_frames), 2)
 
@@ -132,6 +153,7 @@ def create_fragments_pennaction(train=False, val=False, use_random=False, subpre
 
 def create_fragments_jhmdb(train=False, val=False, split=1, use_random=False, subprefix="1"):
         ds = JHMDBDataset("/data/mjakobs/data/jhmdb/", use_random_parameters=use_random, use_saved_tensors=False, train=train, val=val, split=split)
+        ds_bbox_gt = JHMDBDataset("/data/mjakobs/data/jhmdb/", use_random_parameters=use_random, use_saved_tensors=False, train=train, val=val, split=split, use_gt_bb=True)
 
         if use_random:
             assert train
@@ -201,6 +223,18 @@ def create_fragments_jhmdb(train=False, val=False, split=1, use_random=False, su
                 torch.save(bbox, root_dir + prefix + "annotations/" + padded_original_image + ".bbox.pt")
                 torch.save(parameters, root_dir + prefix + "annotations/" + padded_original_image + ".parameters.pt")
                 torch.save(original_window_size, root_dir + prefix + "annotations/" + padded_original_image + ".original_window_size.pt")
+
+                entry = ds_bbox_gt[idx]
+                frames_gt_bb = entry["normalized_frames"]
+                poses_gt_bb = entry["normalized_poses"]
+                matrices_gt_bb = entry["trans_matrices"]
+                bbox_gt_bb = entry["bbox"]
+
+                torch.save(frames_gt_bb, root_dir + prefix + "images/" + padded_original_image + ".frames_gt_bb.pt")
+                torch.save(poses_gt_bb, root_dir + prefix + "annotations/" + padded_original_image + ".poses_gt_bb.pt")
+                torch.save(matrices_gt_bb, root_dir + prefix + "annotations/" + padded_original_image + ".matrices_gt_bb.pt")
+                torch.save(bbox_gt_bb, root_dir + prefix + "annotations/" + padded_original_image + ".bbox_gt_bb.pt")
+
 
                 indices = torch.zeros((num_frames_total - num_frames), 2)
 
