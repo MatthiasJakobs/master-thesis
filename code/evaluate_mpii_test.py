@@ -102,7 +102,7 @@ def main():
     for idx in range(len(ds)):
         entry = ds[idx]
         print(idx)
-        if entry["rects"] == [[]]:
+        if entry["rects"] == [[]] or [] in entry["rects"]:
             continue
         image_name = entry["image"]
         rects = entry["rects"]
