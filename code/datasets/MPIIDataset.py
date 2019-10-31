@@ -31,7 +31,7 @@ class MPIIDataset(BaseDataset):
     def __init__(self, root_dir, transform=None, use_random_parameters=True, train=True, val=False, use_saved_tensors=False, augmentation_amount=1):
         super().__init__(root_dir, use_random_parameters=use_random_parameters, use_saved_tensors=use_saved_tensors, train=train, val=val)
 
-        assert train == True # no test set available
+        #assert train == True # no test set available
 
         assert "annotations.mat" in os.listdir(self.root_dir)
 
@@ -39,7 +39,8 @@ class MPIIDataset(BaseDataset):
 
         train_binary = annotations["img_train"][0][0][0]
         train_indeces = np.where(np.array(train_binary))[0]
-
+        test_indeces = np.where(np.array(train_binary) == 0)[0]
+        
         assert augmentation_amount > 0
         self.augmentation_amount = augmentation_amount
 
@@ -59,79 +60,134 @@ class MPIIDataset(BaseDataset):
         self.labels = []
         missing_annnotation_count = 0
 
+        self.test_indices = []
+        self.test_images = []
+        self.test_rects = []
+        self.test_rectids = []
+
         self.skip_random = False
 
-        for idx in train_indeces:
-            label = annotations["annolist"][0][0][0][idx]
-            image_name = label["image"]["name"][0][0][0]
+        if self.train:
+            for idx in train_indeces:
+                label = annotations["annolist"][0][0][0][idx]
+                image_name = label["image"]["name"][0][0][0]
 
-            full_image_path = self.root_dir + "images/{}".format(image_name)
-            if not os.path.exists(full_image_path):
-                print(full_image_path, "does not exist, skip")
-                continue
-
-            annorect = label["annorect"]
-            if len(annorect) == 0:
-                # some labels are not present in the annotation file
-                missing_annnotation_count += 1
-                continue
-
-
-            for rect_id in range(len(annorect[0])):
-                ann = annorect[0][rect_id]
-                head_coordinates = [
-                    float(superflatten(ann["x1"])),
-                    float(superflatten(ann["y1"])),
-                    float(superflatten(ann["x2"])),
-                    float(superflatten(ann["y2"]))
-                ] # rect x1, y1, x2, y2
-                try:
-                    scale = superflatten(ann["scale"])
-
-                    obj_pose = [
-                        # rough position of human body (x,y)
-                        superflatten(superflatten(ann["objpos"]["x"])),
-                        superflatten(superflatten(ann["objpos"]["y"]))
-                    ]
-
-                    point = superflatten(ann["annopoints"]["point"])
-
-                    xs = list(map(lambda x: superflatten(x), point["x"].flatten()))
-                    ys = list(map(lambda x: superflatten(x), point["y"].flatten()))
-
-                    # 0:r ankle 1:r knee 2:r hip 3:l hip 4:l knee 5:l ankle 6:pelvis 7:thorax 8:upper neck 9:head top 10:r wrist 11:r elbow 12:r shoulder 13:l shoulder 14:l elbow 15:l wrist
-                    ids = list(map(lambda x: superflatten(x), point["id"].flatten()))
-                    vs = []
-                    for i,v in enumerate(point["is_visible"].flatten()):
-                        try:
-                            if ids[i] == 8 or ids[i] == 9:
-                                # for some reason, upper neck and head annotations are always empty, probably  because they are always visible(?)
-                                # set them to be always visible
-                                vs.append(1)
-                            else:
-                                vs.append(superflatten(v))
-                        except IndexError:
-                            vs.append(0)
-                except (IndexError, ValueError):
-                    # all these fields are necessary, thus: skip if not present
-                    missing_annnotation_count = missing_annnotation_count + 1
+                full_image_path = self.root_dir + "images/{}".format(image_name)
+                if not os.path.exists(full_image_path):
+                    print(full_image_path, "does not exist, skip")
                     continue
 
-                pose = {"x": xs, "y": ys, "visible": vs, "ids": ids}
+                annorect = label["annorect"]
+                if len(annorect) == 0:
+                    # some labels are not present in the annotation file
+                    missing_annnotation_count += 1
+                    continue
 
-                final_label = {
-                    "head": np.array(head_coordinates),
-                    "scale": scale,
-                    "obj_pose": obj_pose,
-                    "pose": pose,
-                    "image_name": image_name
-                }
 
-                self.labels.append(final_label)
-        
-        self.items = self.labels
+                for rect_id in range(len(annorect[0])):
+                    ann = annorect[0][rect_id]
+                    head_coordinates = [
+                        float(superflatten(ann["x1"])),
+                        float(superflatten(ann["y1"])),
+                        float(superflatten(ann["x2"])),
+                        float(superflatten(ann["y2"]))
+                    ] # rect x1, y1, x2, y2
+                    try:
+                        scale = superflatten(ann["scale"])
 
-        self.train_val_split()
+                        obj_pose = [
+                            # rough position of human body (x,y)
+                            superflatten(superflatten(ann["objpos"]["x"])),
+                            superflatten(superflatten(ann["objpos"]["y"]))
+                        ]
+
+                        point = superflatten(ann["annopoints"]["point"])
+
+                        xs = list(map(lambda x: superflatten(x), point["x"].flatten()))
+                        ys = list(map(lambda x: superflatten(x), point["y"].flatten()))
+
+                        # 0:r ankle 1:r knee 2:r hip 3:l hip 4:l knee 5:l ankle 6:pelvis 7:thorax 8:upper neck 9:head top 10:r wrist 11:r elbow 12:r shoulder 13:l shoulder 14:l elbow 15:l wrist
+                        ids = list(map(lambda x: superflatten(x), point["id"].flatten()))
+                        vs = []
+                        for i,v in enumerate(point["is_visible"].flatten()):
+                            try:
+                                if ids[i] == 8 or ids[i] == 9:
+                                    # for some reason, upper neck and head annotations are always empty, probably  because they are always visible(?)
+                                    # set them to be always visible
+                                    vs.append(1)
+                                else:
+                                    vs.append(superflatten(v))
+                            except IndexError:
+                                vs.append(0)
+                    except (IndexError, ValueError):
+                        # all these fields are necessary, thus: skip if not present
+                        missing_annnotation_count = missing_annnotation_count + 1
+                        continue
+
+                    pose = {"x": xs, "y": ys, "visible": vs, "ids": ids}
+
+                    final_label = {
+                        "head": np.array(head_coordinates),
+                        "scale": scale,
+                        "obj_pose": obj_pose,
+                        "pose": pose,
+                        "image_name": image_name
+                    }
+
+                    self.labels.append(final_label)
+            
+            self.items = self.labels
+            self.train_val_split()
+        else:
+            for idx in test_indeces:
+                label = annotations["annolist"][0][0][0][idx]
+                annorect = label["annorect"]
+
+                self.test_indices.append(idx)
+
+                if len(annorect) == 0:
+                    self.test_images.append(image_name)
+                    self.test_rects.append([])
+                    self.test_rectids.append([])                    
+                    continue
+
+                rect_ids_raw = annotations["single_person"][0][0][idx][0]
+
+                if len(rect_ids_raw) == 0 or rect_ids_raw.shape == (1,0):
+                    rect_ids = list(range(len(annorect[0]) + 1))[1:] # because matlab starts at 1
+                else:
+                    if len(rect_ids_raw) == 1:
+                        rect_ids = [rect_ids_raw[0][0]]
+                    else:
+                        rect_ids = rect_ids_raw.squeeze()
+
+                image_name = label["image"]["name"][0][0][0]
+
+                full_image_path = self.root_dir + "images/{}".format(image_name)
+                if not os.path.exists(full_image_path):
+                    print(full_image_path, "does not exist, skip")
+                    continue
+
+                rects = []
+                for rect_id in rect_ids:
+                    ann = annorect[0][rect_id-1] # matlab starts at index 1
+                    if ann == None or len(ann[0][0]) == 0 or len(ann[1][0]) == 0:
+                        rects.append([])
+                        continue
+                    scale = ann[0][0][0]
+
+                    center_x = superflatten(ann[1][0][0][0])
+                    center_y = superflatten(ann[1][0][0][1])
+                    rects.append([scale, center_x, center_y])
+
+                assert len(rects) == len(rect_ids)                
+
+                self.test_images.append(image_name)
+                self.test_rects.append(rects)
+                self.test_rectids.append(rect_ids)
+
+            self.indices = self.test_indices
+
 
     def train_val_split(self):
         np.random.seed(None)
@@ -158,6 +214,18 @@ class MPIIDataset(BaseDataset):
         return len(self.indices)
 
     def __getitem__(self, idx):
+
+        if not self.train:
+            image = self.test_images[idx]
+            rects = self.test_rects[idx]
+
+            return {
+                "image": image,
+                "rects": rects,
+                "imgidx": self.test_indices[idx] + 1,
+                "ridx": self.test_rectids[idx]
+            }
+        
         label = self.items[self.indices[idx]]
         output = {}
 
