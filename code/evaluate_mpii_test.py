@@ -51,7 +51,7 @@ def main():
         device = "cuda"
     else:
         device = "cpu"
-    model = Mpii_8(num_context=2)
+    model = Mpii_8(num_context=2).to(device)
     model.load_state_dict(torch.load("mpii_8_trained", map_location=device))
 
     if os.path.exists("mpii_test.csv"):
@@ -118,7 +118,7 @@ def main():
 
             image, trans_matrix = preprocess(old_scale, center_x, center_y, full_image_path)
 
-            model_input = image.unsqueeze(0)
+            model_input = image.unsqueeze(0).to(device)
             _, predictions, _, _ = model(model_input)
             predictions = predictions.squeeze()
             
@@ -131,7 +131,7 @@ def main():
             # FLIP LR
             image_flipped = torch.FloatTensor(np.fliplr(image.clone().permute(1, 2, 0))+1) - 1.0
             image_flipped = image_flipped.permute(2, 0, 1)
-            model_input = image_flipped.unsqueeze(0)
+            model_input = image_flipped.unsqueeze(0).to(device)
             _, predictions, _, _ = model(model_input)
             predictions = predictions.squeeze()
 
