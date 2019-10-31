@@ -56,10 +56,10 @@ First, a feature extraction block, referred to as \textit{Stem}, is used to extr
 Afterwards, these features are used to predict the joint heatmaps in the pose estimation block.
 The heatmaps are then used to compute the $x$ and $y$ coordinates of each joint position using the Soft-argmax function.
 Then, the network splits into two action recognition pipelines.
-In the first pipeline, further referred to as \textit{Pose-based action recognition}, the pose coordinates for all frames in the video clip are aggregated into a matrix and the action is predicted on this matrix.
-In the second pipeline, further referred to as \textit{Appearance-based action recognition}, the image features from the \textit{Stem} block are aggregated in a similar fashion to the \textit{Pose-based action recognition} into a matrix, which is also used to predict the performed action.
+In the first pipeline, further referred to as \textit{Pose Model}, the pose coordinates for all frames in the video clip are aggregated into a matrix and the action is predicted on this matrix.
+In the second pipeline, further referred to as \textit{Visual Model}, the image features from the \textit{Stem} block are aggregated in a similar fashion to the \textit{Pose Model} into a matrix, which is also used to predict the performed action.
 Finally, both intermediate action predictions are combined to form the final prediction.
-Throughout the entire network, the authors use the ReLU activation function.
+Throughout the entire network, the authors use the ReLU activation function if not otherwise stated.
 See \fref{fig:luvizon_overview} for a visualization of the network and its separate components.
 
 \begin{figure}[htb!]
@@ -145,7 +145,7 @@ Similar to the stacked hourglass approach by \cite{newell_stacked_2016}, the pre
 When training the pose estimator for evaluating its accuracy, the authors choose to use $8$ prediction blocks, whereas a smaller pose estimator of $4$ blocks is used when incorporating it into the human activity recognition pipeline.
 The authors do not motivate their choices or evaluate the accuracy of different number of prediction blocks, which is why we chose to evaluate the accuracy experimentally in \sref{sec:exp-replication}.
 
-\subsubsection{Pose-based action recognition}
+\subsubsection{Pose Model}
 \label{sec:pose_based_action_recognition}
 \begin{figure}[htb!]
     \centering
@@ -155,7 +155,7 @@ The authors do not motivate their choices or evaluate the accuracy of different 
 \end{figure}
 
 After computing image features in the \textit{Stem} network and feeding them into the pose estimator, the authors decide to split their network into two parts for estimating the performed action.
-The first path, further referred to as \textit{Pose-based action recognition}, aggregates the predicted $x$ and $y$ coordinates for each frame of the input video into a three-dimensional matrix representation of size $a \times b \times z$, also referred to as the \textit{pose cube}.
+The first path, further referred to as \textit{Pose Model}, aggregates the predicted $x$ and $y$ coordinates for each frame of the input video into a three-dimensional matrix representation of size $a \times b \times z$, also referred to as the \textit{pose cube}.
 $b$ refers to the number of frames of the input clip, while $a$ determines the number of joints to detect.
 To ensure that the pose matrix has identical dimensionality, regardless of the original input video length, the authors decide to subdivide the video into chunks of $16$ frames, resulting in $b=16$.
 The last dimension stores the $x$ and $y$ coordinates, respectively, resulting in $z=2$ and a total dimensionality of $16 \times 16 \times 2$, since all datasets are processed in a way to ensure that there are always $16$ joints (see \sref{sec:exp-datasets} for a more detailed explanation).
@@ -165,30 +165,38 @@ The authors decide to use a function called \textit{MaxPlusMin pooling} instead 
 This function is implemented by the authors using a \textit{Max-pooling} operation with kernel size $(4,4)$ in the following way:
 
 \begin{equation}
-    MaxMinPooling(x) = MaxPool(x) - MaxPool(-x)
+    MaxMinPooling(x) = MaxPool(x) - MaxPool(-x).
 \end{equation}
+However, the authors do not explain the benefit of such a pooling operation over a regular \textit{Max-pooling} layer.
 
 \begin{figure}[htb!]
     \centering
     \includegraphics[width=0.45\textwidth]{luvizon_actionrecognitionblock.png}
-    \caption{The fully-convolutional network used to process the \textit{pose cube} and \textit{appearance cube}, followed by a single \textit{action prediction block}. $T$ refers to the number of frames, $N_j$ is defined as the number of joints and $N_f$ represents the third dimension, i.e., $2$ in the case of the pose cube and $576$ for the appearance cube. In the action prediction block, the number of actions to detect can be set using $N_a$. Image taken from \cite{luvizon_2d/3d_2018} supplementary material.}
+    \caption{The fully-convolutional network used to process the \textit{pose cube}, followed by a single \textit{action prediction block}. $T$ refers to the number of frames, $N_j$ is defined as the number of joints and $N_f$ represents the third dimension, i.e., $2$ in the case of the pose cube. In the action prediction block, the number of actions to detect can be set using $N_a$. Image taken from \cite{luvizon_2d/3d_2018} supplementary material.}
     \label{fig:luvizon_actionrecognitionblock}
 \end{figure}
 
-The purpose of the fully-convolutional block is to extract features in the same way from both the pose cube and appearance cube, discussed later.
+The purpose of the fully-convolutional block is to extract features from the pose matrix.
 Afterwards, a processing block called \textit{action prediction block} can be used to classify the action performed, based on the features computed from either pose or appearance cube. 
 
 The \textit{action prediction block} is similar to the \textit{prediction block} used in the pose estimator, and again follows the ideas of stacking, since input and output dimensions of the action prediction block are identical.
 As an intermediate representation, \textit{action heatmaps} are created, which are in turn used to predict the action performed in the video clip using the Softmax activation function.
 Notice that the output of the action prediction block is not the predicted action itself, but rather features of the same dimensionality as the input to the block.
-The predicted actions are only used for training and are not passed further through the network.
+The predicted actions are only used for computing the loss during training and are not passed further through the network.
 
-\subsubsection{Appearance-based action recognition}
+\subsubsection{Visual Model}
 \begin{figure}[htb!]
     \centering
     \includegraphics[width=0.6\textwidth]{luvizon_appearanceaction.png}
     \caption{The approach proposed in \cite{luvizon_2d/3d_2018} to aggregate image features for multiple frames into a \textit{appearance cube}. This cube can then be used for further processing, similar to the \textit{pose cube}. Image taken from \cite{luvizon_2d/3d_2018}.}
     \label{fig:luvizon_appearanceaction}
+\end{figure}
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.6\textwidth]{luvizon_appearancebasedaction.png}
+    \caption{The \textit{Visual Model}, according to the code provided as supplementary material to \cite{luvizon_2d/3d_2018}. The architecture differs to the one presented in the paper, where the authors claim that both \textit{Visual Model} and \textit{Pose Model} have identical architectures.}
+    \label{fig:luvizon_appearancbasedeaction}
 \end{figure}
 
 The authors also want to incorporate low level image features from the \textit{Stem} block into their action recognition approach, in addition to estimated pose information.
@@ -200,9 +208,14 @@ Notice that they do not multiply the features with the context heatmaps, but onl
 Afterwards, the resulting features are summed over the first two dimensions, resulting in a new feature of size $1 \times 1 \times 576$.
 Then, these new features are aggregated into the appearance cube, resulting in a cube of dimensionality $16 \times 16 \times 576$.
 See \fref{fig:luvizon_appearanceaction} for a visualization of this process.
-The appearance cube is then used to predict the actions of the video clip in the same way as discussed in \sref{sec:pose_based_action_recognition} by producing action heatmaps and using Softmax.
+The authors then use a different feature extraction step as in the \textit{Pose Model}.
+Noticeably, the feature extraction consists of a single convolutional layer, followed by a batch normalization and a \textit{Max-pooling} layer.
+In \cite{luvizon_2d/3d_2018}, the authors claim that they use a similar architecture to the \textit{Pose Model}.
+However, when examining the code published as supplementary material, we found that they actually use the shallow model mentioned before.
+A visualization of the shallow feature extractor can be seen in \fref{fig:luvizon_appearancbasedeaction}.
+The action prediction block is then again identical to the one presented in the \textit{Pose Model} (see \fref{fig:luvizon_actionrecognitionblock}).
 
-For combining both the predictions based on the pose cube and appearance cube, the authors take the output of the last action prediction block in both networks, add the activations and apply a final Max-Pooling and Softmax activation to form the final result. 
+For combining both the predictions based on the pose cube and appearance cube, the authors take the output of the last action prediction block in both networks, add the activations and apply a final \textit{Max-Pooling} and Softmax activation to form the final result. 
 
 \subsection{Intermediate supervision}
 \label{sec:luvizon_intermediate_supervision}
