@@ -164,6 +164,7 @@
                 \item \textit{Feature Extractor - Stem}
                 \begin{itemize}
                     \item Based on Inception v4 \footnotemark
+                    \item Implicit: Batch normalization and ReLU activation
                     \item Uses \textbf{Depthwise separate convolutional layer}\footnotemark\footnotemark
                     \begin{itemize}
                         \item Used when high number of filters needed
@@ -213,7 +214,7 @@
                 \item Two paths in the network for action recognition
                 \item \textit{Pose Model}
                 \begin{itemize}
-                    \item Arrange joint values over time in 2D matrix
+                    \item Arrange joint values over time in 2D matrix (\textit{pose cube})
                     \item Action heatmaps
                     \begin{itemize}
                         \item Through softmax: action probabilities
@@ -231,14 +232,23 @@
     \footnotetext[1]{\cite{luvizon_2d/3d_2018}}
 \end{myframe}
 
-\begin{myframe}[Method - Visual Model recognition]
+\begin{myframe}[Method - Pose Model]
+    \begin{figure}
+        \includegraphics[width=.30\textwidth]{luvizon_actionrecognitionblock.png}
+        \sourcefix{1}
+    \end{figure}
+    \footnotetext[1]{\cite{luvizon_2d/3d_2018}}
+\end{myframe}
+
+\begin{myframe}[Method - Visual Model]
     	\begin{columns}[T]
         \begin{column}{.45\textwidth}
             \begin{itemize}
-                \item \textit{Visual Model recognition}
+                \item \textit{Visual Model}
                 \begin{itemize}
-                    \item Combination of visual features and joint positions
-                    \item Then: Identical architecture to pose recognition part
+                    \item Combination of visual features and joint probability maps
+                    \item Then: Simple feature extraction on \textit{appearance cube}
+                    \item Array of action precition blocks as seen before
                 \end{itemize}
                 \item \textit{Aggregation}
                 \begin{itemize}
@@ -251,6 +261,9 @@
             \begin{figure}
                 \includegraphics[width=.99\textwidth]{appearance-features.png}
                 \sourcefix{1}
+            \end{figure}
+            \begin{figure}
+                \includegraphics[width=.50\textwidth]{luvizon_appearancebasedaction.png}
             \end{figure}
         \end{column}
 	\end{columns}
@@ -269,8 +282,12 @@
             \item Ablation study to determine the choice of certain parameters
             \item Combined loss function of pose and action for \emph{real} end-to-end training
             \item Different representation of temporal information (next slide)
+            \begin{itemize}
+                \item Idea: Use for IMU time series data as presented in \footnotemark
+            \end{itemize}
         \end{itemize}
     \end{itemize}
+    \footnotetext[3]{\cite{reining_towards_2018}}
 \end{myframe}
 
 \begin{myframe}[Method - Different temporal representation]
@@ -295,8 +312,14 @@
               \item \textbf{MPII Human Pose\footnotemark}
               \begin{itemize}
                   \item 40,000 annotated images
+                  \begin{itemize}
+                      \item 2D pose
+                      \item Head size
+                      \item Center of Person bounding box
+                  \end{itemize}
                   \item Single and multi person
-                  \item Over 401 different activities
+                  \item Over 401 different activities from YouTube videos
+                  \item Test image predictions to be send to Max Planck institute
               \end{itemize}
           \end{itemize}
       \end{column}
@@ -319,6 +342,7 @@
               \begin{itemize}
                   \item 2,400 video clips of 15 actions
                   \item Limited number of actions (mainly sport)
+                  \item Literature ``solved'' this dataset
               \end{itemize}
           \end{itemize}
       \end{column}
@@ -349,7 +373,9 @@
                       \item Optical flow
                   \end{itemize}
                   \item 928 clips of 21 actions
-                  \item Can be used for end-to-end training
+                  \begin{itemize}
+                      \item More diverse than Penn Action
+                  \end{itemize}
               \end{itemize}
           \end{itemize}
       \end{column}
@@ -481,8 +507,18 @@
 \section{Conclusion}
 \begin{myframe}[Conclusion]
     \begin{itemize}
-         \item What is left to do
-        \item TODO
+        \item Further evidence that stacked architecture improves accuracy
+        \item JHMDB seems to be harder than MPII
+        \item What will be done next
+        \begin{itemize}
+            \item End-to-end training on JHMDB dataset
+            \item Evaluate use of different \textit{pose cube} feature extraction
+        \end{itemize}
+        \item Future work suggestions
+        \begin{itemize}
+            \item Use video pose estimator
+            \item Gather bigger, fully annotated datasets
+        \end{itemize}
     \end{itemize}
 \end{myframe}
 
