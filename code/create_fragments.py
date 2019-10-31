@@ -128,7 +128,7 @@ def create_fragments_pennaction(train=False, val=False, use_random=False, subpre
                         torch.save(indices, root_dir + prefix + "indices/{}/{}.indices.pt".format(train_test_folder, padded))
                         assert indices.shape == (3,)
 
-                print("{} - {}: {} / {}".format(train_test_folder, split, counter+1, len(all_indices)))
+                print("{}: {} / {}".format(train_test_folder, counter+1, len(all_indices)))
 
 def create_fragments_jhmdb(train=False, val=False, split=1, use_random=False, subprefix="1"):
         ds = JHMDBDataset("/data/mjakobs/data/jhmdb/", use_random_parameters=use_random, use_saved_tensors=False, train=train, val=val, split=split)
