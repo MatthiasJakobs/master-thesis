@@ -240,6 +240,13 @@ class HAR_Testing_Experiment(ExperimentBase):
 
         self.optimizer = optim.SGD(self.model.parameters(), lr=self.conf["learning_rate"], momentum=0.98, nesterov=True)
 
+        if "lr_milestones" in  self.conf["lr_milestones"]:
+            milestones = self.conf["lr_milestones"]
+        else:
+            milestones = [20000000] # basically, never use lr scheduler
+
+        self.lr_scheduler = optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=milestones, gamma=0.1)
+
         self.train_writer.write(["iteration", "loss"])
         self.val_writer.write(["iteration", "accuracy"])
 
@@ -267,12 +274,6 @@ class HAR_Testing_Experiment(ExperimentBase):
             if "start_finetuning" in self.conf and self.iteration < self.conf["start_finetuning"]:
                 _, _, pose_predicted_actions, vis_predicted_actions, _ = self.model(frames, finetune=False)
             else:
-                if self.iteration == self.conf["start_finetuning"] and not self.shrunk:
-                    # make learning rate smaller
-                    print("shrink learning rate")
-                    self.optimizer = optim.SGD(self.model.parameters(), lr=self.conf["learning_rate"] / 10.0, momentum=0.98, nesterov=True)
-                    self.shrunk = True
-
                 _, _, pose_predicted_actions, vis_predicted_actions, _ = self.model(frames, finetune=self.fine_tune)
 
             partial_loss_pose = torch.sum(categorical_cross_entropy(pose_predicted_actions, actions))
@@ -292,6 +293,7 @@ class HAR_Testing_Experiment(ExperimentBase):
         self.train_writer.write([self.iteration, batch_loss])
 
         self.optimizer.step()
+        self.lr_scheduler.step()
 
         self.iteration = self.iteration + 1
 
