@@ -816,7 +816,7 @@ class Pose_Mixed(ExperimentBase):
 
         self.val_loader = data.DataLoader(
             self.ds_val,
-            batch_size=self.conf["batch_size"],
+            batch_size=1,
             sampler=val_sampler
         )
 
