@@ -10,9 +10,9 @@ conf["nr_context"] = 0
 conf["project_dir"] = "har_initial"
 
 conf["batch_size"] = 20
-conf["val_batch_size"] = 10
-conf["total_iterations"] = 30000
-conf["evaluate_rate"] =  2000
+conf["val_batch_size"] = 1
+conf["total_iterations"] = 10000
+conf["evaluate_rate"] =  500
 conf["limit_data_percent"] = 1 # limit dataset to x percent (for testing)
 
 # conf["batch_size"] = 6
@@ -27,7 +27,8 @@ conf["limit_data_percent"] = 1 # limit dataset to x percent (for testing)
 # har.run_experiment()
 
 conf["name"] = "with_finetune"
-conf["start_finetuning"] = 10000
+conf["start_finetuning"] = 1500
 conf["fine_tune"] = True
+conf["lr_milestones"] = [1500, 6000]
 har = HAR_Testing_Experiment(conf)
 har.run_experiment()
