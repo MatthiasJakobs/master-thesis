@@ -368,7 +368,14 @@ def complete_pennaction():
         create_folder_if_not_present("/data/mjakobs/data/pennaction/rand1_annotations")
         create_folder_if_not_present("/data/mjakobs/data/pennaction/rand1_images")
 
-        delete_and_create("/data/mjakobs/data/pennaction_fragments/")
+        create_folder_if_not_present("/data/mjakobs/data/pennaction_fragments/annotations")
+        create_folder_if_not_present("/data/mjakobs/data/pennaction_fragments/images")
+        create_folder_if_not_present("/data/mjakobs/data/pennaction_fragments/rand1_indices")
+        create_folder_if_not_present("/data/mjakobs/data/pennaction_fragments/rand1_indices/train")
+        create_folder_if_not_present("/data/mjakobs/data/pennaction_fragments/rand1_indices/val")
+        create_folder_if_not_present("/data/mjakobs/data/pennaction_fragments/rand1_indices/test")
+        create_folder_if_not_present("/data/mjakobs/data/pennaction_fragments/rand1_annotations")
+        create_folder_if_not_present("/data/mjakobs/data/pennaction_fragments/rand1_images")
         create_fragments_pennaction(train=False, val=False) # test
         create_fragments_pennaction(train=True, val=True) # val
         create_fragments_pennaction(train=True, val=False, use_random=False) # train, no random
