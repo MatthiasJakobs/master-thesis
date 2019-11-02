@@ -215,7 +215,7 @@ class HAR_Testing_Experiment(ExperimentBase):
         else:
             self.use_gt_pose = False
 
-        self.model = DeepHar(num_actions=21, use_gt=True, model_path="/data/mjakobs/data/pretrained_jhmdb").to(self.device)
+        self.model = DeepHar(num_actions=21, use_gt=True, nr_context=self.conf["nr_context"], model_path="/data/mjakobs/data/pretrained_jhmdb").to(self.device)
 
         self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False, use_random_parameters=True, augmentation_amount=3, use_gt_bb=self.use_gt_bb)
         self.ds_val = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=True, use_gt_bb=self.use_gt_bb)

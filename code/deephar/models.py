@@ -110,12 +110,12 @@ class Mpii_8(nn.Module):
 
 
 class DeepHar(nn.Module):
-    def __init__(self, num_frames=16, num_joints=16, num_actions=10, use_gt=True, model_path=None, alternate_time=False):
+    def __init__(self, num_frames=16, num_joints=16, num_actions=10, nr_context=0, use_gt=True, model_path=None, alternate_time=False):
         super(DeepHar, self).__init__()
 
         self.use_gt = use_gt # use pretrained pose estimator
         self.alternate_time = alternate_time
-        self.pose_estimator = Mpii_4(num_context=0)
+        self.pose_estimator = Mpii_4(num_context=nr_context)
 
         if use_gt:
             if torch.cuda.is_available():
