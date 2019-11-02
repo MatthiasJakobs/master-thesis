@@ -2,6 +2,9 @@ import torch.nn as nn
 
 from deephar.blocks import *
 from deephar.layers import MaxMinPooling
+from deephar.utils import create_heatmap
+
+from skimage.transform import resize
 
 class Mpii_1(nn.Module):
     def __init__(self, num_context=0):
@@ -139,20 +142,45 @@ class DeepHar(nn.Module):
 
         #self.action_predictions = []
 
-    def extract_pose_for_frames(self, x):
+    def extract_pose_for_frames(self, x, gt_pose=None):
         train_poses, poses, heatmaps, features = self.pose_estimator(x)
         poses = poses.squeeze(0)
         train_poses = train_poses.permute(1, 0, 2, 3)
 
+        if gt_pose is not None:
+            assert gt_pose.shape == (16, 16, 3)
+            train_poses = gt_pose.clone()
+            train_poses = train_poses.unsqueeze(1)
+            train_poses = train_poses.expand(-1, 4, -1, -1)
+
+            heatmaps = torch.FloatTensor(16, 16, 32, 32)
+            for i in range(16):
+                for o in range(16):
+                    pose = gt_pose[i, o]
+                    if pose[2] == 0:
+                        mean_x = 127
+                        mean_y = mean_x
+                        cov = 500
+                    else:
+                        mean_x = pose[0] * 255
+                        mean_y = pose[1] * 255
+                        cov = 10
+
+                    heatmap = create_heatmap(mean_x, mean_y, cov)
+                    heatmap = torch.FloatTensor(resize(heatmap, (32, 32)))
+                    heatmaps[i, o] = heatmap
+
+            poses = gt_pose.clone()
+
         return train_poses, poses, heatmaps, features
 
-    def forward(self, x, finetune=False):
+    def forward(self, x, finetune=False, gt_pose=None):
 
         if finetune:
-            train_poses, poses, heatmaps, features = self.extract_pose_for_frames(x)
+            train_poses, poses, heatmaps, features = self.extract_pose_for_frames(x, gt_pose=gt_pose)
         else:
             with torch.no_grad():
-                train_poses, poses, heatmaps, features = self.extract_pose_for_frames(x)
+                train_poses, poses, heatmaps, features = self.extract_pose_for_frames(x, gt_pose=gt_pose)
 
         nj = poses.size()[1]
         nf = features.size()[1]

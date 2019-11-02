@@ -205,13 +205,20 @@ class HAR_Testing_Experiment(ExperimentBase):
         else:
             self.fine_tune = False
 
-        print("Fine Tuning: " + str(self.fine_tune))
+        if "use_gt_bb" in self.conf:
+            self.use_gt_bb = self.conf["use_gt_bb"]
+        else:
+            self.use_gt_bb = False
 
+        if "use_gt_pose" in self.conf:
+            self.use_gt_pose = self.conf["use_gt_pose"]
+        else:
+            self.use_gt_pose = False
 
         self.model = DeepHar(num_actions=21, use_gt=True, model_path="/data/mjakobs/data/pretrained_jhmdb").to(self.device)
 
-        self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False, use_random_parameters=True, augmentation_amount=3)
-        self.ds_val = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=True)
+        self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False, use_random_parameters=True, augmentation_amount=3, use_gt_bb=self.use_gt_bb)
+        self.ds_val = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=True, use_gt_bb=self.use_gt_bb)
         self.ds_test = JHMDBDataset("/data/mjakobs/data/jhmdb/", train=False)
 
         train_indices, val_indices, test_indices = self.limit_dataset(include_test=True)
@@ -240,7 +247,7 @@ class HAR_Testing_Experiment(ExperimentBase):
 
         self.optimizer = optim.SGD(self.model.parameters(), lr=self.conf["learning_rate"], momentum=0.98, nesterov=True)
 
-        if "lr_milestones" in  self.conf["lr_milestones"]:
+        if "lr_milestones" in self.conf:
             milestones = self.conf["lr_milestones"]
         else:
             milestones = [20000000] # basically, never use lr scheduler
@@ -266,15 +273,20 @@ class HAR_Testing_Experiment(ExperimentBase):
         for i in range(batch_size):
             frames = train_objects["frames"][i].to(self.device)
             actions = train_objects["action_1h"][i].to(self.device)
+            
+            if self.use_gt_pose:
+                gt_pose = train_objects["poses"][i].to(self.device)
+            else:
+                gt_pose = None
 
             actions = actions.unsqueeze(0)
             actions = actions.expand(4, -1)
             actions = actions.unsqueeze(0)
 
             if "start_finetuning" in self.conf and self.iteration < self.conf["start_finetuning"]:
-                _, _, pose_predicted_actions, vis_predicted_actions, _ = self.model(frames, finetune=False)
+                _, _, pose_predicted_actions, vis_predicted_actions, _ = self.model(frames, finetune=False, gt_pose=gt_pose)
             else:
-                _, _, pose_predicted_actions, vis_predicted_actions, _ = self.model(frames, finetune=self.fine_tune)
+                _, _, pose_predicted_actions, vis_predicted_actions, _ = self.model(frames, finetune=self.fine_tune, gt_pose=gt_pose)
 
             partial_loss_pose = torch.sum(categorical_cross_entropy(pose_predicted_actions, actions))
             partial_loss_action = torch.sum(categorical_cross_entropy(vis_predicted_actions, actions))
@@ -310,13 +322,19 @@ class HAR_Testing_Experiment(ExperimentBase):
             for batch_idx, validation_objects in enumerate(self.val_loader):
                 frames = validation_objects["frames"].to(self.device)
                 actions = validation_objects["action_1h"].to(self.device)
-
+                
+                if self.use_gt_pose:
+                    gt_pose = validation_objects["poses"].to(self.device)
+                    gt_pose = gt_pose.squeeze(0)
+                else:
+                    gt_pose = None
+                
                 ground_class = torch.argmax(actions, 1)
 
                 assert len(frames) == 1
                 frames = frames.squeeze(0)
 
-                _, predicted_poses, pose_model_pred, visual_model_pred, prediction = self.model(frames)
+                _, predicted_poses, pose_model_pred, visual_model_pred, prediction = self.model(frames, gt_pose=gt_pose)
 
                 pose_model_correct = pose_model_correct + (torch.argmax(pose_model_pred[0][-1]) == ground_class).item()
                 visual_model_correct = visual_model_correct + (torch.argmax(visual_model_pred[0][-1]) == ground_class).item()
