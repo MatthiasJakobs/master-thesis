@@ -210,7 +210,7 @@ class HAR_Testing_Experiment(ExperimentBase):
 
         self.model = DeepHar(num_actions=21, use_gt=True, model_path="/data/mjakobs/data/pretrained_jhmdb").to(self.device)
 
-        self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False, use_random_parameters=True)
+        self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False, use_random_parameters=True, augmentation_amount=3)
         self.ds_val = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=True)
         self.ds_test = JHMDBDataset("/data/mjakobs/data/jhmdb/", train=False)
 
@@ -248,7 +248,7 @@ class HAR_Testing_Experiment(ExperimentBase):
         self.lr_scheduler = optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=milestones, gamma=0.1)
 
         self.train_writer.write(["iteration", "loss"])
-        self.val_writer.write(["iteration", "accuracy"])
+        self.val_writer.write(["iteration", "accuracy", "pose_model_accuracy", "visual_model_accuracy"])
 
         self.create_experiment_folders(heatmaps=False)
 
@@ -305,6 +305,8 @@ class HAR_Testing_Experiment(ExperimentBase):
         with torch.no_grad():
             correct = 0
             total = 0
+            pose_model_correct = 0
+            visual_model_correct = 0
             for batch_idx, validation_objects in enumerate(self.val_loader):
                 frames = validation_objects["frames"].to(self.device)
                 actions = validation_objects["action_1h"].to(self.device)
@@ -314,7 +316,10 @@ class HAR_Testing_Experiment(ExperimentBase):
                 assert len(frames) == 1
                 frames = frames.squeeze(0)
 
-                _, predicted_poses, _, _, prediction = self.model(frames)
+                _, predicted_poses, pose_model_pred, visual_model_pred, prediction = self.model(frames)
+
+                pose_model_correct = pose_model_correct + (torch.argmax(pose_model_pred[0][-1]) == ground_class).item()
+                visual_model_correct = visual_model_correct + (torch.argmax(visual_model_pred[0][-1]) == ground_class).item()
 
                 if torch.cuda.is_available():
                     frames = frames.cpu()
@@ -349,7 +354,10 @@ class HAR_Testing_Experiment(ExperimentBase):
 
             accuracy = correct / float(total)
 
-            self.val_writer.write([self.iteration, accuracy])
+            pose_model_accuracy = pose_model_correct / float(total)
+            visual_model_accuracy = visual_model_correct / float(total)
+
+            self.val_writer.write([self.iteration, accuracy, pose_model_accuracy, visual_model_accuracy])
 
             torch.save(self.model.state_dict(), "experiments/{}/weights/weights_{:08d}".format(self.experiment_name, self.iteration))
             torch.save(self.model.pose_estimator.state_dict(), "experiments/{}/weights/pe_weights_{:08d}".format(self.experiment_name, self.iteration))
