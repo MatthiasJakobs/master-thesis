@@ -193,8 +193,8 @@ class ExperimentBase:
                     running = False
                     break
 
-        test_accuracy = self.test()
-        print("Test accuracy: " + str(test_accuracy))
+        # test_accuracy = self.test()
+        # print("Test accuracy: " + str(test_accuracy))
         return
 
 
@@ -562,13 +562,13 @@ class Pose_JHMDB(ExperimentBase):
 
         self.val_loader = data.DataLoader(
             self.ds_val,
-            batch_size=self.conf["batch_size"],
+            batch_size=self.conf["val_batch_size"],
             sampler=val_sampler
         )
 
         self.test_loader = data.DataLoader(
             self.ds_test,
-            batch_size=self.conf["batch_size"],
+            batch_size=self.conf["val_batch_size"],
             sampler=test_sampler
         )
 
@@ -844,7 +844,7 @@ class Pose_Mixed(ExperimentBase):
 
         self.val_loader = data.DataLoader(
             self.ds_val,
-            batch_size=self.conf["batch_size"],
+            batch_size=1,
             sampler=val_sampler
         )
 
