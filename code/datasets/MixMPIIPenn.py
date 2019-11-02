@@ -25,7 +25,7 @@ class MixMPIIPenn(BaseDataset):
         else:
             use_random = True
 
-        self.pennaction = PennActionDataset("/data/mjakobs/data/pennaction/", use_random_parameters=use_random, train=train, val=val, use_gt_bb=True, use_saved_tensors=True, augmentation_amount=augmentation_amount, use_gt_bb=use_gt_bb)
+        self.pennaction = PennActionDataset("/data/mjakobs/data/pennaction/", use_random_parameters=use_random, train=train, val=val, use_gt_bb=True, use_saved_tensors=True, augmentation_amount=augmentation_amount)
         self.mpii = MPIIDataset("/data/mjakobs/data/mpii/", use_random_parameters=use_random, use_saved_tensors=True, train=train, val=val, augmentation_amount=augmentation_amount)
 
         self.padding_amount = 8
@@ -52,6 +52,7 @@ class MixMPIIPenn(BaseDataset):
             pose = entry["normalized_poses"][frame_idx]
             matrix = entry["trans_matrices"][frame_idx]
             bbox = entry["bbox"][frame_idx]
+            dataset = "pennaction"
             
         else:
             # mpii
@@ -60,11 +61,13 @@ class MixMPIIPenn(BaseDataset):
             pose = entry["normalized_pose"]
             matrix = entry["trans_matrix"]
             bbox = entry["bbox"]
+            dataset = "mpii"
 
         return {
             "normalized_image": image,
             "normalized_pose": pose,
             "trans_matrix": matrix,
-            "bbox": bbox
+            "bbox": bbox,
+            "dataset": dataset
         }
 
