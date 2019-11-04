@@ -605,140 +605,150 @@ Instead, \textit{convolutional layers} were proposed, which drastically reduce t
 
 \subsubsection{Convolutional Layer}
 
-\textit{Convolutional layers} relate to the mathematical process of convolution, where two real-valued functions are combined using the convolution operator $*$, resulting in a third real-valued function.
-In its most general form, the convolution operator over functions $x$ and $w$ is defined in \cite{goodfellow_deep_2016} as:
+In computer vision, image features like edges are traditionally computed by first designing two-dimensional matrices $K$ called \textit{kernels} or \textit{filters}.
+Let $W, H$ be the width and height of the image $I$.
+For each $(i,j) \in W \times H$, the \textit{excitation} $E(i,j)$ is computed using the following formula:
 
 \begin{equation}
-    s(t) = (x * w)(t) = \int_{a=-\infty}^{\infty} x(a)w(t-a)  da
+    E(i,j) = \sum_m \sum_n I(i + m,j + n) \cdot K(m, n).
 \end{equation}
 
-In convolutional layers, a discretized version is employed.
-The two operands are the input image $\bm{I}$ and a \textbf{kernel} (also referred to as a \textbf{filter}) $\bm{K}$.
-Typically, when processing images, a kernel is a two dimensional matrix $(p \times k)$ of weights $w_{ij} \in \mathbb{R}$\eref{eq:kernel_definition}.
+A visualization of this process can be seen in \fref{fig:conv-vis}.
+This process relates to the mathematical concept of \textit{convolution}, where the amount of overlap is computed when sliding one function over the other.
+Specifically, computing the excitation is a discretized, two-dimensional version of the general convolution.
+In its most general form, a convolution over functions $x$ and $w$ is defined in \cite{goodfellow_deep_2016} as:
 
 \begin{equation}
-    \label{eq:kernel_definition}
-    \bm{K} =
+    s(t) = (x * w)(t) = \int_{a=-\infty}^{\infty} x(a)w(t-a)  da.
+\end{equation}
+
+The excitation values then form the \textit{output feature map}.
+
+One approach for detecting edges was introduced in \cite{sobel_3x3_1968}, where two $3 \times 3$ kernels were introduced for detecting horizontal ($G_y$) and vertical ($G_x$) edges in an image \eref{eq:sobel}.
+In the case of the Sobel operator, the output feature map is a horizontal or vertical edge image.
+See \fref{fig:sobel_lenna} for a visualization.
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.8\textwidth]{sobel_lenna.png}
+    \caption{Output feature maps after applying $G_x$ and $G_y$, in comparison to the original image (left).}
+    \label{fig:sobel_lenna}
+\end{figure}
+
+\begin{equation}
+    \label{eq:sobel}
+    G_x = 
     \begin{pmatrix}
-        w_{00} & \dots  & w_{0k} \\
-        \vdots & \ddots & \\
-        w_{p0} &        & w_{pk}
+        -1 & 0 & 1 \\
+        -2 & 0 & 2 \\
+        -1 & 0 & 1 
+    \end{pmatrix}
+    ,~~~~~~
+    G_y = 
+    \begin{pmatrix}
+        1 & 2 & 1 \\
+        0 & 0 & 0 \\
+        -1 & -2 & -1
     \end{pmatrix}
 \end{equation}
 
-For each index $(i,j)$ in the input image, the output of the convolution is computed by summing over the product of the weights and the image:
-
-\begin{equation}
-    \begin{split}
-        (\bm{K} * \bm{I})(i,j)
-        &= \sum_{n=-s}^s \sum_{m=-s}^s \bm{K}_{(m+s, n+s)} \cdot \bm{I}_{(i+s, j+s)} \\
-        &= \sum_{n=-s}^s \sum_{m=-s}^s w_{m+s, n+s} \cdot \bm{I}_{(i+s, j+s)}
-    \end{split}
-\end{equation}
-
-with $s = \lfloor \frac{p}{2} \rfloor$.
-A visualization of this process can be seen in \fref{fig:conv-vis}.
-Repeating this process for each $(i,j)$ then produces a \textit{output feature map}.
-A neural network with at least one convolutional layer is also often referred to as a \textbf{convolutional neural network} of a \textbf{CNN}.
+\textit{Convolutional layers} generalize the approach of convolving input feature maps with kernels by using kernels whose parameters are learned through backpropagation.
+This means that the kernels do not need to be designed manually because the network can learn which kernels are needed, depending on the task.
+Instead of computing the excitation for each $(i,j)$ position, a \textit{stride} can be defined.
+A stride of $x$ indicates that the positions to apply the kernel are incremented by $x$, instead of $1$.
 
 \begin{figure}[htb!]
     \centering
     \includegraphics[width=0.8\textwidth]{conv-freecodecamp}
-    \caption{Visualisation of one step of a convolutional layer. Image taken from \cite{dertat_applied_2017}}
+    \caption{Visualisation of using a Sobel filter for detecting vertical edges. Image taken from \cite{dertat_applied_2017}.}
     \label{fig:conv-vis}
 \end{figure}
 
-In practice, each convolutional layer consists of multiple kernels, each with distinct weights.
+In practice, each convolutional layer consists of multiple kernels.
 This results in a output feature map with a depth corresponding to the number of different kernels.
-Also, the output feature map of a convolutional layer can be processed by another convolutional layer, which lets a convolutional neural network combine features by stacking convolutional layers on top of each other.
+The output feature map can then be processed by another convolutional layer.
+A neural network with at least one convolutional layer is also often referred to as a \textbf{Convolutional Neural Network} or a \textbf{CNN}.
 
-According to \cite{goodfellow_deep_2016}, convolutional layers have three important properties to consider.
+% According to \cite{goodfellow_deep_2016}, convolutional layers have three important properties to consider.
 
-\begin{figure}[htb!]
-    \centering
-    \includegraphics[width=0.8\textwidth]{sparse-connectivity.png}
-    \caption{A visualization of sparse connectivity. Bottom: Connections in a traditional Multi-layer Perceptron. The output of each neuron is connected to the input of all neurons in the successive layer. Top: Connectivity in the case of a three-dimensional kernel. Each neuron is used just three times in order to compute the output of a neuron in the next layer. Image taken from \cite{goodfellow_deep_2016}}
-    \label{fig:sparse-connectivity}
-\end{figure}
+% \begin{figure}[htb!]
+%     \centering
+%     \includegraphics[width=0.8\textwidth]{sparse-connectivity.png}
+%     \caption{A visualization of sparse connectivity. Bottom: Connections in a traditional Multi-layer Perceptron. The output of each neuron is connected to the input of all neurons in the successive layer. Top: Connectivity in the case of a three-dimensional kernel. Each neuron is used just three times in order to compute the output of a neuron in the next layer. Image taken from \cite{goodfellow_deep_2016}}
+%     \label{fig:sparse-connectivity}
+% \end{figure}
 
-Firstly, a convolution layer utilizes \textbf{sparse connectivity}.
-This means that not all inputs are connected to all neurons in the next layer.
-To illustrate this, consider a one dimensional input vector $\bm{x}$ and a kernel $\bm{k} \in \mathbb{R}^p$.
-By calculating $(\bm{k} * \bm{x})(i)$ for each entry $i$ it becomes clear that each input $\bm{x}_i$ is only used to calculate $p$ output values.
-See \fref{fig:sparse-connectivity} for a visualization.
-Because of this property, the amount of parameters needed reduces drastically.
-Traditionally, $m \cdot n$ parameters would be needed to calculate all output values for $m$ inputs and $n$ neurons.
-Using convolutions, this reduces to $m \cdot p$.
+% Firstly, a convolution layer utilizes \textbf{sparse connectivity}.
+% This means that not all inputs are connected to all neurons in the next layer.
+% To illustrate this, consider a one dimensional input vector $\bm{x}$ and a kernel $\bm{k} \in \mathbb{R}^p$.
+% By calculating $(\bm{k} * \bm{x})(i)$ for each entry $i$ it becomes clear that each input $\bm{x}_i$ is only used to calculate $p$ output values.
+% See \fref{fig:sparse-connectivity} for a visualization.
+% Because of this property, the amount of parameters needed reduces drastically.
+% Traditionally, $m \cdot n$ parameters would be needed to calculate all output values for $m$ inputs and $n$ neurons.
+% Using convolutions, this reduces to $m \cdot p$.
 
-Secondly, \textbf{parameter sharing} is another important property of convolutional layers.
-Convolutions do not learn one weight per input but a fixed amount of weights defined by the kernel size.
-Because there are only $p^2$ parameters to learn (assuming a two dimensional kernel) as opposed to $m \cdot n$ this further reduces the number of needed parameters.
+% Secondly, \textbf{parameter sharing} is another important property of convolutional layers.
+% Convolutions do not learn one weight per input but a fixed amount of weights defined by the kernel size.
+% Because there are only $p^2$ parameters to learn (assuming a two dimensional kernel) as opposed to $m \cdot n$ this further reduces the number of needed parameters.
 
-Thirdly, convolution layer are \textbf{equivariant to translation}.
-This means that changes in the input result in the same change in the output.
-More specifically, translating the input and then calculating the convolution results in the same output as calculating the convolution first and then applying translation.
-This is useful when considering that a kernel can easily learn to detect edges in the input image.
-Without this property, it would not be guaranteed that the edge detector produces the same output no matter where in the image an edge is occurring.
+% Thirdly, convolution layer are \textbf{equivariant to translation}.
+% This means that changes in the input result in the same change in the output.
+% More specifically, translating the input and then calculating the convolution results in the same output as calculating the convolution first and then applying translation.
+% This is useful when considering that a kernel can easily learn to detect edges in the input image.
+% Without this property, it would not be guaranteed that the edge detector produces the same output no matter where in the image an edge is occurring.
 
 % padding
-Until now, it was assumed that the kernel can be applied on every image index $(i,j)$.
-For corner pixels, this cannot be the case, however, if the kernel size is bigger than $1$, which is the case most of the times.
-This then means that the output would be smaller in dimension because the corner pixels need to be omitted in order to calculate the convolution.
-
-Padding fills in the missing values when calculating convolutions.
-One popular approach is to fill the missing values with $0$. Consider the following example for a $(3,3)$ kernel at the image position $(i,j) = (0,0)$, which is defined as the top-left corner of the image:
-
-\begin{equation}
-    \begin{split}
-        (\bm{K} * \bm{I})(i,j)
-        &= w_{00} \cdot 0 + w_{01} \cdot 0 + w_{02} \cdot 0 \\
-        &+ w_{10} \cdot 0 + w_{11} \cdot \bm{I}_{i,j} + w_{12} \cdot \bm{I}_{i+1,j} \\
-        &+ w_{20} \cdot 0 + w_{21} \cdot \bm{I}_{i,j+1} + w_{22} \cdot \bm{I}_{i+1,j+1}
-    \end{split}
-\end{equation}
-
-% stride ?
-
-
-% receptive field ?
-
-% stacking layers ?
-
+Since the kernel is centered at each coordinate $(i,j)$ of the input feature map, a decision has to be made when not all input values are present, e.g., at the edges of an input image.
+Generally, there are two approaches used in the literature.
+First, $(i,j)$ positions where not all input feature map values are available can be ignored, resulting in a output feature map with smaller spatial dimensions since the convolution was not computed for every $(i,j)$ position.
+Second, the missing values can be substituted.
+This is referred to as \textbf{padding}.
+Common padding approaches are to fill the missing values with $0$ or duplicating with the nearest input feature map values.
 
 \subsubsection{Pooling Layer}
-Another important layer type when using Convolutional Neural Networks is a pooling layer.
+Another important layer type when using Convolutional Neural Networks is the \textit{pooling layer}.
+Pooling layers are used to reduce the size of the activation map and introduce invariance to small translations when applied to the spatial dimensions \cite{goodfellow_deep_2016}.
+There are different types of pooling layer, however the most popular is the \textbf{Max-pooling} layer where, for each $n \times n$ pixel block, the maximum value is used as the output.
+Consider the output feature map of the previously discussed Sobel filter, where high values indicate the presence of a horizontal or vertical edge, depending on the kernel.
+In a similar sliding-window approach to the convolutional layer, the Max-pooling layer computes the maximum values for $n \times m$ blocks at each pixel position.
+Additionally, a stride $s$ can be defined as well and, in practice, the stride is often set to $s=n$.
+This results in a reduction of the spatial dimension of the feature map by a factor $n$ in both dimensions.
+Also, invariance to small translations is introduced because the maximum value is propagated, regardless of where in the $n \times n$ window it occured. 
+See \fref{fig:pooling-tds} for a visualization.
 
 \begin{figure}[htb!]
     \centering
-    \includegraphics[width=0.8\textwidth]{pooling-tds.png}
-    \caption{Example of a $2 \times 2$ Max-Pooling operation. Image taken from \cite{cornelisse_intuitive_2018}}
+    \includegraphics[width=0.65\textwidth]{pooling-tds.png}
+    \caption{Example of a $2 \times 2$ Max-pooling operation with a stride of $2$. Image taken from \cite{cornelisse_intuitive_2018}.}
     \label{fig:pooling-tds}
 \end{figure}
 
-There are different types of pooling layer, however the most popular is the \textbf{Max-Pooling} layer where, for each $n \times n$ pixel block the maximum value is used as the output.
-This then means that the size of the image is reduced.
-For example, using a $2 \times 2$ Max-Pooling layer, the size is reduced by a factor of two in both dimensions.
-See \fref{fig:pooling-tds} for a visualization.
+% Using a pooling layer, the representation becomes invariant to small translations.
+% This means that small translations in an input image do not change the output of the pooling layer.
+% Pooling layers are useful if it is more important whether or not some feature is present in the image as opposed to finding the exact location.
+% For the task of image classification, for example, knowing that the image contains a face is more useful than to know the exact location of the face.
 
-Using a pooling layer, the representation becomes invariant to translations.
-This means that small translations in an input image do not change the output of the pooling layer.
-Pooling layers are useful if it is more important whether or not some feature is present in the image as opposed to finding the exact location.
-For the task of image classification, for example, knowing that the image contains a face is more useful than to know the exact location of the face.
+% \begin{figure}[htb!]
+%     \centering
+%     \includegraphics[width=0.8\textwidth]{pooling-goodfellow.png}
+%     \caption{Illustration of a Max-pooling layer learning invariance towards rotation. By comparing the input against multiple differently rotated versions and just propagating the highest activation no matter which of the filters ultimately detected the number. Image taken from \cite{goodfellow_deep_2016}.}
+%     \label{fig:pooling-goodfellow}
+% \end{figure}
+
+% This aspect of invariance towards translation is just an example, however.
+% Using a pooling layer, invariance towards specific characteristics can be learned.
+% Consider Fig. \ref{fig:pooling-goodfellow} where, using a pooling layer, invariance towards rotation is learned.
+
+\subsubsection{Fully-Connected Layer}
+As discussed previously, in convolutional neural networks, convolution and pooling layers are used to extract visual features from the input.
+The features can then be used for classifying or regression.
+For this purpose, layers of neurons, as introduced earlier, can be added to a convolutional neural network.
+In the context of CNNs, these layers are referred to as \textbf{fully-connected} layers.
+An example of a CNN where features are computed and then classified can be seen in \fref{fig:cnn_pipeline}.
 
 \begin{figure}[htb!]
     \centering
-    \includegraphics[width=0.8\textwidth]{pooling-goodfellow.png}
-    \caption{Illustration of a Max-Pooling layer learning invariance towards rotation. By comparing the input against multiple differently rotated versions and just propagating the highest activation no matter which of the filters ultimately detected the number. Image taken from \cite{goodfellow_deep_2016}}
-    \label{fig:pooling-goodfellow}
+    \includegraphics[width=0.8\textwidth]{cnn_pipeline.jpeg}
+    \caption{Example of a Convolutional Neural network, consisting of a feature extractor, followed by a fully connected network, which uses the Softmax activation function for classification. Image taken from \cite{saha_comprehensive_2018}.}
+    \label{fig:cnn_pipeline}
 \end{figure}
-
-This aspect of invariance towards translation is just an example, however.
-Using a pooling layer, invariance towards specific characteristics can be learned.
-Consider Fig. \ref{fig:pooling-goodfellow} where, using a pooling layer, invariance towards rotation is learned.
-
-\subsubsection{Fully-Connected Layer}
-In convolutional neural networks, the convolution and pooling layer produce a set of features.
-Often, it is necessary to classify these features into categories.
-Consider image classification or character recognition tasks as an example.
-For this purpose, traditional layer of neurons like introduced earlier can be added to a convolutional neural network.
-In the context of CNNs, these layers are referred to as \textbf{fully-connected} layers.
