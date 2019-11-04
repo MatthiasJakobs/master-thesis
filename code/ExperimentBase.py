@@ -199,7 +199,7 @@ class ExperimentBase:
 
 
 class HAR_Testing_Experiment(ExperimentBase):
-    def preparation(self):
+    def preparation(self, load_model=True):
         if "fine_tune" in self.conf:
             self.fine_tune = self.conf["fine_tune"]
         else:
@@ -215,7 +215,10 @@ class HAR_Testing_Experiment(ExperimentBase):
         else:
             self.use_gt_pose = False
 
-        self.model = DeepHar(num_actions=21, use_gt=True, nr_context=self.conf["nr_context"], model_path="/data/mjakobs/data/pretrained_jhmdb").to(self.device)
+        if load_model:
+            self.model = DeepHar(num_actions=21, use_gt=True, nr_context=self.conf["nr_context"], model_path="/data/mjakobs/data/pretrained_jhmdb").to(self.device)
+        else:
+            self.model = DeepHar(num_actions=21, use_gt=False, nr_context=self.conf["nr_context"]).to(self.device)
 
         self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False, use_random_parameters=True, augmentation_amount=3, use_gt_bb=self.use_gt_bb)
         self.ds_val = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=True, use_gt_bb=self.use_gt_bb)
@@ -309,7 +312,7 @@ class HAR_Testing_Experiment(ExperimentBase):
 
         self.iteration = self.iteration + 1
 
-        print("iteration {} train-loss {}".format(self.iteration, losses.item()))
+        print("iteration {} train-loss {}".format(self.iteration, batch_loss))
 
     def evaluate(self):
         self.model.eval()
@@ -439,81 +442,85 @@ class HAR_Testing_Experiment(ExperimentBase):
 class HAR_E2E(HAR_Testing_Experiment):
 
     def preparation(self):
-        super().preparation()
-        self.model = DeepHar(num_actions=21, use_gt=False).to(self.device)
+        super().preparation(load_model=False)
 
     def train(self, train_objects):
         self.model.train()
-        frames = train_objects["frames"].to(self.device)
+        self.optimizer.zero_grad()
 
-        batch_size = len(frames)
 
-        predicted_poses, _, pose_predicted_actions, vis_predicted_actions, _ = self.model(frames, finetune=True)
-        del frames
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
+        batch_size = len(train_objects["frames"])
+        batch_loss = 0
+        for i in range(batch_size):
+            frames = train_objects["frames"][i].to(self.device)
 
-        actions = train_objects["action_1h"].to(self.device)
-        ground_poses = train_objects["poses"].to(self.device)
+            predicted_poses, _, pose_predicted_actions, vis_predicted_actions, _ = self.model(frames, finetune=True)
+            del frames
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
 
-        actions = actions.unsqueeze(1)
-        actions = actions.expand(-1, self.conf["num_blocks"], -1)
+            actions = train_objects["action_1h"][i].to(self.device)
+            ground_poses = train_objects["poses"][i].to(self.device)
 
-        partial_loss_pose = torch.sum(categorical_cross_entropy(pose_predicted_actions, actions))
-        partial_loss_action = torch.sum(categorical_cross_entropy(vis_predicted_actions, actions))
+            actions = actions.unsqueeze(0)
+            actions = actions.expand(self.conf["num_blocks"], -1)
+            actions = actions.unsqueeze(0)
 
-        har_loss = partial_loss_pose + partial_loss_action
+            partial_loss_pose = torch.sum(categorical_cross_entropy(pose_predicted_actions, actions))
+            partial_loss_action = torch.sum(categorical_cross_entropy(vis_predicted_actions, actions))
 
-        pred_pose = predicted_poses[:, :, :, :, 0:2]
-        ground_poses = ground_poses[:, :, :, 0:2]
-        ground_poses = ground_poses.unsqueeze(2)
-        ground_poses = ground_poses.expand(-1, -1, self.conf["num_blocks"], -1, -1)
+            har_loss = partial_loss_pose + partial_loss_action
 
-        pred_vis = predicted_poses[:, :, :, :, 2]
-        ground_vis = ground_poses[:, :, :, 2]
-        ground_vis = ground_vis.unsqueeze(2)
-        ground_vis = ground_vis.expand(-1, -1, self.conf["num_blocks"], -1)
+            pred_pose = predicted_poses[:, :, :, 0:2]
+            ground_pose = ground_poses[:, :, 0:2]
+            ground_pose = ground_pose.unsqueeze(1)
+            ground_pose = ground_pose.expand(-1, self.conf["num_blocks"], -1, -1)
 
-        del predicted_poses
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
+            pred_vis = predicted_poses[:, :, :, 2]
+            ground_vis = ground_poses[:, :, 2]
+            ground_vis = ground_vis.unsqueeze(1)
+            ground_vis = ground_vis.expand(-1, self.conf["num_blocks"], -1)
 
-        binary_crossentropy = nn.BCELoss()
+            del predicted_poses
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
 
-        pred_pose = pred_pose.contiguous().view(batch_size * 16, self.conf["num_blocks"], 16, 2)
-        ground_poses = ground_poses.contiguous().view(batch_size * 16, self.conf["num_blocks"], 16, 2)
-        pred_vis = pred_vis.contiguous().view(batch_size * 16, self.conf["num_blocks"], 16)
-        ground_vis = ground_vis.contiguous().view(batch_size * 16, self.conf["num_blocks"], 16)
+            binary_crossentropy = nn.BCELoss()
 
-        vis_loss = binary_crossentropy(pred_vis, ground_vis)
+            # pred_pose = pred_pose.contiguous().view(batch_size * 16, self.conf["num_blocks"], 16, 2)
+            # ground_poses = ground_poses.contiguous().view(batch_size * 16, self.conf["num_blocks"], 16, 2)
+            # pred_vis = pred_vis.contiguous().view(batch_size * 16, self.conf["num_blocks"], 16)
+            # ground_vis = ground_vis.contiguous().view(batch_size * 16, self.conf["num_blocks"], 16)
 
-        pose_loss = elastic_net_loss_paper(pred_pose, ground_poses)
-        pose_loss = vis_loss * 0.01 + pose_loss
+            vis_loss = binary_crossentropy(pred_vis, ground_vis)
 
-        loss = pose_loss + har_loss
+            pose_loss = elastic_net_loss_paper(pred_pose, ground_pose)
+            pose_loss = vis_loss * 0.01 + pose_loss
 
-        del actions
-        del ground_poses
-        del pose_predicted_actions
-        del vis_predicted_actions
-        del pred_pose
-        del ground_poses
-        del pred_vis
-        del ground_vis
+            loss = pose_loss + har_loss
 
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
+            del actions
+            del ground_poses
+            del pose_predicted_actions
+            del vis_predicted_actions
+            del pred_pose
+            del ground_pose
+            del pred_vis
+            del ground_vis
 
-        loss.backward()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
 
-        self.train_writer.write([self.iteration, loss.item()])
+            loss.backward()
+            batch_loss = batch_loss + float(loss)
+
+        self.train_writer.write([self.iteration, batch_loss])
 
         self.optimizer.step()
-        self.optimizer.zero_grad()
 
         self.iteration = self.iteration + 1
 
-        print("iteration {} train-loss {}".format(self.iteration, loss.item()))
+        print("iteration {} train-loss {}".format(self.iteration, batch_loss))
 
 class Pose_JHMDB(ExperimentBase):
 
