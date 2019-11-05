@@ -18,7 +18,7 @@ from deephar.image_processing import center_crop, rotate_and_crop, normalize_cha
 from deephar.utils import transform_2d_point, translate, scale, flip_h, superflatten, transform_pose, get_valid_joints
 
 class PennActionFragmentsDataset(data.Dataset):
-    def __init__(self, root_dir, transform=None, use_random_parameters=False, train=True, val=False, augmentation_amount=1, use_gt_bb):
+    def __init__(self, root_dir, transform=None, use_random_parameters=False, train=True, val=False, augmentation_amount=1, use_gt_bb=False):
         self.root_dir = root_dir
         self.padding_amount = 8
 
