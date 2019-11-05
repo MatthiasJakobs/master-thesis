@@ -99,5 +99,5 @@ class PennActionFragmentsDataset(data.Dataset):
             "indices": t_indices,
             "bbox": t_bbox,
             "parameters": t_parameters,
-            "original_window_size": t_original_window_sizes
+            "original_window_size": t_original_window_size
         }
