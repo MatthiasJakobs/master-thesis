@@ -1,4 +1,4 @@
-from ExperimentBase import HAR_Testing_Experiment
+from ExperimentBase import HAR_PennAction
 
 conf = {}
 
@@ -28,5 +28,5 @@ conf["use_gt_pose"] = False
 conf["start_finetune"] = 20000
 conf["lr_milestones"] = [20000]
 conf["name"] = "with_finetune"
-har = HAR_Testing_Experiment(conf)
+har = HAR_PennAction(conf)
 har.run_experiment()
