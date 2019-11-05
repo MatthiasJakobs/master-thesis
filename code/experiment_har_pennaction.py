@@ -17,10 +17,10 @@ conf["limit_data_percent"] = 1 # limit dataset to x percent (for testing)
 conf["use_gt_bb"] = True
 conf["use_gt_pose"] = False
 
-conf["fine_tune"] = False # otherwise, using gt pose would make no sense
-conf["name"] = "without_finetune"
-har = HAR_Testing_Experiment(conf)
-har.run_experiment()
+# conf["fine_tune"] = False # otherwise, using gt pose would make no sense
+# conf["name"] = "without_finetune"
+# har = HAR_Testing_Experiment(conf)
+# har.run_experiment()
 
 conf["fine_tune"] = True
 conf["use_gt_bb"] = True
