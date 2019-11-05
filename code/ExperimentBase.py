@@ -455,7 +455,7 @@ class HAR_PennAction(HAR_Testing_Experiment):
             self.use_gt_bb = False
 
 
-        self.model = DeepHar(num_actions=21, use_gt=True, nr_context=self.conf["nr_context"], model_path="/data/mjakobs/data/pretrained_mixed_pose").to(self.device)
+        self.model = DeepHar(num_actions=15, use_gt=True, nr_context=self.conf["nr_context"], model_path="/data/mjakobs/data/pretrained_mixed_pose").to(self.device)
 
         self.ds_train = PennActionFragmentsDataset("/data/mjakobs/data/pennaction_fragments/", train=True, val=False, use_random_parameters=True, augmentation_amount=3, use_gt_bb=self.use_gt_bb)
         self.ds_val = PennActionFragmentsDataset("/data/mjakobs/data/pennaction_fragments/", train=True, val=True, use_gt_bb=self.use_gt_bb)
