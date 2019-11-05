@@ -454,6 +454,7 @@ class HAR_PennAction(HAR_Testing_Experiment):
         else:
             self.use_gt_bb = False
 
+        self.use_gt_pose = False
 
         self.model = DeepHar(num_actions=15, use_gt=True, nr_context=self.conf["nr_context"], model_path="/data/mjakobs/data/pretrained_mixed_pose").to(self.device)
 
