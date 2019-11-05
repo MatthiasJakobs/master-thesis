@@ -11,8 +11,8 @@ conf["project_dir"] = "har_pennaction"
 
 conf["batch_size"] = 20
 conf["val_batch_size"] = 1
-conf["total_iterations"] = 90000
-conf["evaluate_rate"] =  1000
+conf["total_iterations"] = 40000
+conf["evaluate_rate"] =  500
 conf["limit_data_percent"] = 1 # limit dataset to x percent (for testing)
 conf["use_gt_bb"] = True
 conf["use_gt_pose"] = False
