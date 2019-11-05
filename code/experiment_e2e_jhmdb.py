@@ -12,8 +12,9 @@ conf["num_blocks"] = 4
 conf["nr_context"] = 2
 conf["project_dir"] = ""
 conf["total_iterations"] = 50000
-conf["evaluate_rate"] = 1000
+conf["evaluate_rate"] = 1
 conf["name"] = "har_e2e_jhmdb"
+conf["use_gt_bb"] = True
 
 har = HAR_E2E(conf)
 har.run_experiment()

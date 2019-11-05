@@ -26,6 +26,8 @@ from datasets.JHMDBFragmentsDataset import JHMDBFragmentsDataset
 from datasets.JHMDBDataset import actions as jhmdb_actions
 from datasets.JHMDBDataset import JHMDBDataset
 from datasets.MixMPIIPenn import MixMPIIPenn
+from datasets.PennActionDataset import PennActionDataset
+from datasets.PennActionFragmentsDataset import PennActionFragmentsDataset
 from deephar.models import DeepHar, Mpii_1, Mpii_2, Mpii_4, Mpii_8, TimeDistributedPoseEstimation
 from deephar.utils import get_valid_joints, get_bbox_from_pose, transform_2d_point, transform_pose
 from deephar.measures import elastic_net_loss_paper, categorical_cross_entropy
@@ -438,6 +440,64 @@ class HAR_Testing_Experiment(ExperimentBase):
                 current = current + 1
 
             return accuracy_single, accuracy_multi
+
+class HAR_PennAction(HAR_Testing_Experiment):
+
+    def preparation(self):
+        if "fine_tune" in self.conf:
+            self.fine_tune = self.conf["fine_tune"]
+        else:
+            self.fine_tune = False
+
+        if "use_gt_bb" in self.conf:
+            self.use_gt_bb = self.conf["use_gt_bb"]
+        else:
+            self.use_gt_bb = False
+
+
+        self.model = DeepHar(num_actions=21, use_gt=True, nr_context=self.conf["nr_context"], model_path="/data/mjakobs/data/pretrained_mixed_pose").to(self.device)
+
+        self.ds_train = PennActionFragmentsDataset("/data/mjakobs/data/pennaction_fragments/", train=True, val=False, use_random_parameters=True, augmentation_amount=3, use_gt_bb=self.use_gt_bb)
+        self.ds_val = PennActionFragmentsDataset("/data/mjakobs/data/pennaction_fragments/", train=True, val=True, use_gt_bb=self.use_gt_bb)
+        self.ds_test = PennActionDataset("/data/mjakobs/data/pennaction/", train=False)
+
+        train_indices, val_indices, test_indices = self.limit_dataset(include_test=True)
+
+        train_sampler = SubsetRandomSampler(train_indices)
+        val_sampler = SubsetRandomSampler(val_indices)
+        test_sampler = SubsetRandomSampler(test_indices)
+
+        self.train_loader = data.DataLoader(
+            self.ds_train,
+            batch_size=self.conf["batch_size"],
+            sampler=train_sampler
+        )
+
+        self.val_loader = data.DataLoader(
+            self.ds_val,
+            batch_size=1,
+            sampler=val_sampler
+        )
+
+        self.test_loader = data.DataLoader(
+            self.ds_test,
+            batch_size=1,
+            sampler=test_sampler
+        )
+
+        self.optimizer = optim.SGD(self.model.parameters(), lr=self.conf["learning_rate"], momentum=0.98, nesterov=True)
+
+        if "lr_milestones" in self.conf:
+            milestones = self.conf["lr_milestones"]
+        else:
+            milestones = [20000000] # basically, never use lr scheduler
+
+        self.lr_scheduler = optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=milestones, gamma=0.1)
+
+        self.train_writer.write(["iteration", "loss"])
+        self.val_writer.write(["iteration", "accuracy", "pose_model_accuracy", "visual_model_accuracy"])
+
+        self.create_experiment_folders(heatmaps=False)
 
 class HAR_E2E(HAR_Testing_Experiment):
 
