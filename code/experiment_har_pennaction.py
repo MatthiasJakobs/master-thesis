@@ -25,7 +25,7 @@ har.run_experiment()
 # conf["fine_tune"] = True
 # conf["use_gt_bb"] = True
 # conf["use_gt_pose"] = False
-# conf["start_finetune"] = 20000
+# conf["start_finetuning"] = 20000
 # conf["lr_milestones"] = [20000]
 # conf["name"] = "with_finetune"
 # har = HAR_PennAction(conf)
