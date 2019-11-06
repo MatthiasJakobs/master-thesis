@@ -10,12 +10,19 @@ In \cite{andriluka_2d_2014}, the authors present a dataset for 2D human pose est
 It contains $25.000$ images, where $40.000$ persons were annotated.
 The annotations include $16$ joint annotations in addition to an indicator of whether or not the joint is visible or not.
 The $16$ joints are \textit{left / right ankle}, \textit{left / right knee}, \textit{left / right hip}, \textit{left / right elbow}, \textit{left / right shoulder}, \textit{left / right wrist}, \textit{pelvis}, \textit{thorax}, \textit{upper neck} and \textit{top of the head}.
-See TODO for example images, including the pose annotations.
+See \fref{fig:mpii_example_images} for example images of the dataset.
 In addition, the body center coordinates are given in addition to a scale indicating the size of the person bounding box w.r.t. $200$ pixels.
 Also, a bounding box of the head is given, which is used to compute the \textit{PCKh} metric (see \sref{sec:exp-pckh}).
 The images were extracted from YouTube videos and do not contain artifacts commonly found in videos like compression or blur.
 Additionally, each image is assigned an activity performed in the video it was extracted from, totalling $401$ total activities.
 However, these annotations were not used for Human Action Recognition since they are too fine-grained and the number of samples per activity is too low for training a deep neural network.
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.7\textwidth]{mpii_example_images.png}
+    \caption{Four example images from the MPII dataset \cite{andriluka_2d_2014}. }
+    \label{fig:mpii_example_images}
+\end{figure}
 
 We follow the approaches from \cite{luvizon_2d/3d_2018} for preprocessing, which the authors present in their supplemental material.
 First, a person bounding box is estimated using the center body annotation from the dataset.
@@ -24,7 +31,7 @@ They do not motivate the reason for using this specific value, but it most likel
 Next, they compute the width and height using $s_{new} \cdot 200$, which results in a square bounding box.
 In addition, the authors also alter the center position $(c_x,  c_y)$ given by the annotation by computing $(c_{x}^{new}, c_y^{new}) = (c_x, c_y + s_{new} \cdot 12)$.
 Again, the authors do not provide a reasoning for moving the center position further towards the neck of the person in this way.
-Once the bounding box is computed, the image is cropped to the size of the bounding box around the newly computed center coordinate.
+Once the bounding box is computed, the image is cropped to the size of the bounding box around the newly computed center coordinate and rescalled to a size of $256 \times 256$ .
 In the case where a joint annotation falls outside of the now cropped image, the authors set the visibility of the joint to $0$ and set the $(x,y)$ coordinates of the joint to $(-1e9, -1e9)$.
 
 Additionally, the authors introduce parameters used for augmentation.
@@ -32,7 +39,15 @@ These values are sampled from their respective sets whenever augmentation is per
 Specifically, they introduce $s_{aug} \in \{0.7, 1, 1.3\}$ which gets multiplied with $s_{new}$ computed earlier.
 Also, $r_{aug} \in \{-40, -35, \dots, 35, 40\}$ is introduced to rotate the image $r_{aug}$ degrees around its center, possibly introducing black borders around the image.
 Moreover, when augmenting, the image is horizontally flipped with a chance of $50$ percent.
-See TODO for multiple examples of different augmented images. 
+See \fref{fig:mpii_example_augmentation} for multiple examples of different augmented images, including augmented pose. 
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.99\textwidth]{mpii_dataset_augmented_examples.png}
+    \caption{\textbf{From left to right}: \textbf{1.} Original image from the MPII dataset. \textbf{2.} Original image with the ground truth pose superimposed. \textbf{3.} Image after estimating the bounding box, cropping and rescaling. \textbf{4.} Augmented image using $s_{aug} = 1.3$, $r_{aug} = -15$ degrees and flipping the image vertically.}
+    \label{fig:mpii_example_augmentation}
+\end{figure}
+
 
 The dataset does not contain annotations for the test data, other than the scale and center coordinates.
 To evaluate the test images, the joints need to be evaluated and the results need to be send to the authors for comparison to the ground truth pose.
@@ -47,7 +62,14 @@ It contains $2326$ video clips of $15$ different actions performed.
 The actions performed are mostly sports related and include \textit{baseball swing}, \textit{clean and jerk}, \textit{jumping jacks}, \textit{pushup}, \textit{strum guitar}, \textit{bench press}, \textit{golf swing}, \textit{baseball pitch}, \textit{situp}, \textit{tennis forehand}, \textit{bowling}, \textit{jump rope}, \textit{pullup}, \textit{squat} and \textit{tennis serve}.
 In addition, the authors provide annotations for $13$ body joints,
 including \textit{left and right shoulders, elbows, wrists, hips and knees} as well as one annotation of the \textit{head} of the person.
-Some example images can be seen in TODO. 
+Some example images can be seen in \fref{fig:pennaction_example_images}. 
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.7\textwidth]{pennaction_example_images.png}
+    \caption{Four example images from the Penn Action dataset \cite{zhang_actemes_2013}. }
+    \label{fig:pennaction_example_images}
+\end{figure}
 
 It was decided by \cite{luvizon_2d/3d_2018} that the number of joints should be identical to the ones presented in \cite{andriluka_2d_2014} \sref{sec:exp-mpii} because the network assumes a fixed number of joints.
 This then means that the network architecture does not need to be changed, no matter which dataset is used.
@@ -68,13 +90,27 @@ Thus, we decided to precompute $16$ frames subclips, which we call \textit{fragm
 Similar to \cite{zhang_actemes_2013} \sref{sec:exp-penn}, the JHMDB dataset \cite{jhuang_towards_2013} contains annotations for pose and action in video clips.
 The dataset was created by taking a subset of the HMDB action recogntion dataset \cite{kuehne_hmdb:_2011}, which was then annotated using the \textit{puppet tool} \cite{zuffi_pictorial_2012}.
 This tool allows to not only annotate the pose of the person but also automatically computes a binary segmentation map of the person, further referred to as the \textit{puppet mask}.
-See TODO for a visualization of the annotation process and the puppet tool.
+See \fref{fig:puppet_tool_example} for a visualization of the annotation process and the puppet tool.
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.4\textwidth]{puppet_tool_example.png}
+    \caption{Example of an image, annotated using the puppet flow. The dots indicate the joint positions, while the transparent human figure prior automatically adjusts, yielding the human segmentation map. Notice that, by using the figure, even joints that are not visible (like the ankles) still get anatomically plausible annotations. Image taken from \cite{noauthor_jhmdb_nodate}.}
+    \label{fig:puppet_tool_example}
+\end{figure}
 
 The clips in the HMDB dataset were taken from YouTube.
 The annotated subset contains the following actions:
 \textit{brush hair}, \textit{catch}, \textit{clap}, \textit{climb stair}, \textit{golf}, \textit{jump}, \textit{kick ball}, \textit{pick}, \textit{pour}, \textit{pullup}, \textit{push}, \textit{run}, \textit{shoot ball}, \textit{shoot bow}, \textit{shoot gun}, \textit{sit}, \textit{stand}, \textit{swing baseball}, \textit{throw}, \textit{walk} as well as \textit{wave}.
-Some example images of the dataset can be seen in TODO.
+Some example images of the dataset can be seen in \fref{fig:jhmdb_example_images}.
 Notice that the actions are more diverse, in comparison to the Penn Action dataset, specifically because it also contains non-sport activities.
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.7\textwidth]{jhmdb_example_images.png}
+    \caption{Four example images from the JHMDB dataset \cite{jhuang_towards_2013}. }
+    \label{fig:jhmdb_example_images}
+\end{figure}
 
 The puppet tool defines $15$ different joints.
 They are identical to the ones annotated in the Penn Action dataset, but additionally contain \textit{neck} and \textit{belly}.
@@ -84,15 +120,34 @@ Also, the approach for computing ground truth bounding boxes, as well as preproc
 \section{Evaluation Metrics}
 \subsection{PCK}
 \label{sec:exp-pck}
-- pennaction and jhmdb do not have head bboxes
-- bb
-- torso diameter
+
+The \textit{Probability of Correct Keypoints (PCK)} metric \cite{ferrari_progressive_2008} is often used in the literature to evaluate estimated pose when a human bounding box is given.
+See \sref{sec:pck_related_work} for a historical motivation of this metric.
+To determine if a predicted keypoint location $k_{est} = (x_{est}, y_{est})$ is estimated close enough to the ground truth keypoint $k_{gt} = (x_{gt}, y_{gt})$, first the absolute distance $d = \lVert k_{est} - k_{gt} \rVert$ is computed.
+Afterwards, the maximum $l_{max} = max(bbox_{height}, bbox_{width})$ of the bounding box side lengths is computed and multiplied by a hyperparameter $\alpha$, resulting in $l_{comp} = l_{max} \cdot \alpha$.
+Then, a keypoint is determined to be estimated correctly if $d < l_{comp}$.
+Typical values for $\alpha$ found in the literature are $0.2$ and $0.1$.
+This metric is used primarily for evaluating pose on the JHMDB dataset since it does not provide head bounding box annotations, which are necessary for using the PCKh metric.
 
 \subsection{PCKh}
 \label{sec:exp-pckh}
+One downside of using the PCK metric based on person bounding box side lengths is that, for highly articulated poses, the bounding box is not always an accurate representation of the body size.
+Thus, the threshold $l_{comp}$ highly depends on the pose performed.
 
-\subsection{Accuracy}
+In \cite{andriluka_2d_2014}, the authors thus propose to use the head bounding box diameter, assuming that this bounding box does not change for different poses.
+See \sref{sec:pose-machine-evaluation} for a detailed historic motivation of the metric.
+In most cases, $\alpha$ is set to $0.5$ and $0.2$.
 
+\subsection{Single- and Multi-Clip Accuracy}
+To evaluate the accuracy of the HAR pipeline, the authors in \cite{luvizon_2d/3d_2018} use two different approaches.
+First, they take the video clip to evaluate and extract a $16$ frame fragment from the middle of the clip.
+Then, they estimate the action performed.
+Since the output of the network is a Softmax activation, they use the \textit{argmax} function to determine the action with the highest score.
+This is referred to further as Single-Clip accuracy.
+
+Additionally, the authors extract multiple $16$ frame fragments from the clip by starting at frame $0$ and then incrementing the starting position by $8$ for as long as there are at least $16$ frames left in the clip.
+Then, for each fragment, they predict the action identical to the Single-Clip accuracy.
+If the majority of the fragments estimated the same action, this is used to determine the Multi-Clip accuracy. 
 
 \section{Experimental Results}
 \subsection{Accuracy of Soft-argmax function}
@@ -136,6 +191,8 @@ This suggests that the Soft-argmax function requires that the heatmap used is hi
 
 \subsection{Replication of Original Work}
 \label{sec:exp-replication}
+- first, pose estimation results on mpii were replicated
+- second, 2d har on penn action is replicated
 
 \subsubsection{Pose estimation}
 
@@ -143,7 +200,7 @@ This suggests that the Soft-argmax function requires that the heatmap used is hi
 
 \subsection{Pose estimation on JHMDB dataset}
 
-\subsection{HAR using on JHMDB Dataset}
+\subsection{HAR on JHMDB Dataset}
 all kinds of substitutions like using gt bb etc.
 
 \subsection{Effect of Combining Loss Functions}
