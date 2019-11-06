@@ -21,14 +21,14 @@ conf["limit_data_percent"] = 1 # limit dataset to x percent (for testing)
 # conf["evaluate_rate"] = 5000
 # conf["limit_data_percent"] = 1 # limit dataset to x percent (for testing)
 
-# conf["name"] = "no_finetune"
-# conf["fine_tune"] = False
-# har = HAR_Testing_Experiment(conf)
-# har.run_experiment()
-
-conf["name"] = "with_finetune"
-conf["start_finetuning"] = 1500
-conf["fine_tune"] = True
-conf["lr_milestones"] = [1500, 6000]
+conf["name"] = "no_finetune"
+conf["fine_tune"] = False
 har = HAR_Testing_Experiment(conf)
 har.run_experiment()
+
+# conf["name"] = "with_finetune"
+# conf["start_finetuning"] = 1500
+# conf["fine_tune"] = True
+# conf["lr_milestones"] = [1500, 6000]
+# har = HAR_Testing_Experiment(conf)
+# har.run_experiment()

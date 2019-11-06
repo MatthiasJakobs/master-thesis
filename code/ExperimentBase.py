@@ -303,6 +303,7 @@ class HAR_Testing_Experiment(ExperimentBase):
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
 
+            losses = losses / batch_size
             losses.backward()
 
             batch_loss += float(losses)
