@@ -34,18 +34,18 @@ if os.path.exists(output_folder):
 
 os.makedirs(output_folder)
 
-subfolders = ["train_norandom", "train_random", "test_norandom", "test_random"]
-scenarios = [[True, False], [True, True], [False, False], [False, True]]
+subfolders = ["train_norandom", "train_random", "val_norandom", "test_norandom"]
+scenarios = [[True, False, False], [True, False, True], [True, True, False], [False, False, False]]
 
 for path in subfolders:
     os.makedirs(output_folder + "/" + path)
 
-
 for scenario_idx, scenario in enumerate(scenarios):
     train = scenario[0]
-    use_random_parameters = scenario[1]
+    val = scenario[1]
+    use_random_parameters = scenario[2]
     
-    ds = PennActionDataset("/data/mjakobs/data/pennaction/", train=train, use_random_parameters=use_random_parameters)
+    ds = PennActionDataset("/data/mjakobs/data/pennaction/", train=train, val=val, use_random_parameters=use_random_parameters)
 
     random.seed(1)
     np.random.seed(1)
@@ -61,7 +61,7 @@ for scenario_idx, scenario in enumerate(scenarios):
 
         for frame in range(len(entry["normalized_frames"])):
 
-            image = entry["normalized_frames"][frame].reshape(256, 256, 3)
+            image = entry["normalized_frames"][frame].permute(1, 2, 0)
             action_label = actions[entry["action_1h"].argmax().item()]
 
             assert image.max() <= 1 and image.min() >= -1
@@ -98,7 +98,7 @@ for scenario_idx, scenario in enumerate(scenarios):
             matrix = entry["trans_matrices"][frame]
             index = int(entry["index"].item())
             
-            item_path = "/data/mjakobs/data/pennaction/frames/" + ds.items[idx]
+            item_path = "/data/mjakobs/data/pennaction/frames/" + ds.items[ds.indices[idx]]
             all_frames = sorted(glob.glob(item_path + "/*.jpg"))
 
             image_path = all_frames[frame]
@@ -121,7 +121,7 @@ for scenario_idx, scenario in enumerate(scenarios):
                 if vis[dst]:
                     plt.plot([x[src], x[dst]], [y[src], y[dst]], lw=1, c="#00FFFF")
 
-            bbox = entry["bbox"]
+            bbox = entry["bbox"][frame]
             bbox_rect = Rectangle((bbox[0], bbox[1]), abs(bbox[0] - bbox[2]), abs(bbox[1] - bbox[3]), linewidth=1, facecolor='none', edgecolor="#FF00FF", clip_on=False)
             ax = plt.gca()
             ax.add_patch(bbox_rect)
@@ -129,7 +129,7 @@ for scenario_idx, scenario in enumerate(scenarios):
             plt.figtext(0.40, 0.03, action_label, fontsize=16)
 
             if use_random_parameters:
-                parameter_text = "scale={}, angle={}, flip_lr={}, trans_x={}, trans_y={}".format(ds.test["scale"], ds.test["angle"], ds.test["flip"], ds.test["trans_x"], ds.test["trans_y"])
+                parameter_text = "scale={}, angle={}, flip_lr={}, trans_x={}, trans_y={}".format(ds.aug_conf["scale"], ds.aug_conf["angle"], ds.aug_conf["flip"], ds.aug_conf["trans_x"], ds.aug_conf["trans_y"])
                 plt.figtext(0.07, 0.15, parameter_text, fontsize=14)
                 plt.subplots_adjust(bottom=0.30)
             else:
