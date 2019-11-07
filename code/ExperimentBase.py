@@ -217,10 +217,15 @@ class HAR_Testing_Experiment(ExperimentBase):
         else:
             self.use_gt_pose = False
 
-        if load_model:
-            self.model = DeepHar(num_actions=21, use_gt=True, nr_context=self.conf["nr_context"], model_path="/data/mjakobs/data/pretrained_jhmdb").to(self.device)
+        if "use_timedistributed" in self.conf:
+            self.use_timedistributed = self.conf["use_timedistributed"]
         else:
-            self.model = DeepHar(num_actions=21, use_gt=False, nr_context=self.conf["nr_context"]).to(self.device)
+            self.use_timedistributed = False
+
+        if load_model:
+            self.model = DeepHar(num_actions=21, use_gt=True, nr_context=self.conf["nr_context"], model_path="/data/mjakobs/data/pretrained_jhmdb", use_timedistributed=self.use_timedistributed).to(self.device)
+        else:
+            self.model = DeepHar(num_actions=21, use_gt=False, nr_context=self.conf["nr_context"], use_timedistributed=self.use_timedistributed).to(self.device)
 
         self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False, use_random_parameters=True, augmentation_amount=3, use_gt_bb=self.use_gt_bb)
         self.ds_val = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=True, use_gt_bb=self.use_gt_bb)
@@ -273,26 +278,28 @@ class HAR_Testing_Experiment(ExperimentBase):
         self.optimizer.zero_grad()
 
         batch_size = len(train_objects["frames"])
-
         batch_loss = 0
-        for i in range(batch_size):
-            frames = train_objects["frames"][i].to(self.device)
-            actions = train_objects["action_1h"][i].to(self.device)
-            
+
+        if self.use_timedistributed:
+            frames = train_objects["frames"].to(self.device)
+            actions = train_objects["action_1h"].to(self.device)
+
+            #frames = frames.contiguous().view(batch_size * frames.size()[1], 3, 255, 255)
+            #actions = actions.contiguous().view(batch_size * actions.size()[1], 21)
+            actions = actions.unsqueeze(1)
+            actions = actions.expand(-1, 4, -1)
+
             if self.use_gt_pose:
-                gt_pose = train_objects["poses"][i].to(self.device)
+                gt_pose = train_objects["poses"].to(self.device)
+                gt_pose = gt_pose.contiguous().view(batch_size * gt_pose.size()[1], 16, 3)
             else:
                 gt_pose = None
-
-            actions = actions.unsqueeze(0)
-            actions = actions.expand(4, -1)
-            actions = actions.unsqueeze(0)
 
             if "start_finetuning" in self.conf and self.iteration < self.conf["start_finetuning"]:
                 _, _, pose_predicted_actions, vis_predicted_actions, _ = self.model(frames, finetune=False, gt_pose=gt_pose)
             else:
                 _, _, pose_predicted_actions, vis_predicted_actions, _ = self.model(frames, finetune=self.fine_tune, gt_pose=gt_pose)
-
+            
             partial_loss_pose = torch.sum(categorical_cross_entropy(pose_predicted_actions, actions))
             partial_loss_action = torch.sum(categorical_cross_entropy(vis_predicted_actions, actions))
             losses = partial_loss_pose + partial_loss_action
@@ -303,14 +310,48 @@ class HAR_Testing_Experiment(ExperimentBase):
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
 
-            #losses = losses / batch_size
             losses.backward()
 
-            batch_loss += float(losses)
+            batch_loss = float(losses)
+            self.optimizer.step()
+
+        else:
+            for i in range(batch_size):
+                frames = train_objects["frames"][i].to(self.device)
+                actions = train_objects["action_1h"][i].to(self.device)
+                
+                if self.use_gt_pose:
+                    gt_pose = train_objects["poses"][i].to(self.device)
+                else:
+                    gt_pose = None
+
+                actions = actions.unsqueeze(0)
+                actions = actions.expand(4, -1)
+                actions = actions.unsqueeze(0)
+
+                if "start_finetuning" in self.conf and self.iteration < self.conf["start_finetuning"]:
+                    _, _, pose_predicted_actions, vis_predicted_actions, _ = self.model(frames, finetune=False, gt_pose=gt_pose)
+                else:
+                    _, _, pose_predicted_actions, vis_predicted_actions, _ = self.model(frames, finetune=self.fine_tune, gt_pose=gt_pose)
+
+                partial_loss_pose = torch.sum(categorical_cross_entropy(pose_predicted_actions, actions))
+                partial_loss_action = torch.sum(categorical_cross_entropy(vis_predicted_actions, actions))
+                losses = partial_loss_pose + partial_loss_action
+
+                del frames
+                del actions
+
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+
+                losses = losses / batch_size
+                losses.backward()
+
+                batch_loss += float(losses)
+
+            self.optimizer.step()
 
         self.train_writer.write([self.iteration, batch_loss])
-
-        self.optimizer.step()
         self.lr_scheduler.step()
 
         self.iteration = self.iteration + 1
@@ -338,7 +379,8 @@ class HAR_Testing_Experiment(ExperimentBase):
                 ground_class = torch.argmax(actions, 1)
 
                 assert len(frames) == 1
-                frames = frames.squeeze(0)
+                if not self.use_timedistributed:
+                    frames = frames.squeeze(0)
 
                 _, predicted_poses, pose_model_pred, visual_model_pred, prediction = self.model(frames, gt_pose=gt_pose)
 
@@ -354,6 +396,9 @@ class HAR_Testing_Experiment(ExperimentBase):
                     self.create_dynamic_folders(heatmaps=False)
                     for frame in range(len(frames)):
                         path = 'experiments/{}/val_images/{}/{}_{}.png'.format(self.experiment_name, self.iteration, batch_idx, frame)
+                        if len(frames) == 1:
+                            frames = frames.squeeze(0)
+
                         plt.imshow((frames[frame].permute(1,2,0) + 1) / 2.0)
 
                         pred_x = predicted_poses[frame, :, 0]
@@ -455,9 +500,14 @@ class HAR_PennAction(HAR_Testing_Experiment):
         else:
             self.use_gt_bb = False
 
+        if "use_timedistributed" in self.conf:
+            self.use_timedistributed = self.conf["use_timedistributed"]
+        else:
+            self.use_timedistributed = False
+
         self.use_gt_pose = False
 
-        self.model = DeepHar(num_actions=15, use_gt=True, nr_context=self.conf["nr_context"], model_path="/data/mjakobs/data/pretrained_mixed_pose").to(self.device)
+        self.model = DeepHar(num_actions=15, use_gt=True, nr_context=self.conf["nr_context"], model_path="/data/mjakobs/data/pretrained_mixed_pose", use_timedistributed=self.use_timedistributed).to(self.device)
 
         self.ds_train = PennActionFragmentsDataset("/data/mjakobs/data/pennaction_fragments/", train=True, val=False, use_random_parameters=True, augmentation_amount=3, use_gt_bb=self.use_gt_bb)
         self.ds_val = PennActionFragmentsDataset("/data/mjakobs/data/pennaction_fragments/", train=True, val=True, use_gt_bb=self.use_gt_bb)

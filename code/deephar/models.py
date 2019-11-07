@@ -110,13 +110,13 @@ class Mpii_8(nn.Module):
 
 
 class DeepHar(nn.Module):
-    def __init__(self, num_frames=16, num_joints=16, num_actions=10, nr_context=0, use_gt=True, model_path=None, alternate_time=False):
+    def __init__(self, num_frames=16, num_joints=16, num_actions=10, nr_context=0, use_gt=True, model_path=None, alternate_time=False, use_timedistributed=False):
         super(DeepHar, self).__init__()
 
         self.use_gt = use_gt # use pretrained pose estimator
         self.alternate_time = alternate_time
         self.pose_estimator = Mpii_4(num_context=nr_context)
-
+        self.use_timedistributed = use_timedistributed
         if use_gt:
             if torch.cuda.is_available():
                 device = "cuda"
@@ -131,6 +131,9 @@ class DeepHar(nn.Module):
 
         self.max_min_pooling = MaxMinPooling(kernel_size=(4,4))
         self.softmax = nn.Softmax2d()
+
+        if self.use_timedistributed:
+            self.pose_estimator = TimeDistributedPoseEstimation(self.pose_estimator)
 
         if self.alternate_time:
             self.pose_model = PoseModelTimeSeries(num_frames, num_joints, num_actions)
@@ -177,24 +180,40 @@ class DeepHar(nn.Module):
     def forward(self, x, finetune=False, gt_pose=None):
 
         if finetune:
-            train_poses, poses, heatmaps, features = self.extract_pose_for_frames(x, gt_pose=gt_pose)
+            if self.use_timedistributed:
+                train_poses, poses, heatmaps, features = self.pose_estimator(x)
+            else:
+                train_poses, poses, heatmaps, features = self.extract_pose_for_frames(x, gt_pose=gt_pose)
         else:
             with torch.no_grad():
-                train_poses, poses, heatmaps, features = self.extract_pose_for_frames(x, gt_pose=gt_pose)
+                if self.use_timedistributed:
+                    train_poses, poses, heatmaps, features = self.pose_estimator(x)
+                else:
+                    train_poses, poses, heatmaps, features = self.extract_pose_for_frames(x, gt_pose=gt_pose)
+                    
+        if self.use_timedistributed:
+            offset = 1
+        else:
+            offset = 0
 
-        nj = poses.size()[1]
-        nf = features.size()[1]
+        nj = poses.size()[1 + offset]
+        nf = features.size()[1 + offset]
 
         assert nj == self.num_joints
 
-        features = features.unsqueeze(1)
-        features = features.expand(-1, nj, -1, -1, -1)
-        heatmaps = heatmaps.unsqueeze(2)
-        heatmaps = heatmaps.expand(-1, -1, nf, -1, -1)
+        features = features.unsqueeze(1 + offset)
+        heatmaps = heatmaps.unsqueeze(2 + offset )
+
+        if self.use_timedistributed:
+            features = features.expand(-1, -1, nj, -1, -1, -1)
+            heatmaps = heatmaps.expand(-1, -1, -1, nf, -1, -1)
+        else:
+            features = features.expand(-1, nj, -1, -1, -1)
+            heatmaps = heatmaps.expand(-1, -1, nf, -1, -1)
 
         assert heatmaps.size() == features.size()
         y = features * heatmaps
-        y = torch.sum(y, (3, 4))
+        y = torch.sum(y, (3 + offset, 4 + offset))
 
         del features
         del heatmaps
@@ -209,14 +228,27 @@ class DeepHar(nn.Module):
             torch.cuda.empty_cache()
 
         pose_cube = torch.from_numpy(np.empty((self.num_frames, self.num_joints, 2)))
-        pose_cube = poses[:, :, 0:2]
+        if self.use_timedistributed:
+            pose_cube = poses[:, :, :, 0:2]
+        else:
+            pose_cube = poses[:, :, 0:2]
 
         if self.alternate_time:
-            pose_cube = pose_cube.permute(2, 1, 0).float()
-        else:
-            pose_cube = pose_cube.permute(2, 0, 1).float()
+            if self.use_timedistributed:
+                pose_cube = pose_cube.permute(0, 3, 2, 1).float() # TODO
+            else:
+                pose_cube = pose_cube.permute(2, 1, 0).float()
 
-        action_cube = action_cube.permute(2, 0, 1).float()
+        else:
+            if self.use_timedistributed:
+                pose_cube = pose_cube.permute(0, 3, 1, 2).float()
+            else:
+                pose_cube = pose_cube.permute(2, 0, 1).float()
+
+        if self.use_timedistributed:
+            action_cube = action_cube.permute(0, 3, 1, 2).float()
+        else:
+            action_cube = action_cube.permute(2, 0, 1).float()
 
         pose_action_predictions = []
         vis_action_predictions = []
@@ -224,8 +256,8 @@ class DeepHar(nn.Module):
             pose_cube = pose_cube.to('cuda')
             action_cube = action_cube.to('cuda')
 
-        intermediate_poses = self.pose_model(pose_cube, poses)
-        intermediate_vis = self.visual_model(action_cube)
+        intermediate_poses = self.pose_model(pose_cube, poses, use_timedistributed=self.use_timedistributed)
+        intermediate_vis = self.visual_model(action_cube, use_timedistributed=self.use_timedistributed)
         del pose_cube
         del action_cube
         if torch.cuda.is_available():

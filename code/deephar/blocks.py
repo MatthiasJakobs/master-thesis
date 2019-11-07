@@ -379,15 +379,23 @@ class PoseModel(nn.Module):
         self.act_pred3 = ActionPredictionBlock(num_actions, 112)
         self.act_pred4 = ActionPredictionBlock(num_actions, 112, last=True)
 
-    def forward(self, x, p):
-        prob = p[:, :, 2]
-        prob = prob.unsqueeze(-1)
-        prob = prob.expand(-1, -1, 2)
-        prob = prob.permute(2, 0, 1)
+    def forward(self, x, p, use_timedistributed=False):
+        if use_timedistributed:
+            prob = p[:, :, :, 2]
+            prob = prob.unsqueeze(-1)
+            prob = prob.expand(-1, -1, -1, 2)
+            prob = prob.permute(0, 3, 1, 2)
+        else:
+            prob = p[:, :, 2]
+            prob = prob.unsqueeze(-1)
+            prob = prob.expand(-1, -1, 2)
+            prob = prob.permute(2, 0, 1)
 
         x = x * prob # I dont really know why they do that
 
-        x = x.unsqueeze(0)
+        if not use_timedistributed:
+            x = x.unsqueeze(0)
+        
         a = self.cba1(x)
         b = self.cba2(x)
         c = self.cba3(x)
@@ -426,8 +434,10 @@ class VisualModel(nn.Module):
         self.act_pred3 = ActionPredictionBlock(num_actions, 256)
         self.act_pred4 = ActionPredictionBlock(num_actions, 256, last=True)
 
-    def forward(self, x):
-        x = x.unsqueeze(0)
+    def forward(self, x, use_timedistributed):
+        if not use_timedistributed:
+            x = x.unsqueeze(0)
+        
         x = self.cb(x)
 
         x = self.pooling(x)
