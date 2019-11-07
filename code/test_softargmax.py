@@ -1,5 +1,5 @@
 from deephar.layers import Softargmax
-from datasets import MPIIDataset, mpii_joint_order
+from datasets.MPIIDataset import MPIIDataset, mpii_joint_order
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import multivariate_normal
@@ -8,7 +8,8 @@ from deephar.utils import linspace_2d as my_linspace_2d
 
 from skimage import io
 import torch
-
+import math
+import random
 import tensorflow as tf
 
 from keras.models import Model
@@ -136,7 +137,7 @@ def create_2d_normal_image(mean, cov, width, height):
     zz = kernel.pdf(xxyy)
 
     img = zz.reshape((yres,xres))
-    print("heatmap shape", img.shape)
+    #print("heatmap shape", img.shape)
     return img
 
 def print_matrices(matrices):
@@ -150,8 +151,11 @@ def print_matrices(matrices):
     plt.savefig("test.png")
     plt.show()
 
-def test_config(mean, cov, width, height):
-    model = Softargmax(kernel_size=(width, height), input_filters=1, output_filters=1)
+def test_config(mean, cov, width, height, fixed_model=None):
+    if fixed_model is not None:
+        model = fixed_model
+    else:
+        model = Softargmax(kernel_size=(width, height), input_filters=1, output_filters=1)
 
     heatmap = create_2d_normal_image(mean, cov, width, height)
 
@@ -166,7 +170,7 @@ def test_config(mean, cov, width, height):
     original_model = build_softargmax_2d(tf_heatmap.shape)
     output_original = original_model.predict(tf_heatmap.reshape(1, height, width, 1))
 
-    [scale_x, scale_y] = output.numpy()[0]
+    [scale_x, scale_y] = output.numpy()[0][0]
     pred_x, pred_y = int(scale_x * width), int(scale_y * height)
 
     diff_x = abs(pred_x - x)
@@ -181,52 +185,152 @@ def test_config(mean, cov, width, height):
 
     return [ [pred_x, diff_x, pred_y, diff_y], [ tf_pred_x, tf_diff_x, tf_pred_y, tf_diff_y ], heatmap]
 
+def test_pose(variance, pose):
+    pose_accuracy = 0
+    valid_joints = 0
+
+    fixed_model = Softargmax(kernel_size=(255, 255), input_filters=1, output_filters=1)
+    for i in range(len(pose)):
+        if pose[i, 2] == 1:
+            valid_joints = valid_joints + 1
+            x = pose[i, 0] * 255.0
+            y = pose[i, 1] * 255.0
+            output = test_config([x,y], variance, 255, 255, fixed_model=fixed_model)
+            diff_x = output[1][1].item()
+            diff_y = output[1][3].item()
+            if diff_x <= 2 and diff_y <= 2:
+                pose_accuracy = pose_accuracy + 1
+
+    return pose_accuracy / float(valid_joints)
+
+def quantitative_evaluation():
+    variances = [1, 2, 5, 10, 20, 50]
+    variance_accuracies_2 = np.zeros(len(variances))
+    variance_accuracies_1 = np.zeros(len(variances))
+    variance_accuracies_3 = np.zeros(len(variances))
+    variance_accuracies_4 = np.zeros(len(variances))
+    valid_joints = np.zeros(len(variances))
+
+    ds = MPIIDataset("/data/mjakobs/data/mpii/", use_saved_tensors=True, train=True, val=False, use_random_parameters=False)
+
+    nr_objects = 1000
+
+    original_model = build_softargmax_2d((255, 255, 1))
+
+    indices = list(range(len(ds)))
+    random.shuffle(indices)
+    indices = indices[:nr_objects]
+
+    for i in range(nr_objects):
+        example = ds[i]
+        pose = example["normalized_pose"]
+        for idx, cov in enumerate(variances):
+            for joint in pose:
+
+                x = int(joint[0].item() * 255)
+                y = int(joint[1].item() * 255)
+
+                if joint[2] == 0:
+                    continue
+
+                heatmap = create_2d_normal_image((x, y), cov, 255, 255)
+                
+                output = original_model.predict(heatmap.reshape(1, 255, 255, 1))
+
+                [scale_x, scale_y] = output[0][0]
+                pred_x, pred_y = int(scale_x * 255.0), int(scale_y * 255.0)
+
+                difference_x = abs(pred_x - x)
+                difference_y = abs(pred_y - y)
+
+                variance_accuracies_1[idx] = variance_accuracies_1[idx] + (difference_x <= 1 and difference_y <= 1)
+                variance_accuracies_2[idx] = variance_accuracies_2[idx] + (difference_x <= 2 and difference_y <= 2)
+                variance_accuracies_3[idx] = variance_accuracies_3[idx] + (difference_x <= 3 and difference_y <= 3)
+                variance_accuracies_4[idx] = variance_accuracies_4[idx] + (difference_x <= 4 and difference_y <= 4)
+
+                valid_joints[idx] = valid_joints[idx] + 1
+
+    print("1", variance_accuracies_1 / valid_joints.astype(np.float32))
+    print("2", variance_accuracies_2 / valid_joints.astype(np.float32))
+    print("3", variance_accuracies_3 / valid_joints.astype(np.float32))
+    print("4", variance_accuracies_4 / valid_joints.astype(np.float32))
+
+def qualitative_evaluation():
+    variances = [1, 2, 5, 10, 20, 50]
+
+    width = 255
+    height = width
+
+    original_model = build_softargmax_2d((height, width, 1))
+
+    for idx, cov in enumerate(variances):
+        result = np.zeros((width, height))
+
+        for x in range(width):
+            for y in range(height):
+                heatmap = create_2d_normal_image((x, y), cov, width, height)
+                
+                output = original_model.predict(heatmap.reshape(1, height, width, 1))
+
+                [scale_x, scale_y] = output[0][0]
+                pred_x, pred_y = int(scale_x * width), int(scale_y * height)
+
+                difference_x = abs(pred_x - x)
+                difference_y = abs(pred_y - y)
+
+                if difference_x <= 2 and difference_y <= 2:
+                    result[x,y] = 1
+                else:
+                    result[x,y] = 0
+        
+        plt.subplot(2, 3, idx + 1)
+        plt.grid(False)
+        plt.title("c = " + str(cov))
+        plt.imshow(result)
+    plt.tight_layout()
+    plt.savefig("softargmax_qualitative.png")
+
 def main():
-    #variances = [1, 2, 5, 10, 20, 50]
+    #qualitative_evaluation()
+    quantitative_evaluation()
 
-    variances = [1]
+        # image_number = "{}".format(int(example["image_path"][0].item()))
+        # image_name = "{}.jpg".format(image_number.zfill(9))
+        
+        # original_image = io.imread("/data/mjakobs/data/mpii/images/{}".format(image_name))
+        # original_pose = example["normalized_pose"][:, 0:2]
 
-    ds = MPIIDataset("/data/mjakobs/data/mpii/", use_saved_tensors=True)
+        # orig_gt_coordinates = transform_pose(example["trans_matrix"], original_pose, inverse=True)
 
-    example = ds[1000]
-    
-    image_number = "{}".format(int(example["image_path"][0].item()))
-    image_name = "{}.jpg".format(image_number.zfill(9))
-    
-    original_image = io.imread("/data/mjakobs/data/mpii/images/{}".format(image_name))
-    original_pose = example["normalized_pose"][:, 0:2]
+        # original_image = example["normalized_image"].reshape(255, 255, 3)
+        # orig_gt_coordinates = example["original_pose"] * 255.0
 
-    orig_gt_coordinates = transform_pose(example["trans_matrix"], original_pose, inverse=True)
+        # height, width = original_image.shape[0], original_image.shape[1]
+        # print(width, height)
 
-    original_image = example["normalized_image"].reshape(256, 256, 3)
-    orig_gt_coordinates = example["original_pose"] * 256.0
+    # plt.figure()
+    # for i, pose in enumerate(orig_gt_coordinates):
+    #     x = int(pose[0])
+    #     y = int(pose[1])
 
-    height, width = original_image.shape[0], original_image.shape[1]
-    print(width, height)
+    #     plt.subplot(4, 4, 1 + i)
+    #     output = test_config((x,y), 20, width, height)
+    #     my_output = output[0]
+    #     tf_output = output[1]
 
-    plt.figure()
-    for i, pose in enumerate(orig_gt_coordinates):
-        x = int(pose[0])
-        y = int(pose[1])
+    #     print("{}: predicted ({} {}), gt ({} {})".format(mpii_joint_order[i], my_output[0], my_output[2], x, y))
+    #     print("luvizon: predicted ({} {}), gt ({} {}".format(tf_output[0], tf_output[2], x , y))
+    #     print()
+    #     heatmap = output[-1]
+    #     plt.xticks([])
+    #     plt.yticks([])
+    #     plt.imshow(original_image)
+    #     plt.imshow(heatmap, alpha=0.5)
+    #     plt.scatter(x=my_output[0], y=my_output[2], facecolors='none', edgecolors='#FF00FF')
+    #     plt.scatter(x=tf_output[0], y=tf_output[2], facecolors='none', edgecolors='r')
+    #     plt.title(mpii_joint_order[i])
 
-        plt.subplot(4, 4, 1 + i)
-        output = test_config((x,y), 20, width, height)
-        my_output = output[0]
-        tf_output = output[1]
-
-        print("{}: predicted ({} {}), gt ({} {})".format(mpii_joint_order[i], my_output[0], my_output[2], x, y))
-        print("luvizon: predicted ({} {}), gt ({} {}".format(tf_output[0], tf_output[2], x , y))
-        print()
-        heatmap = output[-1]
-        plt.xticks([])
-        plt.yticks([])
-        plt.imshow(original_image)
-        plt.imshow(heatmap, alpha=0.5)
-        plt.scatter(x=my_output[0], y=my_output[2], facecolors='none', edgecolors='#FF00FF')
-        plt.scatter(x=tf_output[0], y=tf_output[2], facecolors='none', edgecolors='r')
-        plt.title(mpii_joint_order[i])
-
-    plt.show()
+    # plt.show()
 
         
 
