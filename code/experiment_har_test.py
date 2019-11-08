@@ -6,7 +6,7 @@ conf["learning_rate"] = 2e-5
 conf["validation_amount"] = 0.1 # 10 percent
 conf["numpy_seed"] = 30004
 conf["num_blocks"] = 4
-conf["nr_context"] = 0
+conf["nr_context"] = 2
 conf["project_dir"] = "har_initial"
 
 conf["batch_size"] = 20
