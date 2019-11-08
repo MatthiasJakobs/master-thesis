@@ -14,7 +14,7 @@ conf["use_random_parameters"] = True
 conf["nr_context"] = 2
 conf["project_dir"] = ""
 conf["evaluate_rate"] = 5000
-conf["lr_milestones"] = [50000, 100000]
+conf["lr_milestones"] = [60000, 100000]
 
 ## With Context
 
@@ -23,6 +23,7 @@ conf["num_blocks"] = 8
 conf["name"] = "mpii_learningrate"
 conf["batch_size"] = 20
 conf["total_iterations"] = 190001
+conf["augmentation_amount"] = 3
 conf["val_batch_size"] = conf["batch_size"]
 
 experiment = MPIIExperiment(conf)

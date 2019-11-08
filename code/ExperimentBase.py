@@ -1119,7 +1119,7 @@ class MPIIExperiment(ExperimentBase):
         else:
             milestones = [20000000] # basically, never use lr scheduler
 
-        self.lr_scheduler = optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=milestones, gamma=0.1)
+        self.lr_scheduler = optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=milestones, gamma=0.2)
 
         self.train_writer.write(["iteration", "loss"])
         self.val_writer.write(["iteration", "pckh_0.5", "pckh_0.2"])
