@@ -9,16 +9,17 @@ conf["num_blocks"] = 4
 conf["nr_context"] = 2
 conf["project_dir"] = "har_pennaction"
 
-conf["batch_size"] = 20
+conf["batch_size"] = 12
 conf["val_batch_size"] = 1
-conf["total_iterations"] = 40000
+conf["total_iterations"] = 80000
 conf["evaluate_rate"] =  500
 conf["limit_data_percent"] = 1 # limit dataset to x percent (for testing)
 conf["use_gt_bb"] = True
 conf["use_gt_pose"] = False
 
 conf["fine_tune"] = False # otherwise, using gt pose would make no sense
-conf["name"] = "without_finetune"
+conf["name"] = "without_finetune_with_td"
+conf["use_timedistributed"] = True
 har = HAR_PennAction(conf)
 har.run_experiment()
 
