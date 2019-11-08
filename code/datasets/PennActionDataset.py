@@ -317,7 +317,7 @@ class PennActionDataset(BaseDataset):
         action_1h = torch.zeros(15).float()
         action_1h[self.action_mapping[action]] = 1
 
-        # t_sequence_length = torch.ByteTensor([number_of_frames])
+        t_sequence_length = torch.ByteTensor([len(frames)])
 
         t_index = torch.zeros(1).float()
         t_index[0] = idx
@@ -334,7 +334,7 @@ class PennActionDataset(BaseDataset):
             "action_label": action,
             "normalized_frames": frames,
             "normalized_poses": poses,
-            # "sequence_length": t_sequence_length,
+            "sequence_length": t_sequence_length,
             "trans_matrices": trans_matrices,
             "parameters": t_parameters,
             "index": t_index,

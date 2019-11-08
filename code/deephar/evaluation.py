@@ -77,7 +77,7 @@ def eval_pcku_batch(predictions, poses, matrices):
 
     return scores_02
 
-def eval_pck_batch(predictions, poses, matrices, distance_meassures):
+def eval_pck_batch(predictions, poses, matrices, distance_meassures, threshold=0.2):
     scores_02 = []
 
     for i, prediction in enumerate(predictions):
@@ -86,7 +86,7 @@ def eval_pck_batch(predictions, poses, matrices, distance_meassures):
         pred_pose = torch.from_numpy(transform_pose(matrices[i], predictions[i], inverse=True))
         ground_pose = torch.from_numpy(transform_pose(matrices[i], poses[i], inverse=True))
 
-        scores_02.append(pck_bounding_box(ground_pose, pred_pose, distance_meassures[i], distance_threshold=0.2))
+        scores_02.append(pck_bounding_box(ground_pose, pred_pose, distance_meassures[i], distance_threshold=threshold))
         #pck_upperbody(poses, predictions, distance_threshold=0.2)
 
     return scores_02
