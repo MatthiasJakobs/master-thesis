@@ -1018,7 +1018,7 @@ class Pose_Mixed(ExperimentBase):
 
         with torch.no_grad():
             pck_bb_02 = []
-            pck_upper_02 = []
+            pck_bb_01 = []
 
             self.create_dynamic_folders()
 
@@ -1049,7 +1049,7 @@ class Pose_Mixed(ExperimentBase):
                     distance_meassures[i] = torch.max(width, height).item()
 
                 pck_bb_02.append(eval_pck_batch(predictions[:, :, 0:2], gt_poses[:, :, 0:2], trans_matrices, distance_meassures))
-                #pck_upper_02.append(eval_pcku_batch(predictions[:, :, 0:2], gt_poses[:, :, 0:2], trans_matrices))
+                pck_bb_01.append(eval_pck_batch(predictions[:, :, 0:2], gt_poses[:, :, 0:2], trans_matrices, distance_meassures, threshold=0.1))
 
                 if batch_idx % 10 == 0:
                     prediction = predictions[0, :, 0:2]
@@ -1068,10 +1068,52 @@ class Pose_Mixed(ExperimentBase):
         torch.save(self.model.state_dict(), "experiments/{}/weights/weights_{:08d}".format(self.experiment_name, self.iteration))
 
         mean_bb_02 = torch.mean(torch.FloatTensor(pck_bb_02)).item()
-        #mean_upper_02 = torch.mean(torch.FloatTensor(pck_upper_02)).item()
-        mean_upper_02 = 0.0
-        self.val_writer.write([self.iteration, mean_bb_02, mean_upper_02])
+        mean_bb_01 = torch.mean(torch.FloatTensor(pck_bb_01)).item()
+        self.val_writer.write([self.iteration, mean_bb_02, mean_bb_01])
         return mean_bb_02
+
+    def test(self, pretrained_model=None):
+        with torch.no_grad():
+
+            test_ds = PennActionDataset("/data/mjakobs/data/pennaction/", train=False, use_gt_bb=True)
+            if pretrained_model is not None:
+                self.preparation()
+                self.model.load_state_dict(torch.load(pretrained_model, map_location=self.device))
+    
+            self.model.eval()
+            
+            pck_bb_02 = []
+            pck_bb_01 = []
+
+            for i in range(len(test_ds)):
+                print(i)
+                test_data = test_ds[i]
+                test_images = test_data["normalized_frames"].to(self.device)
+                test_poses = test_data["normalized_poses"].to(self.device)
+
+                trans_matrices = test_data["trans_matrices"].to(self.device)
+
+                _, predictions, _, _ = self.model(test_images)
+                del test_images
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+
+                predictions = predictions.squeeze(dim=0)
+
+                # get distance meassures
+                original_window_sizes = test_data["original_window_size"]
+                distance_meassures = torch.IntTensor(len(original_window_sizes))
+
+                for i in range(len(distance_meassures)):
+                    distance = original_window_sizes[i][0]
+                    distance_meassures[i] = original_window_sizes[i][0]
+
+                pck_bb_02.append(eval_pck_batch(predictions[:, :, 0:2], test_poses[:, :, 0:2], trans_matrices, distance_meassures, threshold=0.2))
+                pck_bb_01.append(eval_pck_batch(predictions[:, :, 0:2], test_poses[:, :, 0:2], trans_matrices, distance_meassures, threshold=0.1))
+
+        mean_bb_02 = torch.mean(torch.FloatTensor(pck_bb_02)).item()
+        mean_bb_01 = torch.mean(torch.FloatTensor(pck_bb_01)).item()
+        return mean_bb_02, mean_bb_01
 
 class MPIIExperiment(ExperimentBase):
 
