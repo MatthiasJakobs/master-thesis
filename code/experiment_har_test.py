@@ -30,6 +30,7 @@ conf["limit_data_percent"] = 1 # limit dataset to x percent (for testing)
 conf["name"] = "finetune_with_td"
 conf["fine_tune"] = True
 conf["start_finetuning"] = 0
+conf["batch_size"] = 12
 conf["learning_rate"] = 1e-6
 conf["use_timedistributed"] = True
 har = HAR_Testing_Experiment(conf, pretrained_model="/data/mjakobs/data/har_jhmdb_5500")
