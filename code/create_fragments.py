@@ -321,7 +321,7 @@ def create_fragments_mpii(train=False, val=False, use_random=False, subprefix="1
                 torch.save(parameters, root_dir + train_test_folder + prefix + "annotations/" + padded_original_image + ".parameters.pt")
                 torch.save(image_path, root_dir + train_test_folder + prefix + "annotations/" + padded_original_image + ".image_path.pt")
 
-def complete_jhmdb(split=1, amount_random=3):
+def complete_jhmdb(split=1, amount_random=6):
         ######
         #  JHMDB
         #####
