@@ -201,6 +201,10 @@ class ExperimentBase:
 
 
 class HAR_Testing_Experiment(ExperimentBase):
+    def __init__(self, conf, pretrained_model=None):
+        super().__init__(conf)
+        self.pretrained_model = pretrained_model
+
     def preparation(self, load_model=True):
         if "fine_tune" in self.conf:
             self.fine_tune = self.conf["fine_tune"]
@@ -224,6 +228,10 @@ class HAR_Testing_Experiment(ExperimentBase):
 
         if load_model:
             self.model = DeepHar(num_actions=21, use_gt=True, nr_context=self.conf["nr_context"], model_path="/data/mjakobs/data/pretrained_jhmdb", use_timedistributed=self.use_timedistributed).to(self.device)
+
+            if self.pretrained_model is not None:
+                self.model.load_state_dict(torch.load(self.pretrained_model, map_location=self.device))
+              
         else:
             self.model = DeepHar(num_actions=21, use_gt=False, nr_context=self.conf["nr_context"], use_timedistributed=self.use_timedistributed).to(self.device)
 
@@ -508,6 +516,9 @@ class HAR_PennAction(HAR_Testing_Experiment):
         self.use_gt_pose = False
 
         self.model = DeepHar(num_actions=15, use_gt=True, nr_context=self.conf["nr_context"], model_path="/data/mjakobs/data/pretrained_mixed_pose", use_timedistributed=self.use_timedistributed).to(self.device)
+
+        if self.pretrained_model is not None:
+            self.model.load_state_dict(torch.load(self.pretrained_model, map_location=self.device))
 
         self.ds_train = PennActionFragmentsDataset("/data/mjakobs/data/pennaction_fragments/", train=True, val=False, use_random_parameters=True, augmentation_amount=3, use_gt_bb=self.use_gt_bb)
         self.ds_val = PennActionFragmentsDataset("/data/mjakobs/data/pennaction_fragments/", train=True, val=True, use_gt_bb=self.use_gt_bb)
