@@ -384,7 +384,7 @@ def complete_pennaction(aug_amount=6):
             create_folder_if_not_present("/data/mjakobs/data/pennaction_fragments/rand{}_annotations".format(index))
             create_folder_if_not_present("/data/mjakobs/data/pennaction_fragments/rand{}_images".format(index))
         
-            create_fragments_pennaction(train=True, val=False, use_random=True, subprefix="{}".format(index) # train random
+            create_fragments_pennaction(train=True, val=False, use_random=True, subprefix="{}".format(index)) # train random
 
 def complete_recreation():
         complete_jhmdb()
