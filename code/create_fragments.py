@@ -325,16 +325,17 @@ def complete_jhmdb(split=1, amount_random=6):
         ######
         #  JHMDB
         #####
+        delete_and_create("/data/mjakobs/data/jhmdb_fragments/", use_random=False, subprefix="1")
+        create_fragments_jhmdb(train=True, val=False, split=split, use_random=False)
+        create_fragments_jhmdb(train=False, val=False, split=split) # test
+        create_fragments_jhmdb(train=True, val=True, split=split) # val
+
         for i in range(amount_random):
                 subprefix = "{}".format(i + 1)
 
                 delete_and_create("/data/mjakobs/data/jhmdb_fragments/", use_random=True, subprefix=subprefix)
                 create_fragments_jhmdb(train=True, val=False, split=split, use_random=True, subprefix=subprefix)
 
-        delete_and_create("/data/mjakobs/data/jhmdb_fragments/", use_random=False, subprefix="1")
-        create_fragments_jhmdb(train=True, val=False, split=split, use_random=False)
-        create_fragments_jhmdb(train=False, val=False, split=split) # test
-        create_fragments_jhmdb(train=True, val=True, split=split) # val
 
 def complete_mpii():
         ######
