@@ -235,7 +235,7 @@ class HAR_Testing_Experiment(ExperimentBase):
         else:
             self.model = DeepHar(num_actions=21, use_gt=False, nr_context=self.conf["nr_context"], use_timedistributed=self.use_timedistributed).to(self.device)
 
-        self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False, use_random_parameters=True, augmentation_amount=3, use_gt_bb=self.use_gt_bb)
+        self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False, use_random_parameters=True, augmentation_amount=6, use_gt_bb=self.use_gt_bb)
         self.ds_val = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=True, use_gt_bb=self.use_gt_bb)
         self.ds_test = JHMDBDataset("/data/mjakobs/data/jhmdb/", train=False)
 
@@ -574,48 +574,40 @@ class HAR_E2E(HAR_Testing_Experiment):
 
         batch_size = len(train_objects["frames"])
         batch_loss = 0
-        for i in range(batch_size):
-            frames = train_objects["frames"][i].to(self.device)
+
+        if self.use_timedistributed:
+            frames = train_objects["frames"].to(self.device)
+            actions = train_objects["action_1h"].to(self.device)
+            ground_poses = train_objects["poses"].to(self.device)
+
+            actions = actions.unsqueeze(1)
+            actions = actions.expand(-1, 4, -1)
 
             predicted_poses, _, pose_predicted_actions, vis_predicted_actions, _ = self.model(frames, finetune=True)
-            del frames
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-
-            actions = train_objects["action_1h"][i].to(self.device)
-            ground_poses = train_objects["poses"][i].to(self.device)
-
-            actions = actions.unsqueeze(0)
-            actions = actions.expand(self.conf["num_blocks"], -1)
-            actions = actions.unsqueeze(0)
-
+            
             partial_loss_pose = torch.sum(categorical_cross_entropy(pose_predicted_actions, actions))
             partial_loss_action = torch.sum(categorical_cross_entropy(vis_predicted_actions, actions))
-
             har_loss = partial_loss_pose + partial_loss_action
 
-            pred_pose = predicted_poses[:, :, :, 0:2]
-            ground_pose = ground_poses[:, :, 0:2]
-            ground_pose = ground_pose.unsqueeze(1)
-            ground_pose = ground_pose.expand(-1, self.conf["num_blocks"], -1, -1)
+            pred_pose = predicted_poses[:, :, :, :, 0:2]
+            ground_pose = ground_poses[:, :, :, 0:2]
+            ground_pose = ground_pose.unsqueeze(2)
+            ground_pose = ground_pose.expand(-1, -1, self.conf["num_blocks"], -1, -1)
 
-            pred_vis = predicted_poses[:, :, :, 2]
-            ground_vis = ground_poses[:, :, 2]
-            ground_vis = ground_vis.unsqueeze(1)
-            ground_vis = ground_vis.expand(-1, self.conf["num_blocks"], -1)
+            pred_vis = predicted_poses[:, :, :, :, 2]
+            ground_vis = ground_poses[:, :, :, 2]
+            ground_vis = ground_vis.unsqueeze(2)
+            ground_vis = ground_vis.expand(-1, -1, self.conf["num_blocks"], -1)
 
             del predicted_poses
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
 
             binary_crossentropy = nn.BCELoss()
-
-            # pred_pose = pred_pose.contiguous().view(batch_size * 16, self.conf["num_blocks"], 16, 2)
-            # ground_poses = ground_poses.contiguous().view(batch_size * 16, self.conf["num_blocks"], 16, 2)
-            # pred_vis = pred_vis.contiguous().view(batch_size * 16, self.conf["num_blocks"], 16)
-            # ground_vis = ground_vis.contiguous().view(batch_size * 16, self.conf["num_blocks"], 16)
-
             vis_loss = binary_crossentropy(pred_vis, ground_vis)
+
+            pred_pose = pred_pose.contiguous().view(batch_size * 16, 4, 16, 2)
+            ground_pose = ground_pose.contiguous().view(batch_size * 16, 4, 16, 2)
 
             pose_loss = elastic_net_loss_paper(pred_pose, ground_pose)
             pose_loss = vis_loss * 0.01 + pose_loss
@@ -635,7 +627,74 @@ class HAR_E2E(HAR_Testing_Experiment):
                 torch.cuda.empty_cache()
 
             loss.backward()
-            batch_loss = batch_loss + float(loss)
+            batch_loss = float(loss)
+        
+        else:
+            for i in range(batch_size):
+                frames = train_objects["frames"][i].to(self.device)
+
+                predicted_poses, _, pose_predicted_actions, vis_predicted_actions, _ = self.model(frames, finetune=True)
+                del frames
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+
+                actions = train_objects["action_1h"][i].to(self.device)
+                ground_poses = train_objects["poses"][i].to(self.device)
+
+                actions = actions.unsqueeze(0)
+                actions = actions.expand(self.conf["num_blocks"], -1)
+                actions = actions.unsqueeze(0)
+
+                partial_loss_pose = torch.sum(categorical_cross_entropy(pose_predicted_actions, actions))
+                partial_loss_action = torch.sum(categorical_cross_entropy(vis_predicted_actions, actions))
+
+                har_loss = partial_loss_pose + partial_loss_action
+
+                pred_pose = predicted_poses[:, :, :, 0:2]
+                ground_pose = ground_poses[:, :, 0:2]
+                ground_pose = ground_pose.unsqueeze(1)
+                ground_pose = ground_pose.expand(-1, self.conf["num_blocks"], -1, -1)
+
+                pred_vis = predicted_poses[:, :, :, 2]
+                ground_vis = ground_poses[:, :, 2]
+                ground_vis = ground_vis.unsqueeze(1)
+                ground_vis = ground_vis.expand(-1, self.conf["num_blocks"], -1)
+
+                del predicted_poses
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+
+                binary_crossentropy = nn.BCELoss()
+
+                # pred_pose = pred_pose.contiguous().view(batch_size * 16, self.conf["num_blocks"], 16, 2)
+                # ground_poses = ground_poses.contiguous().view(batch_size * 16, self.conf["num_blocks"], 16, 2)
+                # pred_vis = pred_vis.contiguous().view(batch_size * 16, self.conf["num_blocks"], 16)
+                # ground_vis = ground_vis.contiguous().view(batch_size * 16, self.conf["num_blocks"], 16)
+
+                vis_loss = binary_crossentropy(pred_vis, ground_vis)
+
+                pred_pose = pred_pose.contiguous().view(batch_size * 16, 4, 16, 2)
+                ground_pose = ground_pose.contiguous().view(batch_size * 16, 4, 16, 2)
+
+                pose_loss = elastic_net_loss_paper(pred_pose, ground_pose)
+                pose_loss = vis_loss * 0.01 + pose_loss
+
+                loss = pose_loss + har_loss
+
+                del actions
+                del ground_poses
+                del pose_predicted_actions
+                del vis_predicted_actions
+                del pred_pose
+                del ground_pose
+                del pred_vis
+                del ground_vis
+
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+
+                loss.backward()
+                batch_loss = batch_loss + float(loss)
 
         self.train_writer.write([self.iteration, batch_loss])
 

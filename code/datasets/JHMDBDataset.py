@@ -98,8 +98,8 @@ class JHMDBDataset(BaseDataset):
         self.items = sorted(self.items)
 
         if self.use_random_parameters:
-            self.angles=torch.IntTensor(range(-30, 30+1, 5))
-            self.scales=torch.FloatTensor([0.7, 1.0, 1.3])
+            self.angles=torch.IntTensor([-30, -25, -20, -15, -10, -5, 5, 10, 15, 20, 25, 30])
+            self.scales=torch.FloatTensor([0.7, 1.3])
             self.flip_horizontal = torch.ByteTensor([0, 1])
 
         # REMEMBER: 15 Joint positions, MPII has 16!

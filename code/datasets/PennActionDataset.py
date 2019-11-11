@@ -78,8 +78,8 @@ class PennActionDataset(BaseDataset):
         }
 
         if self.use_random_parameters:
-            self.angles=np.array(range(-30, 30+1, 5))
-            self.scales=np.array([0.7, 1.0, 1.3])
+            self.angles=np.array([-30, -25, -20, -15, -10, -5, 5, 10, 15, 20, 25, 30])
+            self.scales=np.array([0.7, 1.3])
             self.flip_horizontal = np.array([0, 1])
 
         self.use_gt_bb = use_gt_bb
