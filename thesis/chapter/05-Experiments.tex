@@ -207,15 +207,96 @@ In summary, while the Soft-argmax function appears to be less accurate around th
 
 \subsubsection{Pose estimation}
 
+- ablation study
+    - vary the number of blocks
+    - vary the number of context heatmaps
+- explain testing procedure (also flipping)
+    - explain why not all experiments can be tested
+- parameters
+    - learning rate 1e-3 since authors use that
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.7\textwidth]{mpii_vals.png}
+    \caption{Validation accuracies of all evaluated pose estimation configurations on the MPII dataset. Notice that the addition of context heatmaps does not significantly improve upon the accuracy for $nr\_blocks > 2$. }
+    \label{fig:mpii_vals}
+\end{figure}
+
+\begin{table}[]
+    \small
+    \begin{tabular}{|l|c|c|c|c|}
+    \hline
+        & \textbf{nr\_blocks} & \textbf{nr\_context} & \textbf{PCKh @ 0.5 (validation)} & \textbf{PCKh @ 0.5 (test)} \\ \hline
+    \textbf{Own} & 2 & 0 & 80.96 &  \\
+    \textbf{} & 2 & 2 & 81.56 &  \\
+    \textbf{} & 4 & 0 & 83.22 &  \\
+    \textbf{} & 4 & 2 & 82.97 &  \\
+    \textbf{} & 8 & 0 & 84.67 &  \\
+    \textbf{} & 8 & 2 & 84.66 & tbd \\ \hline
+    \textbf{\cite{luvizon_2d/3d_2018}} & 8 & 2 & 89.00 & 91.2 \\ \hline
+    \end{tabular}
+\end{table}
+
+\begin{table}[]
+    \centering
+    \scalebox{0.90}{%
+    \begin{tabular}{|l|l|l|l|l|l|l|l|l|}
+        \hline
+        &Head & Shoulder & Elbow & Wrist & Hip & Knee  & Ankle & Total  \\ \hline
+        out recreation& 95.7  & 90.5  & 81.4  & 74.6  & 82.5  & 73.0 & 66.2 & 81.4 \\
+        \cite{luvizon_2d/3d_2018}& 98.1  & 96.6  & 92.0  & 87.5  & 90.6  & 88.0 & 82.7 & 91.2  \\ \hline
+    \end{tabular}}
+    \caption{Our recreation in direct comparison to the original work by \cite{luvizon_2d/3d_2018}. Values represent PCKh using $\alpha = 0.5$.  } %TODO: New values and / or explain differences
+    \label{tab:softargmax_numeric_eval}
+\end{table}
+
 \subsubsection{HAR using Penn Action dataset}
+
+- train pose estimator using 75 mpii 25 penn action, as did the authors
+- parameters
+    - augmentation of 75 augmented and 25 regular (for all experiments, if not mentioned otherwise)
+    - batch size 30
+    - learning rate 1e-3 because thats what the authors use in their MPII training. they do not talk about the learning rate used for this
+    - trained for 110000 iterations (batches)
+- PCK @ 0.2 used for evaluation 
+% TODO: Test using PCK @ 0.2 and @ 0.1
+% TODO: statistical significance testing
+% TODO: discuss gt_bb 
+
+- first find the point where validation plateaus
+- parameters
+    - batch size 12
+    - for X iterations, afterwards validation plateaus % TODO
+    - learning rate 2e-5 since this is what the authors used
+    - 4 blocks, 2 context in pose estimation
+
+- Started finetuning at iteration X and reduce learning rate by X % TODO
+- Talk about results
+% TODO: statistical significance testing
 
 \subsection{Pose estimation on JHMDB dataset}
 
+- same ablation study as before
+    - evaluate different number of blocks and context heatmaps
+        - talk about a general conclusion like \textit{the higher the number of blocks the better}
+- parameters
+    - learning rate 1e-3, as discussed in MPII
+
+% TODO: report the number of iterations used
+% TODO: do plot of all validation accuracy cuvers
+- general conclusion: is this dataset harder? why?
+
 \subsection{HAR on JHMDB Dataset}
-all kinds of substitutions like using gt bb etc.
+%all kinds of substitutions like using gt bb etc.
+- use the pretrained pose estimator from before, 4 blocks, 2 context heatmaps
+- parameters
+- Same as in pennaciton: first find the validation plateau point
+- afterwards: new experiment with finetune
 
 \subsection{Effect of Combining Loss Functions}
-e2e
+- explain how e2e training was done (using pose loss etc.)
+- show results
+- explain why it didnt work (or why it did)
 
 \subsection{Effect of Using Different Representations of Pose}
 \label{sec:different_pose_representation_experiment}
