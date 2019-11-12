@@ -10,6 +10,7 @@ import glob
 import imgaug as ia
 import imgaug.augmenters as iaa
 
+import matplotlib.pyplot as plt
 
 import scipy.io as sio
 import numpy as np
@@ -48,18 +49,18 @@ class PennActionDataset(BaseDataset):
 
         self.mpii_mapping = np.array([
             [0, 8],  # head -> upper neck
-            [1, 13], # left shoulder
-            [2, 12], # right shoulder
-            [3, 14], # left elbow
-            [4, 11], # right elbow
-            [5, 15], # left wrist
-            [6, 10], # right wrist
-            [7, 3],  # left hip
-            [8, 2],  # right hip
-            [9, 4],  # left knee
-            [10, 1], # right knee
-            [11, 5], # left ankle
-            [12, 0]  # right ankle
+            [2, 13], # left shoulder
+            [1, 12], # right shoulder
+            [4, 14], # left elbow
+            [3, 11], # right elbow
+            [6, 15], # left wrist
+            [5, 10], # right wrist
+            [8, 3],  # left hip
+            [7, 2],  # right hip
+            [10, 4],  # left knee
+            [9, 1], # right knee
+            [12, 5], # left ankle
+            [11, 0]  # right ankle
         ])
 
         self.action_mapping = {
