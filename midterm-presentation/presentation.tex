@@ -90,18 +90,19 @@
                 \item Often: Human Activity Recognition approached separately from pose estimation
                 \item Pose is used for HAR, but not learned jointly.
                 \begin{itemize}
-                    \item Shown to be very important feature
+                    \item Shown to be very important feature \footnotemark
                 \end{itemize}
                 \item Idea: Both can benefit from each other
                 \item Luvizon et al. \footnotemark~ propose approach for jointly learning both
             \end{itemize}
         \end{column}
-        \footnotetext[1]{\cite{luvizon_2d/3d_2018}}
-        \footnotetext[2]{\cite{reining_towards_2018}}
+        \footnotetext[1]{\cite{jhuang_towards_2013}}
+        \footnotetext[2]{\cite{luvizon_2d/3d_2018}}
+        \footnotetext[3]{\cite{reining_towards_2018}}
         \begin{column}{.45\textwidth}
             \begin{figure}
                 \includegraphics[width=.99\textwidth]{skeleton_har_example.png}
-                \sourcefix{2}
+                \sourcefix{3}
             \end{figure}
         \end{column}
     \end{columns}
@@ -206,6 +207,19 @@
     \footnotetext[1]{\url{https://towardsdatascience.com/a-basic-introduction-to-separable-convolutions-b99ec3102728}}
 \end{myframe}
 
+\begin{myframe}[Method - Pose estimator]
+    \begin{itemize}
+        \item Features $\rightarrow$ prediction block
+        \item Input and output dimensions identical
+        \item Intermediate results via Soft-argmax function
+    \end{itemize}
+    \begin{figure}
+        \includegraphics[width=.80\textwidth]{multitask-part.png}
+        \sourcefix{1}
+        \caption{Pose estimation pipeline. Notice the intermediate results after each prediction block.}
+    \end{figure}
+    \footnotetext[1]{\cite{luvizon_2d/3d_2018}}
+\end{myframe}
 
 \begin{myframe}[Method - Pose Model]
 	\begin{columns}[T]
@@ -423,10 +437,13 @@
 \begin{myframe}[Recreate experiments - 2D Pose estimation]
     \begin{itemize}
         \item Recreate results for using different parameters
-        \item In general:
+        \item Evaluate significance using randomization test
         \begin{itemize}
-            \item More prediction blocks lead to higher accuracy
-            \item Context maps yield slighly higher accuracy for small network
+            \item Improvement when using context heatmaps is not statistically significant (with significance level $0.05$)
+            \item Improvement between $nr\_blocks = 2$ and $nr\_blocks = 4$ is significant.
+            \begin{itemize}
+                \item Using $8$ blocks does not significantly increase accuracy
+            \end{itemize}
         \end{itemize}
     \end{itemize}
     \begin{figure}
@@ -440,12 +457,13 @@
             \textbf{} & 4 & 0 & 83.22 &  \\
             \textbf{} & 4 & 2 & 82.97 &  \\
             \textbf{} & 8 & 0 & 84.67 &  \\
-            \textbf{} & 8 & 2 & 84.66 & tbd \\ \hline
+            \textbf{} & 8 & 2 & 84.66 & \textbf{81.1}* \\ \hline
             \textbf{\footnotemark} & 8 & 2 & 89.00 & 91.2 \\ \hline
             \end{tabular}
         \end{table}
     \end{figure}
     \footnotetext[1]{\cite{luvizon_2d/3d_2018}}
+    * Test results need to be send to Max Planck institute for evaluation
 \end{myframe}
 
 \begin{myframe}[Recreate experiments - 2D pose estimation]
@@ -466,9 +484,15 @@
 
 \begin{myframe}[Recreate experiments]
     \begin{itemize}
-        \item Penn Action HAR
-        \item tbd
+        \item Use pretrained pose estimator
+        \item First: Pose estimator is not fine-tuned, locked weights
+        \item Find validation plateau and then start fine-tuning with smaller learning rate
     \end{itemize}
+    \begin{figure}
+        \includegraphics[height=.60\textheight]{presentation_har_pennaction.png}
+        \centering
+    \end{figure}    
+
 \end{myframe}
 
 \begin{myframe}[2D pose estimation on JHMDB]
@@ -476,6 +500,7 @@
         \item Used ground truth bounding boxes as in \footnotemark
         \item Additionally: \textit{PCK} w.r.t. upper body size (\textit{PCKu})
         \item Dataset more challenging because of video artifacts
+        \item Unclear whether or not \footnotemark[2] use ground truth bounding box
     \end{itemize}
     \begin{figure}
         \begin{table}[]
@@ -483,23 +508,37 @@
             \begin{tabular}{|l|c|c|c|c|}
             \hline
              & \textbf{nr\_blocks} & \textbf{nr\_context} & \textbf{PCK @ 0.2 (test)} & \textbf{PCKu @ 0.2 (test)} \\ \hline
-            \textbf{Own} & 2 & 0 & TODO &  \\
-            \textbf{} & 2 & 2 & TODO &  \\
-            \textbf{} & 4 & 0 & TODO &  \\
-            \textbf{} & 4 & 2 & TODO &  \\
-            \textbf{} & 8 & 0 & TODO &  \\
-            \textbf{} & 8 & 2 & TODO &  \\ \hline
+            \textbf{Own} & 2 & 0 & 86.47 & 62.33 \\
+            \textbf{} & 2 & 2 & 86.73 & 62.24 \\
+            \textbf{} & 4 & 0 & 86.87 &  62.71\\
+            \textbf{} & 4 & 2 & 87.10 &  62.80 \\
+            \textbf{} & 8 & 0 & 61.54* &  30.70* \\
+            \textbf{} & 8 & 2 & 61.27* &  25.66*\\ \hline
             \textbf{\footnotemark} &  &  & 81.60 &  \\ \hline
             \end{tabular}
         \end{table}
     \end{figure}
     \footnotetext[1]{\cite{luvizon_2d/3d_2018}}
     \footnotetext[2]{\cite{song_thin-slicing_2017}}
+    * overfitted on training
 \end{myframe}
 
 \begin{myframe}[HAR on JHMDB dataset]
     \begin{itemize}
-        \item best jhmdb found: 87.9 percent \footnotemark
+        \item Same procedure as with Penn Action
+        \item Overfitting observed
+        \begin{itemize}
+            \item Use more augmented data
+            \item Also: try to decrease learning rate
+            \item Then: fine-tune pose estimator after validation plateaus
+        \end{itemize}
+    \end{itemize}
+    \begin{figure}
+        \includegraphics[height=.55\textheight]{presentation_har_jhmdb_bad.png}
+        \centering
+    \end{figure}    
+    \begin{itemize}
+        \item Best result found in literature: 87.9 percent \footnotemark
     \end{itemize}
     \footnotetext[1]{\cite{choutas_potion:_2018}}
 \end{myframe}
@@ -507,23 +546,24 @@
 \section{Conclusion}
 \begin{myframe}[Conclusion]
     \begin{itemize}
-        \item Further evidence that stacked architecture improves accuracy
-        \item JHMDB seems to be harder than MPII
+        \item Stacked architecture in pose estimator increases accuracy until $nr\_blocks = 4$
+        \item Using context heatmaps does not significantly increase accuracy
+        \item JHMDB seems to be harder than MPII for pose estimation
         \item What will be done next
         \begin{itemize}
+            \item Fine-tuning network once the network is no longer overfitting
             \item End-to-end training on JHMDB dataset
             \item Evaluate use of different \textit{pose cube} feature extraction
         \end{itemize}
         \item Future work suggestions
         \begin{itemize}
             \item Use video pose estimator
-            \item Gather bigger, fully annotated datasets
+            \item Gather bigger, fully annotated video datasets for end-to-end Human Activity Recognition
         \end{itemize}
     \end{itemize}
 \end{myframe}
 
 \begin{myframe}[Thank you]
-    \note[item]{placeholder}
     \centering \Large
     \emph{Thank you for your time!}
 \end{myframe}

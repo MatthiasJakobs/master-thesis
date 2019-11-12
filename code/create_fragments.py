@@ -325,16 +325,17 @@ def complete_jhmdb(split=1, amount_random=6):
         ######
         #  JHMDB
         #####
+        delete_and_create("/data/mjakobs/data/jhmdb_fragments/", use_random=False, subprefix="1")
+        create_fragments_jhmdb(train=True, val=False, split=split, use_random=False)
+        create_fragments_jhmdb(train=False, val=False, split=split) # test
+        create_fragments_jhmdb(train=True, val=True, split=split) # val
+
         for i in range(amount_random):
                 subprefix = "{}".format(i + 1)
 
                 delete_and_create("/data/mjakobs/data/jhmdb_fragments/", use_random=True, subprefix=subprefix)
                 create_fragments_jhmdb(train=True, val=False, split=split, use_random=True, subprefix=subprefix)
 
-        delete_and_create("/data/mjakobs/data/jhmdb_fragments/", use_random=False, subprefix="1")
-        create_fragments_jhmdb(train=True, val=False, split=split, use_random=False)
-        create_fragments_jhmdb(train=False, val=False, split=split) # test
-        create_fragments_jhmdb(train=True, val=True, split=split) # val
 
 def complete_mpii():
         ######
@@ -359,42 +360,31 @@ def complete_mpii():
         create_fragments_mpii(train=True, val=False, use_random=True, subprefix="3") # train random 3
         create_fragments_mpii(train=True, val=True, use_random=False) # val
 
-def complete_pennaction():
+def complete_pennaction(aug_amount=6):
         ######
         #  Penn Action
         # #####
         create_folder_if_not_present("/data/mjakobs/data/pennaction/annotations")
         create_folder_if_not_present("/data/mjakobs/data/pennaction/images")
-        create_folder_if_not_present("/data/mjakobs/data/pennaction/rand1_annotations")
-        create_folder_if_not_present("/data/mjakobs/data/pennaction/rand1_images")
-        create_folder_if_not_present("/data/mjakobs/data/pennaction/rand2_annotations")
-        create_folder_if_not_present("/data/mjakobs/data/pennaction/rand2_images")
-        create_folder_if_not_present("/data/mjakobs/data/pennaction/rand3_annotations")
-        create_folder_if_not_present("/data/mjakobs/data/pennaction/rand3_images")
 
         create_folder_if_not_present("/data/mjakobs/data/pennaction_fragments/annotations")
         create_folder_if_not_present("/data/mjakobs/data/pennaction_fragments/images")
-        create_folder_if_not_present("/data/mjakobs/data/pennaction_fragments/rand1_indices")
-        create_folder_if_not_present("/data/mjakobs/data/pennaction_fragments/rand1_indices/train")
-        create_folder_if_not_present("/data/mjakobs/data/pennaction_fragments/rand1_annotations")
-        create_folder_if_not_present("/data/mjakobs/data/pennaction_fragments/rand1_images")
-        
-        create_folder_if_not_present("/data/mjakobs/data/pennaction_fragments/rand2_indices")
-        create_folder_if_not_present("/data/mjakobs/data/pennaction_fragments/rand2_indices/train")
-        create_folder_if_not_present("/data/mjakobs/data/pennaction_fragments/rand2_annotations")
-        create_folder_if_not_present("/data/mjakobs/data/pennaction_fragments/rand2_images")
-        
-        create_folder_if_not_present("/data/mjakobs/data/pennaction_fragments/rand3_indices")
-        create_folder_if_not_present("/data/mjakobs/data/pennaction_fragments/rand3_indices/train")
-        create_folder_if_not_present("/data/mjakobs/data/pennaction_fragments/rand3_annotations")
-        create_folder_if_not_present("/data/mjakobs/data/pennaction_fragments/rand3_images")
 
         create_fragments_pennaction(train=False, val=False) # test
         create_fragments_pennaction(train=True, val=True) # val
         create_fragments_pennaction(train=True, val=False, use_random=False) # train, no random
-        create_fragments_pennaction(train=True, val=False, use_random=True, subprefix="1") # train 1, random
-        create_fragments_pennaction(train=True, val=False, use_random=True, subprefix="2") # train 2, random
-        create_fragments_pennaction(train=True, val=False, use_random=True, subprefix="3") # train 3, random
+
+        for i in range(aug_amount):
+            index = i + 1
+            create_folder_if_not_present("/data/mjakobs/data/pennaction/rand{}_annotations".format(index))
+            create_folder_if_not_present("/data/mjakobs/data/pennaction/rand{}_images".format(index))
+
+            create_folder_if_not_present("/data/mjakobs/data/pennaction_fragments/rand{}_indices".format(index))
+            create_folder_if_not_present("/data/mjakobs/data/pennaction_fragments/rand{}_indices/train".format(index))
+            create_folder_if_not_present("/data/mjakobs/data/pennaction_fragments/rand{}_annotations".format(index))
+            create_folder_if_not_present("/data/mjakobs/data/pennaction_fragments/rand{}_images".format(index))
+        
+            create_fragments_pennaction(train=True, val=False, use_random=True, subprefix="{}".format(index)) # train random
 
 def complete_recreation():
         complete_jhmdb()

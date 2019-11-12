@@ -8,6 +8,9 @@ import re
 import glob
 import csv
 
+import imgaug as ia
+import imgaug.augmenters as iaa
+
 import scipy.io as sio
 import numpy as np
 import pandas as pd
@@ -98,9 +101,14 @@ class JHMDBDataset(BaseDataset):
         self.items = sorted(self.items)
 
         if self.use_random_parameters:
-            self.angles=torch.IntTensor(range(-30, 30+1, 5))
+            self.angles=torch.IntTensor([-30, -25, -20, -15, -10, -5, 5, 10, 15, 20, 25, 30])
             self.scales=torch.FloatTensor([0.7, 1.0, 1.3])
             self.flip_horizontal = torch.ByteTensor([0, 1])
+            
+            self.further_augmentation_prob = 0.5
+            self.dropout_size_percent = 0.10
+            self.salt_and_pepper = 0.02
+            self.motion_blur_angle = list(range(10, 300))
 
         # REMEMBER: 15 Joint positions, MPII has 16!
         self.mpii_mapping = torch.ByteTensor([
@@ -326,11 +334,26 @@ class JHMDBDataset(BaseDataset):
 
             bounding_boxes.append(self.bbox.clone().unsqueeze(0))
             processed_poses.append(norm_pose.unsqueeze(0))
-            processed_frames.append(norm_frame.unsqueeze(0))
+            processed_frames.append(norm_frame.numpy())
             trans_matrices.append(trans_matrix.clone().unsqueeze(0))
             original_window_sizes.append(self.original_window_size.clone().unsqueeze(0))
 
         number_of_frames = len(processed_frames)
+
+        # further augmentation, beyond Luvizon et al.
+        if self.use_random_parameters:
+            processed_frames = list(map(lambda x: (x + 1) / 2.0, processed_frames))
+            seq = iaa.Sequential(
+                [
+                    #iaa.Sometimes(1.0, iaa.MotionBlur(k=3, angle=self.motion_blur_angle)),
+                    iaa.Sequential([
+                        iaa.Sometimes(self.further_augmentation_prob, iaa.CoarseDropout((0.05 * self.aug_conf["scale"]).item(), size_percent=(self.dropout_size_percent * self.aug_conf["scale"]).item())),
+                        iaa.Sometimes(self.further_augmentation_prob, iaa.SaltAndPepper((self.salt_and_pepper * self.aug_conf["scale"]).item())),
+                    ], random_order=True)
+                ]
+            , random_order=False)
+            np_processed_frames = seq(images=processed_frames)
+            processed_frames = list(map(lambda x: 2.0 * torch.FloatTensor(np.expand_dims(x, axis=0)) - 1, np_processed_frames))
 
         frames = torch.cat(processed_frames)
         poses = torch.cat(processed_poses)
