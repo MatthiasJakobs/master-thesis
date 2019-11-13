@@ -32,9 +32,6 @@ class MixMPIIPenn(BaseDataset):
 
         self.sample_amount = 11 # this leads to a approximate 2/3 mpii 1/3 pennaction mix
 
-        assert augmentation_amount > 0
-        self.augmentation_amount = augmentation_amount
-
     def __len__(self):
         return len(self.mpii) + len(self.pennaction) * self.sample_amount
 
