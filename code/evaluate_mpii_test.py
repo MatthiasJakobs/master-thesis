@@ -166,7 +166,7 @@ def main():
                     new_center_x = center_x + positive_pixel_displacement
                     new_center_y = center_y + positive_pixel_displacement
                     image, trans_matrix = preprocess(old_scale, new_center_x, new_center_y, full_image_path)
-                    model_input = image.unsqueeze(0)
+                    model_input = image.unsqueeze(0).to(device)
                     _, predictions, _, _ = model(model_input)
                     predictions = predictions.squeeze()
                     positive_displacements.append(torch.FloatTensor(transform_pose(trans_matrix, predictions[:, 0:2], inverse=True)))
