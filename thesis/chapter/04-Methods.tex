@@ -1,6 +1,18 @@
 \chapter{Method}
 \section{Deep HAR}
+
+In the previous chapter, approaches for estimating pose from still images and predicting actions from video were presented.
+Although some approaches for HAR incorporate pose information as features in their decision process, estimating pose and predicting actions were not used in conjunction during the training process.
+For example, \cite{choutas_potion:_2018} \sref{sec:potion} estimated pose using a dedicated model, before using the information to train their model. 
+
+This chapter presents the approach by \cite{luvizon_2d/3d_2018}, who argue that estimating pose and predicting action in a single model may help in the learning process, since the pose estimator can incorporate action prediction information and vice versa.
+In Section \ref{sec:softargmax}, the authors present a novel way to infer joint coordinates from heatmap, which allows the model to be fully differentiable and thus able to be trained in an end-to-end approach.
+Next, the model architecture the authors used is presented in Section \ref{sec:deephar_architecture}.
+For training the model, the authors use an approach called \textit{intermediate supervision}, which is presented in Section \ref{sec:luvizon_intermediate_supervision}.
+Lastly, this thesis presents limitations of the authors work in Section \ref{sec:deephar_limitations}, in addition to proposed experiments to overcome some of those limitations.
+
 \subsection{Approach}
+\label{sec:deephar_approach}
 
 In \cite{luvizon_2d/3d_2018}, the authors propose a network, which estimates pose and then uses the estimation, in combination with low level image features, to predict the action performed by a subject in a video clip.
 The network is completely differentiable, which allows the authors to pretrain certain parts, like the post estimator, and then fine-tune the network in an end-to-end fashion.
@@ -10,7 +22,7 @@ Such a heatmap requires the use of the argmax function in a postprocessing step 
 Thus, the authors propose the \textit{Soft-argmax} function as an differentiable alternative to the regular argmax function \sref{sec:softargmax}.
 
 In addition, the authors propose methods to use both $3D$ and $2D$ pose datasets while training their network.
-However, these are not discussed here since this thesis focuses on $2D$ pose information only. 
+However, these are not discussed here since this thesis focuses on $2D$ pose information. 
 
 \subsection{Soft-argmax}
 \label{sec:softargmax}
@@ -51,6 +63,8 @@ As proof, they compare their methods to other state-of-the-art methods which dir
 Specifically, when comparing to the previously best approach for regressing pose by \cite{sun_compositional_2017}, the authors observe an overall increase in PCKh accuracy of $5.2$ percentage points from $86.4$ to $91.2$ percent.
 
 \subsection{Architecture}
+\label{sec:deephar_architecture}
+
 The architecture used by the authors can be divided into several blocks.
 First, a feature extraction block, referred to as \textit{Stem}, is used to extract visual features from each frame of the input video separately.
 Afterwards, these features are used to predict the joint heatmaps in the pose estimation block.
@@ -194,7 +208,7 @@ The predicted actions are only used for computing the loss during training and a
 
 \begin{figure}[htb!]
     \centering
-    \includegraphics[width=0.6\textwidth]{luvizon_appearancebasedaction.png}
+    \includegraphics[width=0.3\textwidth]{luvizon_appearancebasedaction.png}
     \caption{The \textit{Visual Model}, according to the code provided as supplementary material to \cite{luvizon_2d/3d_2018}. The architecture differs to the one presented in the paper, where the authors claim that both \textit{Visual Model} and \textit{Pose Model} have identical architectures.}
     \label{fig:luvizon_appearancbasedeaction}
 \end{figure}
@@ -227,6 +241,7 @@ The authors claim that this approach increases the accuracy of the overall netwo
 However, they do not provide evidence to proof their claim.  
 
 \subsection{Limitations}
+\label{sec:deephar_limitations}
 There are four limitations to the approach proposed by the authors and their evaluation of the method.
 First, they imply by the choice of their paper's title that their approach constitutes end-to-end learning.
 This would imply that the network weights are not pretrained in any way.

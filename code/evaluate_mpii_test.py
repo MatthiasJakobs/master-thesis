@@ -54,10 +54,18 @@ def main():
     model = Mpii_8(num_context=2).to(device)
     model.load_state_dict(torch.load("mpii_8_trained", map_location=device))
 
-    if os.path.exists("mpii_test.csv"):
-        os.remove("mpii_test.csv")
-    
-    with open("mpii_test.csv", mode="a+") as csv_file:
+
+    use_displacement = False
+
+    output_file_name = "mpii_test.csv"
+
+    if use_displacement:
+        output_file_name = "mpii_test_displacement.csv" 
+
+    if os.path.exists(output_file_name):
+        os.remove(output_file_name)
+
+    with open(output_file_name, mode="a+") as csv_file:
         writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         writer.writerow(
             [
@@ -144,37 +152,54 @@ def main():
             transformed_pose_flipped = torch.FloatTensor(transform_pose(trans_matrix, transformed_pose_flipped, inverse=True))
             transformed_pose_flipped = flip_lr_pose(transformed_pose_flipped)
 
-            # # displace center positive
-            # percentage = 10.0
-            # new_center_x = center_x + (center_x / percentage)
-            # new_center_y = center_y + (center_y / percentage)
-            # image, trans_matrix = preprocess(old_scale, center_x, center_y, full_image_path)
-            # model_input = image.unsqueeze(0)
-            # _, predictions, _, _ = model(model_input)
-            # predictions = predictions.squeeze()
-            # positive_displacement = torch.FloatTensor(transform_pose(trans_matrix, predictions[:, 0:2], inverse=True))
+            if use_displacement:
+                # displace center
+                positive_displacements = []
+                negative_displacements = []
+                nr_displacements = 2
 
-            # # displace center negative
-            # percentage = 10.0
-            # new_center_x = center_x - (center_x / percentage)
-            # print(center_x / percentage)
-            # new_center_y = center_y - (center_y / percentage)
-            # image, trans_matrix = preprocess(old_scale, center_x, center_y, full_image_path)
-            # model_input = image.unsqueeze(0)
-            # _, predictions, _, _ = model(model_input)
-            # predictions = predictions.squeeze()
-            # negative_displacement = torch.FloatTensor(transform_pose(trans_matrix, predictions[:, 0:2], inverse=True))
+                for i in range(nr_displacements):
+                    positive_pixel_displacement = np.random.randint(3, 8, 1)[0]
+                    negative_pixel_displacement = (np.random.randint(3, 8, 1) * -1)[0]
+
+
+                    new_center_x = center_x + positive_pixel_displacement
+                    new_center_y = center_y + positive_pixel_displacement
+                    image, trans_matrix = preprocess(old_scale, new_center_x, new_center_y, full_image_path)
+                    model_input = image.unsqueeze(0)
+                    _, predictions, _, _ = model(model_input)
+                    predictions = predictions.squeeze()
+                    positive_displacements.append(torch.FloatTensor(transform_pose(trans_matrix, predictions[:, 0:2], inverse=True)))
+
+                    new_center_x = center_x + negative_pixel_displacement
+                    new_center_y = center_y + negative_pixel_displacement
+                    image, trans_matrix = preprocess(old_scale, new_center_x, new_center_y, full_image_path)
+                    model_input = image.unsqueeze(0)
+                    _, predictions, _, _ = model(model_input)
+                    predictions = predictions.squeeze()
+                    negative_displacements.append(torch.FloatTensor(transform_pose(trans_matrix, predictions[:, 0:2], inverse=True)))
 
             # Calculate mean pose
             mean_pose = transformed_pose.clone()
             del transformed_pose
             mean_pose = mean_pose + transformed_pose_flipped.clone()
             del transformed_pose_flipped
-            # mean_pose = mean_pose + positive_displacement.clone()
-            # mean_pose = mean_pose + negative_displacement.clone()
-            mean_pose = mean_pose / 2.0
+
+            if use_displacement:
+                for i in range(nr_displacements):
+                    mean_pose = mean_pose + positive_displacements[i].clone()
+                    mean_pose = mean_pose + negative_displacements[i].clone()
+                del negative_displacements
+                del positive_displacements
+
+            nr_poses = 2
+            if use_displacement:
+                nr_poses = nr_poses + nr_displacements * 2
+
+            mean_pose = mean_pose / float(nr_poses)
             mean_pose = mean_pose.int()
-            with open("mpii_test.csv", mode="a+") as csv_file:
+
+            with open(output_file_name, mode="a+") as csv_file:
                 writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
                 writer.writerow(
                     [

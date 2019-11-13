@@ -1226,7 +1226,7 @@ class MPIIExperiment(ExperimentBase):
 
         self.optimizer = optim.RMSprop(self.model.parameters(), lr=self.conf["learning_rate"])
 
-        if "lr_milestones" in  self.conf["lr_milestones"]:
+        if "lr_milestones" in self.conf:
             milestones = self.conf["lr_milestones"]
         else:
             milestones = [20000000] # basically, never use lr scheduler
