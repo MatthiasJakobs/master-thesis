@@ -54,12 +54,18 @@ def main():
     model = Mpii_8(num_context=2).to(device)
     model.load_state_dict(torch.load("mpii_8_trained", map_location=device))
 
-    if os.path.exists("mpii_test.csv"):
-        os.remove("mpii_test.csv")
 
-    use_displacement = True
-    
-    with open("mpii_test.csv", mode="a+") as csv_file:
+    use_displacement = False
+
+    output_file_name = "mpii_test.csv"
+
+    if use_displacement:
+        output_file_name = "mpii_test_displacement.csv" 
+
+    if os.path.exists(output_file_name):
+        os.remove(output_file_name)
+
+    with open(output_file_name, mode="a+") as csv_file:
         writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         writer.writerow(
             [
@@ -193,7 +199,7 @@ def main():
             mean_pose = mean_pose / float(nr_poses)
             mean_pose = mean_pose.int()
 
-            with open("mpii_test.csv", mode="a+") as csv_file:
+            with open(output_file_name, mode="a+") as csv_file:
                 writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
                 writer.writerow(
                     [
