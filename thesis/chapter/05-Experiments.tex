@@ -48,6 +48,18 @@ See \fref{fig:mpii_example_augmentation} for multiple examples of different augm
     \label{fig:mpii_example_augmentation}
 \end{figure}
 
+When using horizontal flipping, a problem occured where the learned pose resembled a generic skeleton.
+See \fref{fig:ghost_skeleton} for an example image.
+Because of the horizontal flipping of the image, the pose needed to be flipped as well.
+Furthermore, however, the labels of some joints needed to be changed as well.
+As an example, the right arm (from the perspective of the subject in the image) becomes the left arm when the image is flipped.
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.80\textwidth]{ghost_skeleton.png}
+    \caption{Example of a phenomenon which occured when the image and pose were flipped durring augmentation, but the annotations were not properly changed. As an example, the left arm becomes the right arm after flipping. The ground truth pose is shown in red, while the learned pose is shown in blue. }
+    \label{fig:ghost_skeleton}
+\end{figure}
 
 The dataset does not contain annotations for the test data, other than the scale and center coordinates.
 To evaluate the test images, the joints need to be evaluated and the results need to be send to the authors for comparison to the ground truth pose.
@@ -75,7 +87,7 @@ It was decided by \cite{luvizon_2d/3d_2018} that the number of joints should be 
 This then means that the network architecture does not need to be changed, no matter which dataset is used.
 Specifically, the \textit{pose cube} dimensionality does not need to be changed.
 To achieve this, the \textit{head} annotation of the Penn Action dataset is mapped to the \textit{upper neck} joint of the MPII dataset and the missing joints were interpreted as not visible.
-The augmentation is identical to the augmentation mentioned in \sref{sec:exp-mpii}.
+The augmentation is identical to the augmentation mentioned in \sref{sec:exp-mpii}. % TODO: Augmentation changed
 
 For some experiments, we compute a ground truth bounding box of the person by calculating the minimum and maximum $x$ and $y$ coordinates of the pose and defining these as the corners of the bounding box.
 Additionally, to include more context, we decided to increase the bounding box by $30$ pixels in both dimensions.
@@ -115,7 +127,7 @@ Notice that the actions are more diverse, in comparison to the Penn Action datas
 The puppet tool defines $15$ different joints.
 They are identical to the ones annotated in the Penn Action dataset, but additionally contain \textit{neck} and \textit{belly}.
 The same procedure was used to map the joints to the format provided by the MPII dataset.
-Also, the approach for computing ground truth bounding boxes, as well as preprocessing the \textit{fragments} and augmentations is identical to the one presented earlier.
+Also, the approach for computing ground truth bounding boxes, as well as preprocessing the \textit{fragments} and augmentations is identical to the one presented earlier. % TODO: augmentation changed
 
 \section{Evaluation Metrics}
 \subsection{PCK}
@@ -202,18 +214,28 @@ In summary, while the Soft-argmax function appears to be less accurate around th
 
 \subsection{Replication of Original Work}
 \label{sec:exp-replication}
-- first, pose estimation results on mpii were replicated
-- second, 2d har on penn action is replicated
+% TODO
+
+First, in order to recreate the work of \cite{luvizon_2d/3d_2018}, a pose estimator using the MPII dataset was trained.
+In addition to the authors work, the number of prediction blocks as well as the number of context heatmaps was varied to observe the effect on the overall accuracy of the model.
+Second, the 2D HAR experiments performed by the authors on the Penn Action datasets were recreated.
+If not otherwise mentioned, the experiment settings mentioned are taken from \cite{luvizon_2d/3d_2018} as well as the supplemental material provided by the authors.
 
 \subsubsection{Pose estimation}
+% TODO
 
-- ablation study
-    - vary the number of blocks
-    - vary the number of context heatmaps
-- explain testing procedure (also flipping)
-    - explain why not all experiments can be tested
-- parameters
-    - learning rate 1e-3 since authors use that
+In their work, the authors use $8$ prediction blocks in their pose estimator for evaluating the accuracy of the model on the MPII dataset.
+In this thesis, additional experiments using $2$ and $4$ prediction blocks were performed.
+In addition, we chose to evaluate all models without context heatmaps as well as with $2$ context heatmaps, since this what the authors chose for their experiment.
+
+The training data of the MPII dataset was split into a training and validation set for evaluating the models accuracy on unseen data in intervals of $1000$ iterations.
+An iteration is defined as the processing of one batch.
+The batch size varies, depending on the experiment, since the models are of different size and thus allow for bigger batch sizes when using smaller models.
+The batch size was set to $45, 30$ and $20$ for $2, 4$ and $8$ prediction blocks, respectively.
+A initial learning rate of $1^{-3}$ was used in accordance to the work of the authors.
+% TODO: Evaluate using learning rate scheduling or remove the "initial"
+As discussed before, for evaluating a model on the test dataset, the estimations need to be send to the Max Planck institute for evaluation.
+Because they limit the amount of submissions to $4$, it was not possible to evaluate each trained model on the test data, which is why it was decided to report the validation accuracy for comparison and only submit estimations from the best performing model.
 
 \begin{figure}[htb!]
     \centering
@@ -222,20 +244,67 @@ In summary, while the Soft-argmax function appears to be less accurate around th
     \label{fig:mpii_vals}
 \end{figure}
 
+As can be seen in \fref{fig:mpii_vals} as well as \tref{tab:mpii_results}, the higher the number of prediction blocks, the more accurate the model performs on the validation data.
+In addition, using context heatmaps appears to increase the accuracy as well, especially so when using $2$ prediction blocks.
+To test whether or not the increase in accuracy is statistically significant, randomization tests with a significance level of $0.05$ were performed.
+For the randomization test, $3000$ permutations were used.
+As can be seen in \tref{tab:mpii_results}, the only statistically significant increases in accuracy where observed when comparing $2$ and $4$ prediction block models without context heatmaps, as well as between $4$ and $8$ prediction block models when using $2$ context heatmaps.
+This suggests that, while keeping the number of prediction blocks constant, the use of context heatmaps does not influence the accuracy of the model in a significant way.
+% TODO: Talk more about results after rerunning experiments of figure something out
+
 \begin{table}[]
     \small
-    \begin{tabular}{|l|c|c|c|c|}
+    \centering
+    \begin{tabular}{|l|l|c|c|}
     \hline
-        & \textbf{nr\_blocks} & \textbf{nr\_context} & \textbf{PCKh @ 0.5 (validation)} & \textbf{PCKh @ 0.5 (test)} \\ \hline
-    \textbf{Own} & 2 & 0 & 80.96 &  \\
-    \textbf{} & 2 & 2 & 81.56 &  \\
-    \textbf{} & 4 & 0 & 83.22 &  \\
-    \textbf{} & 4 & 2 & 82.97 &  \\
-    \textbf{} & 8 & 0 & 84.67 &  \\
-    \textbf{} & 8 & 2 & 84.66 & tbd \\ \hline
-    \textbf{\cite{luvizon_2d/3d_2018}} & 8 & 2 & 89.00 & 91.2 \\ \hline
+        \textbf{nr\_blocks} & \textbf{nr\_context}  & \textbf{PCKh @ 0.5 (validation)} & \textbf{p-value} \\ \hline
+        \begin{tabular}{@{}c@{}} 2 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}}80.96 \\ 81.56  \end{tabular} & 0.54  \\ \hline
+    
+        \begin{tabular}{@{}c@{}} 4 \\ 4 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}}83.22 \\ 82.97  \end{tabular} & 0.78  \\ \hline
+
+        \begin{tabular}{@{}c@{}} 8 \\ 8 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}}84.67 \\ 84.66  \end{tabular} & 0.97  \\ \hline
+
+        \begin{tabular}{@{}c@{}} 2 \\ 4 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 0 \end{tabular} & \begin{tabular}{@{}c@{}} 80.96 \\ 83.22  \end{tabular} & \textbf{0.02}  \\ \hline
+
+        \begin{tabular}{@{}c@{}} 2 \\ 4 \end{tabular} & \begin{tabular}{@{}c@{}} 2 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 81.56 \\ 82.97  \end{tabular} & 0.16  \\ \hline
+
+        \begin{tabular}{@{}c@{}} 4 \\ 8 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 0 \end{tabular} & \begin{tabular}{@{}c@{}} 83.22 \\ 84.67  \end{tabular} & 0.14  \\ \hline
+
+        \begin{tabular}{@{}c@{}} 4 \\ 8 \end{tabular} & \begin{tabular}{@{}c@{}} 2 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 82.97 \\ 84.66  \end{tabular} & \textbf{0.081}  \\ \hline
+
     \end{tabular}
+    \caption{Different model configurations and their corresponding PCKh validation score. The $p$-values were computed using a randomization test. $p$-values below the significance level of $0.05$ are shown in bold.} % TODO
+    \label{tab:mpii_results}
 \end{table}
+
+Next, the best performing model ($8$ prediction blocks, $2$ context heatmaps) was used to estimate the pose on the test dataset and the results were submitted to the Max Planck institute.
+The results can be seen in \tref{tab:mpii_test}, in direct comparison to the values reported by the authors.
+As can be seen, our model performs significantly worse in comparison to the reported values.
+One possible reason is the way the test poses were estimated.
+The authors report that they averaged multiple estimations to compute a final estimation.
+More specifically, they first computed the pose for the regular test image.
+Afterwards, they flipped the image, computed the pose again, and flipped the pose again.
+Moreover, they report that they additionally displaced the bounding box used for cropping the image around the subject, after which they estimate the pose again.
+Because the authors do not mention how this was done in detail, and since the number of submissions allowed was limited, it was decided to not use displacement and merely averaging the estimated pose with and without mirroring the image.
+% TODO: Do small displacement once experiments are done and then say: I dont know exactly how they did it, which might explain why its worse
+
+% TODO: authors report 89 percent accuracy on val and 91.2 on test. Mention that, because it supports the theory that the way the test data was estimated is the reason for discrepancy
+
+% \begin{table}[]
+%     \small
+%     \begin{tabular}{|l|c|c|c|c|}
+%     \hline
+%         & \textbf{nr\_blocks} & \textbf{nr\_context} & \textbf{PCKh @ 0.5 (validation)} & \textbf{PCKh @ 0.5 (test)} \\ \hline
+%     \textbf{Own} & 2 & 0 & 80.96 &  \\
+%     \textbf{} & 2 & 2 & 81.56 &  \\
+%     \textbf{} & 4 & 0 & 83.22 &  \\
+%     \textbf{} & 4 & 2 & 82.97 &  \\
+%     \textbf{} & 8 & 0 & 84.67 &  \\
+%     \textbf{} & 8 & 2 & 84.66 & 81.2 \\ \hline
+%     \textbf{\cite{luvizon_2d/3d_2018}} & 8 & 2 & 89.00 & 91.2 \\ \hline
+%     \end{tabular}
+%     \label{tab:mpii_results}
+% \end{table}
 
 \begin{table}[]
     \centering
@@ -247,44 +316,45 @@ In summary, while the Soft-argmax function appears to be less accurate around th
         \cite{luvizon_2d/3d_2018}& 98.1  & 96.6  & 92.0  & 87.5  & 90.6  & 88.0 & 82.7 & 91.2  \\ \hline
     \end{tabular}}
     \caption{Our recreation in direct comparison to the original work by \cite{luvizon_2d/3d_2018}. Values represent PCKh using $\alpha = 0.5$.  } %TODO: New values and / or explain differences
-    \label{tab:softargmax_numeric_eval}
+    \label{tab:mpii_test}
 \end{table}
 
+% TODO: zwischenfazit
+
 \subsubsection{HAR using Penn Action dataset}
+% TODO
+In order to recreate the Human Activity Recognition results from \cite{luvizon_2d/3d_2018} on the Penn Action dataset, we first trained a pose estimator, which is later incorporated into the HAR model.
+The authors used a hybrid dataset for training, consisting of $75$ percent MPII and $25$ percent Penn Action training data.
+They do not, however, motivate this decision.
+The pose estimator contains $4$ prediction blocks, uses $2$ context heatmaps and was trained using a batch size of TODO and a learning rate of TODO.
+The validation accuracy scores can be seen in TODO.
+% TODO: talk about results
+% TODO: Test on Penn action using PCK @ 0.2 and @ 0.1
 
-- train pose estimator using 75 mpii 25 penn action, as did the authors
-- parameters
-    - augmentation of 75 augmented and 25 regular (for all experiments, if not mentioned otherwise)
-    - batch size 30
-    - learning rate 1e-3 because thats what the authors use in their MPII training. they do not talk about the learning rate used for this
-    - trained for 110000 iterations (batches)
-- PCK @ 0.2 used for evaluation 
-% TODO: Test using PCK @ 0.2 and @ 0.1
-% TODO: statistical significance testing
-% TODO: discuss gt_bb 
-
-- first find the point where validation plateaus
-- parameters
-    - batch size 12
-    - for X iterations, afterwards validation plateaus % TODO
-    - learning rate 2e-5 since this is what the authors used
-    - 4 blocks, 2 context in pose estimation
+Afterwards, the pretrained pose estimator was inserted into the HAR model.
+The model was trained using Penn Action data only.
+Also, the weights of the pose estimator were initially frozen.
+This was done in order to find the point in training where the validation accuracies plateaus, at which point the authors unfreeze the weights and lower the learning rate.
+In the experiment conducted in this thesis, the validation did not increase after the TODO iteration
+A learning rate of $2^{-5}$ was used, because this is what the authors suggested in their work.
 
 - Started finetuning at iteration X and reduce learning rate by X % TODO
 - Talk about results
-% TODO: statistical significance testing
+% TODO: statistical significance testing between my results and authors
+% TODO: zwischenfazit
 
 \subsection{Pose estimation on JHMDB dataset}
 
 - same ablation study as before
     - evaluate different number of blocks and context heatmaps
-        - talk about a general conclusion like \textit{the higher the number of blocks the better}
 - parameters
     - learning rate 1e-3, as discussed in MPII
 
+% TODO: talk about a general conclusion like \textit{the higher the number of blocks the better} when comparing MPII and JHMDB results
+
 % TODO: report the number of iterations used
 % TODO: do plot of all validation accuracy cuvers
-- general conclusion: is this dataset harder? why?
+% TODO: general conclusion: is this dataset harder? why?
 
 \subsection{HAR on JHMDB Dataset}
 %all kinds of substitutions like using gt bb etc.
