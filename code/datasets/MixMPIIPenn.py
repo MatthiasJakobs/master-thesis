@@ -12,7 +12,7 @@ import glob
 import random
 
 class MixMPIIPenn(BaseDataset):
-    def __init__(self, transform=None, train=True, val=False, augmentation_amount=1, use_gt_bb=False):
+    def __init__(self, transform=None, train=True, val=False, use_gt_bb=False):
 
         # Decision: Always using random parameters (if not val) and saved tensors
 
@@ -25,8 +25,8 @@ class MixMPIIPenn(BaseDataset):
         else:
             use_random = True
 
-        self.pennaction = PennActionDataset("/data/mjakobs/data/pennaction/", use_random_parameters=use_random, train=train, val=val, use_gt_bb=True, use_saved_tensors=True, augmentation_amount=augmentation_amount)
-        self.mpii = MPIIDataset("/data/mjakobs/data/mpii/", use_random_parameters=use_random, use_saved_tensors=True, train=train, val=val, augmentation_amount=augmentation_amount)
+        self.pennaction = PennActionDataset("/data/mjakobs/data/pennaction/", use_random_parameters=use_random, train=train, val=val, use_gt_bb=True, use_saved_tensors=True, augmentation_amount=6)
+        self.mpii = MPIIDataset("/data/mjakobs/data/mpii/", use_random_parameters=use_random, use_saved_tensors=True, train=train, val=val, augmentation_amount=3)
 
         self.padding_amount = 8
 
