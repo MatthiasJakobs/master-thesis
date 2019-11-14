@@ -205,7 +205,7 @@ class HAR_Testing_Experiment(ExperimentBase):
         super().__init__(conf)
         self.pretrained_model = pretrained_model
 
-    def preparation(self, load_model=True):
+    def preparation(self, load_model=True, nr_aug=6):
         if "fine_tune" in self.conf:
             self.fine_tune = self.conf["fine_tune"]
         else:
@@ -235,10 +235,11 @@ class HAR_Testing_Experiment(ExperimentBase):
         else:
             self.model = DeepHar(num_actions=21, use_gt=False, nr_context=self.conf["nr_context"], use_timedistributed=self.use_timedistributed).to(self.device)
 
-        self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False, use_random_parameters=True, augmentation_amount=6, use_gt_bb=self.use_gt_bb)
+        self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False, use_random_parameters=True, augmentation_amount=nr_aug, use_gt_bb=self.use_gt_bb)
         self.ds_val = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=True, use_gt_bb=self.use_gt_bb)
         self.ds_test = JHMDBDataset("/data/mjakobs/data/jhmdb/", train=False)
 
+        print("Number of augmentations", str(nr_aug))
         train_indices, val_indices, test_indices = self.limit_dataset(include_test=True)
 
         train_sampler = SubsetRandomSampler(train_indices)
@@ -565,7 +566,7 @@ class HAR_PennAction(HAR_Testing_Experiment):
 class HAR_E2E(HAR_Testing_Experiment):
 
     def preparation(self):
-        super().preparation(load_model=False)
+        super().preparation(load_model=False, nr_aug=10)
 
     def train(self, train_objects):
         self.model.train()

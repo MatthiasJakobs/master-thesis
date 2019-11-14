@@ -234,7 +234,7 @@ The batch size varies, depending on the experiment, since the models are of diff
 The batch size was set to $45, 30$ and $20$ for $2, 4$ and $8$ prediction blocks, respectively.
 A initial learning rate of $1^{-3}$ was used in accordance to the work of the authors.
 % TODO: Evaluate using learning rate scheduling or remove the "initial"
-As discussed before, for evaluating a model on the test dataset, the estimations need to be send to the Max Planck institute for evaluation.
+As discussed before, for evaluating a model on the test dataset, the estimations need to be send to the \textit{Max Planck Institute for Intelligent Systems} for evaluation.
 Because they limit the amount of submissions to $4$, it was not possible to evaluate each trained model on the test data, which is why it was decided to report the validation accuracy for comparison and only submit estimations from the best performing model.
 
 \begin{figure}[htb!]
@@ -277,7 +277,7 @@ This suggests that, while keeping the number of prediction blocks constant, the 
     \label{tab:mpii_results}
 \end{table}
 
-Next, the best performing model ($8$ prediction blocks, $2$ context heatmaps) was used to estimate the pose on the test dataset and the results were submitted to the Max Planck institute.
+Next, the best performing model ($8$ prediction blocks, $2$ context heatmaps) was used to estimate the pose on the test dataset and the results were submitted to the \textit{Max Planck Institute for Intelligent Systems}.
 The results can be seen in \tref{tab:mpii_test}, in direct comparison to the values reported by the authors.
 As can be seen, our model performs significantly worse in comparison to the reported values.
 One possible reason is the way the test poses were estimated.
