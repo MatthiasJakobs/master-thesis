@@ -133,8 +133,8 @@ Finally, convolutional neural networks are discussed, which are very commonly us
 
 \subsection{Artificial Neural Networks}
 Artificial Neural Networks are unidirected graphs where \textit{neurons} are used as vertices.
-A neuron is a compute unit which performs an action upon its inputs and propagates its output along the output edge.
-Each neuron has a set of internal parameters which determine how its output is computed.
+A neuron is a compute unit, which performs an action upon its inputs and propagates its output along the output edge.
+Each neuron has a set of internal parameters that determine how its output is computed.
 In the following sections, two approaches for how a neuron is defined are presented, as well as mechanisms for determining their internal parameters automatically.
 Also, the approach of constructing a neural network from a collection of neurons to compute more complex functions will be discussed.
 
@@ -208,7 +208,7 @@ When defining the number of layers a network has, the input layer is typically n
 This means that the example network in \fref{fig:simple-neural-network} would be considered a three layer network.
 
 By using a two-layer neural network it is possible to model any boolean function $f: \mathbb{B}^n \to \mathbb{B}$.
-The first layer consists of neurons which model conjunctions over the inputs just as presented above.
+The first layer consists of neurons that model conjunctions over the inputs just as presented above.
 The second layer is made up of a single neuron, which is configured to compute \textbf{boolean OR}.
 By making the outpus of the first layer the input of the disjunction in the second layer any boolean function $f$ can be computed because any such function can be represented in disjunctive normal form.
 
@@ -257,7 +257,7 @@ While MCP's were designed to model logical functions like \textbf{boolean OR} or
 Perceptrons learn from a \textit{training set} $\bm{M} = \bm{P} \cup \bm{N}$ comprised of \textit{positive examples} and \textit{negative examples}.
 A positive example $\bm{p} \in \bm{P}$ is defined as an input for which the Perceptron should output $1$.
 Analogously, the Perceptron should output $0$ for each negative example.
-Learning in the context of Perceptrons then means determining a parameter vector $\bm{w}$ which satisfies the following inequalities for all positive and negative examples:
+Learning in the context of Perceptrons then means determining a parameter vector $\bm{w}$, which satisfies the following inequalities for all positive and negative examples:
 
 \begin{equation}
     \begin{split}
@@ -364,7 +364,7 @@ Until now, the definition of a single Perceptron was the following:
     \end{split}
 \end{equation}
 
-where $\psi$ is called the \textit{integration function}, which computes the excitation and $\phi$ the \textit{activation function}, which computes the activation of the neuron.
+where $\psi$ is called the \textit{integration function}, which computes the excitation and $\phi$ the \textit{activation function} that computes the activation of the neuron.
 
 This results in a non-differentiable activation function since the thresholding approach is not continuous, which means that it cannot be differentiable.
 A popular choice for a differentiable activation function is the \textit{sigmoid activation function} $S(x)$ given by:
@@ -660,7 +660,7 @@ See \fref{fig:sobel_lenna} for a visualization.
 \end{equation}
 
 \textit{Convolutional layers} generalize the approach of convolving input feature maps with kernels by using kernels whose parameters are learned through backpropagation.
-This means that the kernels do not need to be designed manually because the network can learn which kernels are needed, depending on the task.
+This means that the kernels do not need to be designed manually, because the network can learn which kernels are needed, depending on the task.
 Instead of computing the excitation for each $(i,j)$ position, a \textit{stride} can be defined.
 A stride of $x$ indicates that the positions to apply the kernel are incremented by $x$, instead of $1$.
 
