@@ -1,12 +1,13 @@
 \chapter{Fundamentals}
 After introducing and motivating the problems this thesis focuses on in the previous chapter, this chapter gives an overview over the fundamentals of Human Action Recognition, Pose estimation as well as Neural Networks in general.
 
-First, the fundamental concepts of Human Action recognition are discussed in Section X.X, specifically in the context of video data.
-Afterwards, $2D$ pose estimation for still images is introduced in Section Y.Y.
-Since many methods discussed in this thesis, including the approach by \cite{luvizon_2d/3d_2018}, use Neural networks, this thesis also introduces them, beginning with \textit{Artificial Neural networks} and how they are trained.
+First, the fundamental concepts of Human Action recognition are discussed in Section \ref{sec:fund_har}, specifically in the context of video data.
+Afterwards, $2D$ pose estimation for still images is introduced in Section \ref{sec:fund_poseestimation}.
+Since many methods discussed in this thesis, including the approach by \cite{luvizon_2d/3d_2018}, use Neural networks, this thesis also introduces them in Section \ref{sec:neural_networks}, beginning with \textit{Artificial Neural networks} and how they are trained.
 Afterwards, the use of \textit{Convolutional Neural networks}, often used in image processing, is motivated and explained.
 
 \section{Human Action Recognition}
+\label{sec:fund_har}
 In \textit{Human Action Recognition}, often referred to simply by its acronym \textit{HAR}, the task is to attach a label of an \textit{action} to a signal, e.g. an image, video or sensor meassurements.
 Thus, HAR is a \textit{classification} problem where the classes are human actions.
 It is important to understand that HAR recognizes the action after it is completed, as opposed to \textit{action prediction}, which tries to predict the action while it is still happening \cite{kong_human_2018}.
@@ -65,7 +66,7 @@ No single label is able to fully describe the human actions present in the image
 Thus, a sizeable portion of literature focuses on single human, single action problems.
 
 \section{Pose Estimation}
-
+\label{sec:fund_poseestimation}
 \begin{figure}[htb!]
     \centering
     \includegraphics[width=0.9\textwidth]{tree-pose.png}
