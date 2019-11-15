@@ -1159,29 +1159,48 @@ class Pose_Mixed(ExperimentBase):
             for i in range(len(test_ds)):
                 print(i)
                 test_data = test_ds[i]
-                test_images = test_data["normalized_frames"].to(self.device)
-                test_poses = test_data["normalized_poses"].to(self.device)
+                start = 0
+                nr_frames = len(test_data["normalized_frames"])
+                stop = min(start + 20, nr_frames)
+                need_stop = False
+                while not need_stop:
+                    test_images = test_data["normalized_frames"][start:stop].to(self.device)
+                    test_poses = test_data["normalized_poses"][start:stop].to(self.device)
+                    trans_matrices = test_data["trans_matrices"][start:stop].to(self.device)
+                    original_window_sizes = test_data["original_window_size"][start:stop]
 
-                trans_matrices = test_data["trans_matrices"].to(self.device)
+                    _, predictions, _, _ = self.model(test_images)
+                    del test_images
+                    if torch.cuda.is_available():
+                        torch.cuda.empty_cache()
 
-                _, predictions, _, _ = self.model(test_images)
-                del test_images
-                if torch.cuda.is_available():
-                    torch.cuda.empty_cache()
 
-                predictions = predictions.squeeze(dim=0)
+                    predictions = predictions.squeeze(dim=0)
 
-                # get distance meassures
-                original_window_sizes = test_data["original_window_size"]
-                distance_meassures = torch.IntTensor(len(original_window_sizes))
+                    # get distance meassures
+                    distance_meassures = torch.IntTensor(len(original_window_sizes))
 
-                for i in range(len(distance_meassures)):
-                    distance = original_window_sizes[i][0]
-                    distance_meassures[i] = original_window_sizes[i][0]
+                    for i in range(len(distance_meassures)):
+                        distance = original_window_sizes[i][0]
+                        distance_meassures[i] = original_window_sizes[i][0]
 
-                pck_bb_02.append(eval_pck_batch(predictions[:, :, 0:2], test_poses[:, :, 0:2], trans_matrices, distance_meassures, threshold=0.2))
-                pck_bb_01.append(eval_pck_batch(predictions[:, :, 0:2], test_poses[:, :, 0:2], trans_matrices, distance_meassures, threshold=0.1))
+                    pck_bb_02.extend(eval_pck_batch(predictions[:, :, 0:2], test_poses[:, :, 0:2], trans_matrices, distance_meassures, threshold=0.2))
+                    pck_bb_01.extend(eval_pck_batch(predictions[:, :, 0:2], test_poses[:, :, 0:2], trans_matrices, distance_meassures, threshold=0.1))
 
+                    if stop == nr_frames:
+                        need_stop = True
+                    else:
+                        start = stop
+                        stop = min(stop + 20, nr_frames)
+
+                    del predictions
+                    del distance_meassures
+                    del test_poses
+                    del trans_matrices
+                    if torch.cuda.is_available():
+                        torch.cuda.empty_cache()
+
+        print("len", str(len(pck_bb_02)))
         mean_bb_02 = torch.mean(torch.FloatTensor(pck_bb_02)).item()
         mean_bb_01 = torch.mean(torch.FloatTensor(pck_bb_01)).item()
         return mean_bb_02, mean_bb_01
