@@ -12,6 +12,7 @@ import torch.utils.data as data
 import torch.optim as optim
 import torch.nn as nn
 from torch.utils.data.sampler import SubsetRandomSampler
+from torchvision.datasets import ImageNet
 
 import csv
 import numpy as np
@@ -29,6 +30,7 @@ from datasets.MixMPIIPenn import MixMPIIPenn
 from datasets.PennActionDataset import PennActionDataset
 from datasets.PennActionFragmentsDataset import PennActionFragmentsDataset
 from deephar.models import DeepHar, Mpii_1, Mpii_2, Mpii_4, Mpii_8, TimeDistributedPoseEstimation
+from deephar.blocks import Stem
 from deephar.utils import get_valid_joints, get_bbox_from_pose, transform_2d_point, transform_pose
 from deephar.measures import elastic_net_loss_paper, categorical_cross_entropy
 from deephar.evaluation import *
@@ -1333,3 +1335,41 @@ class MPIIExperiment(ExperimentBase):
 
             self.val_writer.write([self.iteration, mean_05, mean_02])
             return mean_05
+
+class StemImageNet(ExperimentBase):
+
+    def preparation(self):
+
+        self.ds_train = ImageNet("/vol/corpora/vision/ILSVRC2012", split="train")
+        self.ds_val = ImageNet("/vol/corpora/vision/ILSVRC2012", split="val")
+
+        self.model = Stem()
+
+        #train_indices, val_indices = self.limit_dataset(include_test=False)
+        train_indices = list(range(len(ds_train)))
+        val_indices = list(range(len(ds_val)))
+        
+        train_sampler = SubsetRandomSampler(train_indices)
+        val_sampler = SubsetRandomSampler(val_indices)
+
+        self.train_loader = data.DataLoader(
+            self.ds_train,
+            batch_size=self.conf["batch_size"],
+            sampler=train_sampler
+        )
+
+        self.val_loader = data.DataLoader(
+            self.ds_val,
+            batch_size=self.conf["batch_size"],
+            sampler=val_sampler
+        )
+
+        self.optimizer = optim.RMSprop(self.model.parameters(), lr=self.conf["learning_rate"])
+
+        self.train_writer.write(["iteration", "loss"])
+        self.val_writer.write(["iteration", "pckh_0.5", "pckh_0.2"])
+
+    def train(self, train_objects):
+        print(train_objects)
+    def evaluate(self):
+        print('not implemented')
