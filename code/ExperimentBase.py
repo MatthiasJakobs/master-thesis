@@ -12,7 +12,6 @@ import torch.utils.data as data
 import torch.optim as optim
 import torch.nn as nn
 from torch.utils.data.sampler import SubsetRandomSampler
-from torchvision.datasets import ImageNet
 
 import csv
 import numpy as np
