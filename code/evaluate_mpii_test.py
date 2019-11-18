@@ -54,8 +54,7 @@ def main():
     model = Mpii_8(num_context=2).to(device)
     model.load_state_dict(torch.load("mpii_8_trained", map_location=device))
 
-
-    use_displacement = False
+    use_displacement = True
 
     output_file_name = "mpii_test.csv"
 
@@ -175,6 +174,7 @@ def main():
 
                     new_center_x = center_x + negative_pixel_displacement
                     new_center_y = center_y + negative_pixel_displacement
+                    print(new_center_x, new_center_y, old_scale, full_image_path)
                     image, trans_matrix = preprocess(old_scale, new_center_x, new_center_y, full_image_path)
                     trans_matrix = torch.FloatTensor(trans_matrix)
 
