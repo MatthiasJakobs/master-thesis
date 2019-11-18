@@ -59,7 +59,7 @@ The authors further prove that the Soft-argmax function is differentiable by pro
 \end{equation}
 
 Further, the authors argue that such a method for regressing $x$ and $y$ coordinates is more accurate and requires fewer training weights than directly regressing them using, for example, a fully-connected layer \cite{luvizon_human_2017}.
-As proof, they compare their methods to other state-of-the-art methods which directly regress the coordinates, and observe that their approach consistently outperforms these approaches on the MPII benchmark.
+As proof, they compare their methods to other state-of-the-art methods that directly regress the coordinates, and observe that their approach consistently outperforms these approaches on the MPII benchmark.
 Specifically, when comparing to the previously best approach for regressing pose by \cite{sun_compositional_2017}, the authors observe an overall increase in PCKh accuracy of $5.2$ percentage points from $86.4$ to $91.2$ percent.
 
 \subsection{Architecture}
@@ -91,7 +91,7 @@ A \textit{depthwise separable convolution} \cite{sifre_rigid-motion_2014} \cite{
 Consider an input matrix (like an RGB image) to a convolutional layer of size $n \times n \times p$, where $p$ indicates the number of channels.
 Without loss of generality, a square input as well as a square kernel size is assumed.
 If a regular convolutional layer is used, and the desired number of output channels is given by $m$ with $m \gg p$, then one approach is to use $m$ kernels in the convolutional layer of size $a \times a \times p$.
-This results in $a^2 * p * m$ parameters of the convolutional layer which need to be learned.
+This results in $a^2 * p * m$ parameters of the convolutional layer that need to be learned.
 In a depthwise separable convolutional layer, two convolutional layers are used after one another, referred to as the \textit{depthwise convolutional layer} and \textit{pointwise convolutional layer}.
 The \textit{depthwise convolutional layer} uses $p$ filters of size $a \times a \times 1$ to process the input matrix one channel at a time.
 Afterwards, the \textit{pointwise convolutional layer} uses $m$ filters of size $1 \times 1 \times p$.
@@ -275,6 +275,6 @@ Thus, we propose that, by using an end-to-end learning approach, both pose estim
 
 Second, recent work utilize information gathered by \textit{Inertial Measurement Units (IMUs)} for action recognition in a warehouse setting \cite{reining_towards_2018}.
 IMUs are physical devices attached to a subjects body, containing accelerometers, gyroscopes and magnetometers.
-These sensors measure time-series data which are then used for action recognition.
+These sensors measure time-series data, which are then used for action recognition.
 We propose to change the encoding of the estimated pose into a similar, time-series representation, so that it can be used with IMU data in future work.
 In addition, since the authors did not evaluate different methods for encoding video pose information, this will lead to more insight into how such an encoding effects the overall performance of the network.

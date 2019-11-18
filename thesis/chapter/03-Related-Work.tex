@@ -1,22 +1,29 @@
 \chapter{Related Work}
 
-\section{Pose Estimation}
-% first: single images only, no video
+In the previous chapter, the fundamentals of Human Action Recognition, Pose estimation, as well as Artificial and Convolutional Neural networks were introduced.
+This chapter discusses current methods for both HAR and Pose estimation found in the literature.
+Current and historical approaches to estimating pose are presented in Section \ref{sec:rw_poseestimation}.
+These include shallow approaches based on the \textit{Pictoral Structure Framework}, as well as deep learning based approaches.
+In Section \ref{sec:har_video}, both shallow methods as well as methods using deep learning are discussed for HAR on video datasets.
+This thesis focuses on methods incorporating pose information in the Human Activity Recognition decision process as features, since this is similar to the approach presented in \cite{luvizon_2d/3d_2018}.
 
-While there are many different approaches for pose estimation, one of the most widely used in the literature until recently was the \textit{Pictoral Structure Framework}.
-In the following section, the foundation of this framework will be explained, along with some additions to it.
-Afterwards, deep learning based methods became dominant in the field of pose estimation which is why they will be explained in the subsequent section.
+\section{Pose Estimation}
+\label{sec:rw_poseestimation}
+
+While there are many different approaches for pose estimation, one of the most widely used in the literature was the \textit{Pictoral Structure Framework}.
+In the following section, the foundation of this framework will be explained, along with extensions to the model from .
+Afterwards, deep learning based methods became dominant in the field of pose estimation, which is why they will be explained in the subsequent section.
 
 \subsection{Pictoral Structure Framework}
 In 1973, \cite{fischler_representation_1973} presented a general framework for object recognition problems, including pose estimation.
-The so called \textit{Pictoral Structure Framework} is comprised of parts, connected by \textit{spring-like connections}.
+The so called \textit{Pictoral Structure Framework} is comprised of parts, that are connected by \textit{spring-like connections}.
 In the context of pose estimation, they used the term \textit{part} to be synonymous with \textit{limb}.
 A part is defined by a collection of parameters $l_i$ which could include center coordinates and rotation.
 The connection between two parts is modelled using a mechanism inspired by physical springs.
-Similar to a string, such a connection can be relaxed or be under tension.
+Such connections can be relaxed or be under tension.
 This expresses how realistic a certain connection is, based on the amount of tension required to connect two parts.
 
-The graph that is created that way then models the desired object, for example the pose or facial features of a human, and is also referred to as a \textit{deformable structure}.
+The graph that is created from connected parts models the desired object, for example the pose or facial features of a human, and it is also referred to as a \textit{deformable structure}.
 In the context of pose estimation, limbs are modelled as parts, connected together at the joints.
 
 The output of the alorithm is expressed as $L = (l_0, l_1, \dots, l_n)$, called the \textit{configuration} of all parts $l_i$.
@@ -27,35 +34,37 @@ To compute the optimal configuration, the authors proposed the following minimiz
     L^* = \argmin_L \left(\sum_{i=0}^n m_i(l_i) + \sum_{(v_i, v_j) \in E} d_{ij}(l_i, l_j)\right).
 \end{equation}
 
-$m_i$ is a function evaluating the placement of part $i$ at configuration $l_i$.
+In \eref{eq:energy-minimization}, $m_i$ is a function evaluating the placement of part $i$ at configuration $l_i$.
 This is also often referred to as the \textit{unary} term.
 $d_{ij}$ measures the mismatch when parts $i$ and $j$, which are connected, are placed according to $l_i$ and $l_j$ respectively.
 
 Minimizing the energy function is computationally expensive since the space of possible positions for each part spans the entire image.
 % ------ GENERAL OBJECT RECOGNITION FRAMEWORK ----------
-According to \cite{felzenszwalb_pictorial_2005}, there are methods using heuristics to make the computation more efficient but they do not find optimal solutions.
+According to \cite{felzenszwalb_pictorial_2005}, there are methods using heuristics to make the computation more efficient, but they do not find optimal solutions.
 They proposed to transform the problem into a statstical framework and solve it by estimating a posterior distribution.
 
 One advantage of this statistical model is that the parameters can then be estimated using training examples, similar to the principles of learning presented in \sref{sec:neural_networks}.
-Also, it is trivial to get multiple solutions to the minimization problem by sampling the posterior distribution as opposed to a single solution with the energy minimization approach.
+Also, it is possible to get multiple solutions to the minimization problem by sampling the posterior distribution as opposed to a single solution with the energy minimization approach.
 
 The authors model the problem as follows.
 Let $p(L \mid I, \theta)$ be the desired posterior distribution, where $\theta$ is a set of model parameters and $I$ is the image.
 When applying Bayes' formula, one can express the posterior as:
 
+% TODO: Ask fernando
 \begin{equation}
     p(L \mid I, \theta) \propto p(I \mid L, \theta) p(L \mid \theta).
 \end{equation}
 
 The likelihood $p(I \mid L, \theta)$ is approximated as $\prod_{i=1}^n p(I \mid l_i, \theta_i)$.
-This approximation, however, is bad if recognized parts overlap, which is often the case when detecting human limbs.
-This problem is often referred to as \textit{double counting} and is one of the most prominent error of Pictoral Structure based models.
-The authors tackle this problem by sampling multiple times from the posterior and evaluating them using a separate measurement.
+This approximation, however, is bad if recognized parts occlude each other \cite{felzenszwalb_pictorial_2005}.
+This problem is often referred to as \textit{double counting} and it is one of the most prominent error of Pictoral Structure based models.
+The authors tackle this problem by sampling multiple times from the posterior, and by evaluating them using a separate measurement.
 
-To approximate the prior distribution $p(L \mid \theta)$ the authors utilize the joint distribution of a tree structured Markov random field.
-This tree is also referred to as the \textit{kinematic pose prior} since it encodes prior information of how limbs should be connected together.
-The vertices are modeled by $l_i$ and the edges show connections between the different parts. 
-They set the denominator to $1$ because they argue that it can be constant if only relative position between parts are of importance:
+To approximate the prior distribution $p(L \mid \theta)$, the authors utilize the joint distribution of a tree structured Markov-random field.
+This tree is also referred to as the \textit{kinematic pose prior}, since it encodes prior information of how limbs should be connected together.
+The vertices are modeled by $l_i$ and the edges show connections among the different parts. 
+Since the denominator incorporated the absolute position for each part, and the authors are only interested in modeling the relative position between parts, they argue that the denominator can be constant.
+Thus, for simplicity, they set the denominator to one:
 
 \begin{equation}
     \begin{split}
@@ -76,7 +85,7 @@ This then leads to the following approximation of the posterior distribution:
     \end{split} 
 \end{equation}
 
-To show the equivalence to the original energy minimization problem, the authors take the formula presented in \eref{eq:pictoral-posterior-general} and apply the logarithmic function. Then, they negate the result.
+To show the equivalence to the original energy minimization problem, the authors take the formula presented in \eref{eq:pictoral-posterior-general}, and they apply the logarithmic function. Then, they negate the result.
 This then leads to the following formulation:
 
 \begin{equation}
@@ -108,7 +117,7 @@ Each part configuration $l_i = (x_i, y_i, s_i , \varphi_i)$ contains the $x$ and
 In addition, $s_i \in [0,1]$ defines the length of the rectangle and $\varphi_i$ its rotation.
 The width is fixed.
 
-To model $p(I \mid l_i, \theta_i)$ they use the formula in \eref{eq:felz-unary} which utilizes $\theta_i = (q_1, q_2)$.
+To model $p(I \mid l_i, \theta_i)$, they use the formula in \eref{eq:felz-unary}, which utilizes $\theta_i = (q_1, q_2)$.
 $q_1$ is the probability of pixel inside $l_i$ being a foreground pixel whereas $q_2$ is the probability of pixels closely around $l_i$ being foreground pixels.
 The area around $l_1$ is referred to as $area_2$ whereas the area of $l_i$ is referred to as $area_1$.
 $count_i$ referres to the number of foreground pixels in $area_i$ and $t$ is the total number of pixels in the image.
@@ -123,11 +132,11 @@ $count_i$ referres to the number of foreground pixels in $area_i$ and $t$ is the
 \end{equation}
 
 Also, they smooth the distribution to prevent peaks by using the principle of annealing with a constant factor $T$ \eref{eq:smoothed}.
-This is important because a distribution with strong peaks is more likely to return similar results when sampled from.
+This is important because a distribution with strong peaks is more likely to return results around these pearks when sampled from.
 As discussed earlier, sampling is needed because of the approximation of the unary term the authors used and its problem with overlapping limbs.
-A distribution with too strong peaks would not allow for sufficiently different pose samples.
+A distribution with strong peaks would not allow for sufficiently diverse pose samples.
 
-$\theta_i$ is then estimated using mean values from annotated training data points while $T$ is set to $10$.
+$\theta_i$ is then estimated using the mean values from annotated training data points, and the authors set $T$ to to $10$ for smooting the peaks:
 
 \begin{equation}
     \label{eq:smoothed}
@@ -176,7 +185,7 @@ where $\hat{x}_i$ and $\hat{y}_i$ are transformations of the joint position into
 
 $\hat{x}_j$ and $\hat{y}_j$ are computed analogously.
 $R_{\varphi_i}$ is a matrix which rotates around the origin for $\varphi_i$ radiants.
-Additionaly, the authors define that the difference between $s_i$ and $s_j$ should be close to zero as well.
+Additionaly, the authors define that the difference between $s_i$ and $s_j$ should be close to zero.
 Again, this is modelled using a Gaussian distribution:
 
 \begin{equation}
@@ -190,8 +199,9 @@ They use a von Mises distribution, given by
     M(\theta, \mu, k) \propto \exp (k \cdot \cos (\theta - \mu)).
 \end{equation}
 
-A von Mises distribution can be thought of as a normal distribution around a circle, which is why the authors use it for periodic input like gradients.
-Using $\mu = \varphi_{ij}$ they specify the constrained described earlier.
+A von Mises distribution, also referred to as a circular normal distribution, can be thought of as a normal distribution around a circle.
+This means that the support of the distribution is $x \in [-\pi, \pi]$ which is why the authors use it for periodic input like angles.
+Using $\mu = \varphi_{ij}$, they specify the constrained described earlier.
 The parameter $k$ determines how strong the peak at $\varphi_{ij}$ should be or, in other words, how constrained the joints should be.
 
 In summary, each spatial relation is expressed in the following way:
@@ -207,7 +217,7 @@ In summary, each spatial relation is expressed in the following way:
     \end{split}    
 \end{equation}
 
-The prior parameters $c_{ij}$ are then given by $c_{ij} = (x_{ij}, x_{ji}, y_{ij}, y_{ji}, \sigma_x, \sigma_y, \sigma_s, \varphi_{ij}, k)$ and are estimated using maximum likelihood estimation.
+The prior parameters $c_{ij}$ are then given by $c_{ij} = (x_{ij}, x_{ji}, y_{ij}, y_{ji}, \sigma_x, \sigma_y, \sigma_s, \varphi_{ij}, k)$ and they are estimated using maximum the maximum likelihood estimation.
 
 % ----- Short evaluation
 The authors merely provide example images instead of a quantitative analysis.
@@ -227,12 +237,12 @@ Some example images can be seen in \fref{fig:pictoral-examples}
 \subsubsection{Approaches for parts detection}
 \label{sec:pose-andriluka}
 Over the years, many approaches build on top of \cite{felzenszwalb_pictorial_2005} by improvig parts of the framework.
-One approach, where the parts detector was improved upon, is presented in the following section.
+One approach, where the parts detector was improved, is presented in the following section.
 
 In \cite{andriluka_pictorial_2009}, the authors propose a different appearance model $p(I \mid L, \theta)$, which is based on individual parts detectors.
 \cite{felzenszwalb_pictorial_2005} used background separation to extract the silhouette of the subject from the background.
 Then, the objective was to configure the parts in such way that the covered foreground area was maximized (see \eref{eq:felz-unary}).
-This resulted in a large search space since all different rotations and scalings for each part need to be placed inside the foreground area in order to evaluate the overall fit.
+This resulted in a large search space since all different rotations and scalings for each part need to be placed inside the foreground area to evaluate the overall fit.
 The authors in \cite{andriluka_pictorial_2009} limit the search space by using a detected \textit{parts evidence map} $d_i$ for each part $i$.
 An example evidence map can be seen in \fref{fig:parts-evidence}.
 These evidence maps are the result of individual parts detectors trained on annotated images such as presented in \fref{fig:parts-annot}.
@@ -285,7 +295,7 @@ $\bm{x}(l_i)$ is the feature vector for part $l_i$ whereas $\epsilon_0$ is set t
 The authors claim that this pseudo-probability achieves good results in practice.
 
 % Appearance model Pictoral Structure Framework
-Lastly, the authors make two assumptions in order to embed the parts detectors into the Pictoral Structute Framework.
+Lastly, the authors make two assumptions to embed the parts detectors into the Pictoral Structute Framework.
 First, different part evidence maps $d_i$ are independent from each other given $L$.
 Second, $d_i$ only depends on $l_i$ on not on other parts configurations.
 This leads to the following likelihood
@@ -302,7 +312,7 @@ The authors use two datasets to evaluate their model.
 The \textit{Buffy} dataset provides annotated upper-body poses from $3$ episodes of the TV series \textit{Buffy The Vampire Slayer} \cite{ferrari_progressive_2008}.
 Also, for evaluating full-body poses, they used the \textit{Iterative Image Parsing} dataset provided by \cite{ramanan_learning_2007}
 
-As an evaluation metrc, the authors use \textit{Percentage of Correct Parts (PCP)}, proposed by \cite{ferrari_progressive_2008}.
+As an evaluation metric, the authors use the \textit{Percentage of Correct Parts (PCP)}, proposed by \cite{ferrari_progressive_2008}.
 For each annotated body part, PCP is calculated by first computing the length of the ground truth body part $l_{gt}$.
 Then, a threshold value $t_{gt} = 0.5 \cdot l_{gt}$ is defined as half the length of the segment.
 If both endpoints of a prediction fall within $t_{gt}$ radius of their ground truth annotation the part is considered detected.
@@ -312,7 +322,7 @@ In contrast to \cite{ferrari_progressive_2008}, however, the authors also comput
 Using the pose dataset of \cite{ramanan_learning_2007} for training the pose priors and part detectors, the authors achieve an overall accuracy of $71.3\%$.
 They notice that, while torso, head and upper arm accuracy is fairly high (from $78\%$ for upper arm to $95.9\%$ for head), forearm accuracy ($40\%$) was significantly lower.
 They argue that is is due to the challenging nature of the dataset.
-Also, forearm parts are smaller, making it more difficult for parts to be considered correct.
+Also, forearm parts are smaller, which means it is more difficult for these parts to be considered correct.
 The authors also tried exclusively using frames from the Buffy dataset, which were not used for testing, to learn the pose priors.
 This lead to a slight increase in accuracy ($73.5\%$) in comparison to generic priors, mainly by increasing the forearm accuracy scores.
 This illustrates that generic pose priors can achieve comparable results to domain-specific priors.
@@ -327,20 +337,21 @@ The accuracy of the authors is higher than \cite{ramanan_learning_2007}, even wh
 \label{sec:yangramanan}
 Another approach building on the Pictoral Structure Framework was proposed by \cite{yang_articulated_2011}.
 
-The proposed model differs from the origninal framework by using parts which are not rotated or forshortened.
-To gain more flexibility, each part $i$ has a type $t_i$, which can encode arbitrary information, since the model the authors propose is general.
+The proposed model differs from the origninal framework by using parts that are not rotated or forshortened.
+To gain more flexibility, each part $i$ has a type $t_i$, which can encode arbitrary information.
 One possibility, which is also what the authors used in their experiments, is to let the types correspond to different orientations.
 For example, two types for the part \textit{head} could be \textit{upright} or \textit{tilted to the left}.
-In addition, in this model, it is possible to constraint two adjacent parts' types as will be seen later.
+In addition, in this model, it is possible to constraint two adjacent parts' types, as it will be seen later.
 
 % General overview over differences
 First, the authors change the definition of a part $i$ and its parametrization $l_i$ from the one presented in \cite{felzenszwalb_pictorial_2005}.
-A part is defined as a joint instead of a limb because the datasets used annotated joint positions as opposed to parts positions.
+A part is defined as a joint instead of a limb, because the datasets used annotated joint positions as opposed to parts positions.
 Thus, the parametrization changes to $l_i = (x_i, y_i)$ since no rotation and forshortening occurs.
 
 % Learning
 %% Generate annotation
-The datasets the authors used do not provide annotations for type labels, which is why these were computed beforehand using the following steps.
+The Buffy and Iterative Image Parsing datasets, which the authors used for evaluation, do not provide annotations for type labels.
+Thus, they decided to compute these beforehand using the following steps.
 First, the authors define a graph where the vertices correspond to joints.
 The edges of the graph are defined in a way that model a human skeleton.
 See \fref{fig:yang-tree} for an example graph.
@@ -358,7 +369,7 @@ Necks tend to be below heads (when considering upright people).
 The authors use all relative positions found by iterating the dataset and cluster the relative positions into $T=4$ clusters.
 The cluster that the part $i$ is put in then defines the type label $t_i$.
 See \fref{fig:yang-clustering} for an example.
-This then results in a fully annotated dataset with location information $l_i$ as well as type $t_i$ for each part $i$.
+This results in a fully annotated dataset with location information $l_i$ as well as type $t_i$ for each part $i$.
 
 \begin{figure}[htb!]
     \centering
@@ -382,7 +393,7 @@ The authors provide the following score function to evaluate a predicted pose:
     \end{split}
 \end{equation}
 
-In \eref{eq:yang-score}, $I$ refers to the image that is evaluated.
+In \eref{eq:yang-score}, the variable $I$ refers to the image that is evaluated.
 $l = (l_1, \cdots, l_k)$ is the configuration containing all part positions while $t = (t_1, \dots, t_k)$ corresponds to the types of parts.
 $\phi(I, l_i)$ is a Histogram of Oriented Gradients (HoG) feature vector \cite{dalal_histograms_2005} computed around the part position $l_i$.
 $\psi(l_i - l_j) = [(x_i - x_j), (x_i - x_j)^2, (y_i - y_j), (y_i - y_j)^2]^T$ encodes the relative location of part $l_i$ to $l_j$.
@@ -397,7 +408,7 @@ In addition, they define a new metric, \textit{Probability of Correct Keypoints 
 In terms of datasets, they use Buffy and Iterative Image Parsing. 
 
 PCK was designed to improve upon two disadvantages of PCP.
-First, the toolkit provided with the Buffy dataset \cite{ferrari_progressive_2008} used a definition of PCP different from the one proposed in the paper, which makes the comparison of PCP values in literature hard because it is unclear which definition was used.
+First, the toolkit provided with the Buffy dataset \cite{ferrari_progressive_2008} used a definition of PCP different from the one proposed in the paper, which makes the comparison of PCP values in literature hard, because it is unclear which definition was used.
 The paper definition was provided in \sref{sec:andriluka-eval}.
 The Buffy toolkit defines a part as detected if the distance of the average point of both endpoints is within the threshold to the average of the ground truth endpoints.
 Second, foreshortening changes the length of the part, which means that the threshold is dependent upon the amount of foreshortening.
@@ -405,13 +416,13 @@ This means that foreshortened parts require more accurate predictions to be cons
 PCK requires each test image to have a person bounding box annotation.
 Using the bounding box dimensions $(width, height)$, a keypoint is considered detected if the distance between the ground truth and prediction is less than $\alpha \cdot max(width, height)$.
 This gives a clear reference point for comparison and makes the metric less susceptible to errors due to foreshortened parts.
-The paramter $\alpha$ determmines how strict the meassurement should be.
+The paramter $\alpha$ determines how strict the meassurement should be.
 For the Buffy dataset, the authors set $\alpha = 0.2$, while they chose $\alpha = 0.1$ for the Iterative dataset.
 They argue that they relaxed the metric for Buffy since the dataset only contains upper-body poses.
 
 As mentioned earlier, the definition of PCP is not clear since the toolkit implementation and paper definition differ.
 Thus, the authors computed two different PCP values for each dataset.
-First, they use definition presented in the paper, where the distance of both keypoints need to be smaller than the threshold in order for a part to be defined as detected.
+First, they use definition presented in the paper, where the distance of both keypoints need to be smaller than the threshold for a part to be defined as detected.
 This is referred to as the strict definition.
 Second, they use the definition provided by the Buffy toolkit, which is more loose since the averages of the keypoints are more likely to be close to each other than both endpoints of the parts.
 
@@ -440,6 +451,13 @@ They argue that $26$ parts and $6$ mixtures is a good trade-off when considering
 \end{figure}
 
 \subsection{Deep Learning Methods}
+\label{sec:rw_posedeeplearning}
+
+In the following Sections, this thesis presents methods for estimating pose using deep learning approaches.
+In contrast to the previously presented Pictoral Structure Framework, these methods do not learn statistical representations of pose.
+Rather, they use CNNs to detect the joints between limbs from image features and either regress the location of the limbs directly or output a \textit{heatmap}, which indicates the likelihood of a certain limb being present for each pixel pair $(x,y)$ in the image.
+Another term used in the literature for heatmap is \textit{belief map}.
+In addition, all approaches use the principle of a \textit{stacking architecture}, where initial pose estimations are refined by later stages of the network.
 
 \subsubsection{DeepPose}
 \label{sec:deeppose}
@@ -453,11 +471,11 @@ In contrast to the Pictoral Structure framework discussed earlier, the approach 
 The authors define their network in terms of multiple connected \textit{stages}.
 Each \textit{stage} is comprised of the neural network architecture provied in \tref{tab:deeppose-architecture}.
 The only change the authors made from the architecture originally proposed in \cite{krizhevsky_imagenet_2012} was to use the output of the last fully connected layer to regress the joint coordinates as opposed using the softmax activation function.
-This means that, assuming $k$ joints should be detected, the output of each stage is of size $2 * k$, because each joint position is given by image coordinates $(x, y)$.
+This means that, assuming $k$ joints should be detected, the output of each stage is of size $2k$, because each joint position is given by image coordinates $(x, y)$.
 Stage $s_0$ is trained using the full images of size $220 x 220$ as its input.
 
 Once the first stage is trained until convergence, the authors use the output coordinates to crop sub images around the prediction.
-By feeding these subimages into the next stage $s_1$ they argue that the predictions of $s_1$ get more precise because local context around the prediction becomes more important.
+By feeding these subimages into the next stage $s_1$ they argue that the predictions of $s_1$ get more precise, because local context around the prediction becomes more important.
 The sub image size is dependend upon the diameter of the torso bounding box given by the annotations.
 
 This cascading approach is then repeated with the next stages.
@@ -496,7 +514,7 @@ In the end, they use $3$ stages $S = (s_0, s_1, s_2)$ after evaluating different
 
 \label{sec:flic-lsp}
 After training their network, the authors evaluate the final model on two datasets, FLIC \cite{sapp_modec:_2013} and LSP \cite{johnson_clustered_2010}.
-Frames Labled In Cinema (FLIC) is a dataset which contains $5000$ images of Hollywoord movie scenes where $10$ upper-body joint positions are labeled for the subject of the scene.
+Frames Labeled In Cinema (FLIC) is a dataset, which contains $5000$ images of Hollywoord movie scenes where $10$ upper-body joint positions are labeled for the subject of the scene.
 In that regard, FLIC is similar to the Buffy dataset.
 Leeds Sports Pose (LSP) is a dataset of $2000$ annotated images of subjects in a sport context, which means that the subjects are highly articulated and thus challenging to detect.
 LSP contains $14$ different joint positions of the entire body.
@@ -506,7 +524,7 @@ First, they use PCP (see \sref{sec:andriluka-eval}) for comparison with the lite
 
 Also, they define a new metric, \textit{Percentage of Detected Joints (PDJ)}.
 They argue, similar to \cite{yang_articulated_2013}, that PCP unfairly penalizes shorter limbs.
-With PDJ, a joint is considered detected correctly if the distance between the predicted joint position and the ground truth $d_p$ is smaller than a fraction of the torsos diameter $d_t$.
+With PDJ, a joint is considered detected correctly if the distance between the predicted joint position and the ground truth $d_p$ is smaller than a fraction of the torso's diameter $d_t$.
 This fraction is set to be $0.5$, meaning a joint is considered detected if $0 <= d_p <= 0.5 \cdot d_t$.
 This metric is similar to PCK in that it compares the distance between two joints to a subject-specific value like torso diameter or subject bounding box.
 
@@ -515,7 +533,7 @@ However, like mentioned before, PCP accuracies are hard to compare since there a
 Thus, the authors reevaluate previous approaches using PDJ and compare their model against these new meassurements.
 Again, they outperform the previous state-of-the-art models on both LSP and FLIC.
 
-The authors additionally evaluated their model on the Buffy and Iterative Image Parse datasets, presented in \sref{sec:andriluka-eval}.
+The authors additionally evaluate their model on the Buffy and Iterative Image Parse datasets, presented in \sref{sec:andriluka-eval}.
 This allows a comparison to \cite{yang_articulated_2013}.
 Specifically, they trained their model on LSP and evaluated it on Iterative Image Parse for evaluating full-body poses.
 Analogously, they train their model on FLIC and evaluate it on the Buffy dataset when considering upper-body poses.
@@ -526,7 +544,7 @@ These are considered to be the hardest to detect.
 On this subset, the model outperforms \cite{yang_articulated_2013} on average by $13$ percentage points ($69\%$ average acccuracy as opposed to $56\%$).
 
 For the Buffy dataset, they do not publish explicit values, but rather the plot in \fref{fig:deeppose-eval}.
-From the graphic, it becomes clear that the author's model outperforms \cite{yang_articulated_2013} again, this time in terms of PDJ. 
+From the graphic, it becomes clear that the author's model also outperforms \cite{yang_articulated_2013} in terms of PDJ. 
 
 \begin{figure}[htb!]
     \centering
@@ -535,9 +553,9 @@ From the graphic, it becomes clear that the author's model outperforms \cite{yan
     \label{fig:deeppose-eval}
 \end{figure}
 
-The authors provide three examples which illustrate the importance of the cascading architecture.
+The authors provide three examples, which illustrate the importance of the cascading architecture.
 These examples can be seen in \fref{fig:deeppose-qualitative}.
-They argue that stage $s_1$ has the biggest effect on the accuracy of the joints since further stages use smaller and smaller subimages for regression and thus use a smaller context.
+They argue that stage $s_1$ has the biggest effect on the accuracy of the joints, since further stages use smaller and smaller subimages for regression and thus use a smaller context.
 To support their hypothesis, they evaluating three networks in terms of PDJ on the FLIC dataset, with one, two and three stages respectively.
 Their findings show the same behaviour observed in \fref{fig:deeppose-qualitative}.
 
@@ -546,7 +564,7 @@ Their findings show the same behaviour observed in \fref{fig:deeppose-qualitativ
 % Introduction
 Another approach for pose estimation was proposed by \cite{wei_convolutional_2016}.
 The authors base their work on \textit{traditional} Pose machines proposed by \cite{ramakrishna_pose_2014}.
-In comparison to \cite{toshev_deeppose:_2014}, they do not regress the joint coordinates directly using fully-connected layers but use a fully convolutional architecture to compute \textit{belief maps}.
+In comparison to \cite{toshev_deeppose:_2014}, they do not regress the joint coordinates directly using fully-connected layers, but use a fully convolutional architecture to compute \textit{belief maps}.
 These maps are very similar to the part evidence maps discussed in \sref{sec:pose-andriluka}, since they indicate the belief of a joint being present at a certain pixel position.
 
 % "Classical" Pose Machine Concepts
@@ -555,10 +573,10 @@ The modular nature allows to easily use different predictors and encoders, which
 
 The Pose machine is made up of cascaded \textit{stages}.
 The first stage uses a predictor $g_1$, which predicts, for each pixel in the input image, how likely it belongs to part $p$.
-The result are $P$ belief maps, one for each part to detect.
+The results are $P$ belief maps, one for each part to detect.
 In all subsequent stages, the output belief maps of the previous stage are encoded back into image features using an encoder function $\varphi$.
 Then, these encoded features are combined with the local image features of the current stage and passed into the stage's predictor.
-This way, the predictor not only has the image features as a basis for decision but also the previously estimated joint location for context.
+This way, the predictor not only has the image features as a basis for decision, but also the previously estimated joint location for context.
 See \fref{fig:pose-machines-architecture} for a visualization of the pipeline.
 
 \begin{figure}[htb!]
@@ -572,11 +590,11 @@ See \fref{fig:pose-machines-architecture} for a visualization of the pipeline.
 In \cite{ramakrishna_pose_2014}, the authors use boosted random forests for their stage predictors $g_i$.
 To extract features, they utilize \textit{Histogram of Oriented Gradients (HoG)} descriptors \cite{dalal_histograms_2005}.
 Their encoder $\varphi$ is made up of two parts.
-The first part is referred to by the authors as \textit{context patch features}.
+The first part is referred to, by the authors, as \textit{context patch features}.
 For a given pixel coordinate $z = (x, y)$ for each belief map, the authors concatenate the belief scores in a $5 x 5$ grid around $z$.
 Afterwards, the concatenated scores from each belief map are again concatenated across belief maps into a final feature vector $\varphi_1$.
 The second part, which the authors refer to as \textit{context offset features}, again iterates over all pixel locations $z$.
-Given the pixel location of the $3$ highest peaks in the belief map, the feature vector is given by concatenating the relative position to these peaks, given $z$, in polar coordinates.
+Given the pixel location of the three highest peaks in the belief map, the feature vector is given by concatenating the relative position to these peaks, given $z$, in polar coordinates.
 Again, they concatenate all feature vectors over all belief maps, resulting in $\varphi_2$.
 Finally, their context feature vector is given by $\varphi = [\varphi_1, \varphi_2]$.
 See \fref{fig:pose-machines-context} for a visualization of $\varphi_1$ and $\varphi_2$.
@@ -604,38 +622,26 @@ Then, when computing the context of position $z = (x, y)$, they center a  window
 This leads to 
 
 \begin{equation}
-    \bm{b}_t = g_t(x_z, \varphi_t(z, \bm{b}_{t-1}))
+    \bm{b}_t = g_t(x_z, \varphi_t(z, \bm{b}_{t-1})),
 \end{equation}
 
 as the output belief maps of stage $t$ with $t > 1$.
 
 The layers in \tref{tab:pose-machine-feature-extraction-architecture} denoted with $a_1$ to $a_3$ refer to the layers after the feature extraction network in the first stage $s_1$.
 Analogously, $b_1$ to $b_5$ refer to the layers after the feature extraction network in all subsequent stages $s_i, i > 1$.
-The architecture of the first stage, compared to all subsequent stages, differs because the authors want the first stage to have a lower receptive field in order for a more precise extraction of local features.
+The architecture of the first stage, compared to all subsequent stages, differs because the authors want the first stage to have a lower receptive field for a more precise extraction of local features.
 In fact, the design was chosen so that, after the second stage, the receptive field of the network is roughly the size of the input image.
 The authors claim that, through experimentation, this provided the best overall accuracy.
 
 \begin{table}[]
     \centering
-    \scalebox{0.7}{%
-    \begin{tabular}{|l|l|l|}
+    \scalebox{0.65}{%
+    \begin{tabular}{|l|lllllll|lll|lllll|}
     \hline
-    \textbf{nr.} & \textbf{layer type} & \textbf{filter size} \\ \hline
-    1 & convolutional & 9 x 9 \\
-    2 & pooling & 2 x 2\\
-    3 & convolutional & 9 x 9 \\
-    4 & pooling & 2 x 2\\
-    5 & convolutional & 9 x 9 \\
-    6 & pooling & 2 x 2 \\
-    7 & convolutional & 5 x 5 \\ \hline 
-    $a_1$ & convolutional & 9 x 9 \\  
-    $a_2$ & convolutional & 1 x 1 \\  
-    $a_3$ & convolutional & 1 x 1 \\ \hline 
-    $b_1$ & convolutional & 11 x 11 \\  
-    $b_2$ & convolutional & 11 x 11 \\  
-    $b_3$ & convolutional & 11 x 11 \\ 
-    $b_4$ & convolutional & 1 x 1 \\  
-    $b_5$ & convolutional & 1 x 1 \\ \hline     
+    %\textbf{nr.} & \textbf{layer type} & \textbf{filter size} \\ \hline
+    \textbf{nr.} & 1 & 2 & 3 & 4 & 5 & 6 & 7 & $a_1$ & $a_2$ & $a_3$ & $b_1$ & $b_2$ &  $b_3$ &  $b_4$ & $b_5$ \\ \hline
+    \textbf{layer type} & conv & pool & conv & pool & conv & pool & conv &  conv & conv & conv & conv & conv & conv & conv & conv \\
+    \textbf{layer size} & 9 x 9 & 2 x 2 &  9 x 9  & 2 x 2 & 9 x 9  & 2 x 2  & 5 x 5 & 9 x 9 & 1 x 1 & 1 x 1 & 11 x 11 & 11 x 11 & 11 x 11 & 1 x 1 & 1 x 1 \\ \hline
     \end{tabular}}
     \caption{Network architecture of the Convolutional Pose Machine. Layers $1$ to $7$ refer to the feature extraction subnet, which is identical (in terms of architecture) in each stage. However, stages $t > 1$ share the weights of the feature extraction layer to to share the computed image features across stages. $a_1$ to $a_3$ are layers attached to the feature extraction subnet in the first stage, while $b_1$ to $b_5$ are layeres attached to the feature extraction subnet in all subsequent stages.}
     \label{tab:pose-machine-feature-extraction-architecture}
@@ -643,7 +649,7 @@ The authors claim that, through experimentation, this provided the best overall 
 
 % Number of stages
 The authors evaluated the amount of stages to use.
-They found that, after $5$ stages, the performance of the network stops increasing, which is why they chose to use $5$ stages for all subsequent experiments.
+They find that, after $5$ stages, the performance of the network stops increasing, which is why they choose to use $5$ stages for all subsequent experiments.
 
 % Why contexts are helpful
 To illustrate why context belief maps can help the network to correct itself, the authors provide the visualization in \fref{fig:context-belief-maps}.
@@ -654,7 +660,7 @@ Thus, their position in the first stage belief maps can aid in finding more diff
 Similarly, the lack of context information can also help in lessening the score in the belief maps.
 For example, consider the local information around \textit{right shoulder}.
 Normally, necks and shoulders are near to each other.
-When there is no indication of \textit{neck} in the belief map around \textit{right shoulder} this may lead to a lower belief score of \textit{right shoulder} being present at that pixel. 
+When there is no indication of \textit{neck} in the belief map around \textit{right shoulder}, this may lead to a lower belief score of \textit{right shoulder} being present at that pixel. 
 
 \begin{figure}[htb!]
     \centering
@@ -669,7 +675,7 @@ When there is no indication of \textit{neck} in the belief map around \textit{ri
 The authors evaluate their model using three widely used benchmark datasets.
 These are LSP and FLIC \sref{sec:flic-lsp} as well as \textit{MPII Human Pose}.  
 MPII Human Pose is a benchmark, which consists of $40,000$ annotated images of people.
-These images are also often referred to as \textit{in-the-wild} images since they were downloaded from YouTube videos and are thus representative of every day activaties and situations.
+These images are also often referred to as \textit{in-the-wild} images, since they were downloaded from YouTube videos and are thus representative of every day activaties and situations.
 In addition, since most YouTube videos are uploaded by private individuals, the image quality varies, making the benchmark more realisitic.
 For a complete overview of the MPII dataset, please refer to \sref{sec:exp-mpii}.
 
@@ -680,11 +686,12 @@ However, instead of using the person bounding box or torso bounding box for norm
 Consider a person, jumping in the air, spreading their arms and legs away from their body.
 This maximizes the person bounding box and thus makes it easier for the PCK metric to consider predictions to be correct when they are fairly far away from the ground truth.
 The head size, aswell as torso size, however, is quite independent from the type of pose and thus more suitable for evaluation.
-In addition, they use PCK in order to compare their results on FLIC and LSP to the literature.
+In addition, they use PCK to compare their results on FLIC and LSP to the literature.
 
-When evaluating their model using the LSP dataset, they found that, using a six stage model, they outperform the state-of-the-art approaches by approximately $15$ percentage points.
+When evaluating their model using the LSP dataset, they found that, using a six stage model, they achieved $84.32$ percent accuracy.
+In comparison, the previous state-of-the-art approach achieved $~70$ percent.
 The improvement is especially noticeable when evaluating the challenging joints like ankles.
-The result got even better ($~20$ percentage points increase) when utilizing additional training data from the MPII dataset.
+The accuracy increased to $90.5$ percent when utilizing additional training data from the MPII dataset.
 The authors argue that this is due to the fact that the LSP datasets contains noisy annotations when compared to the annotations provided by MPII.
 
 Afterwards, the authors compare their results on the FLIC dataset to many state-of-the-art models, including \cite{toshev_deeppose:_2014} \sref{sec:deeppose}.
@@ -718,7 +725,7 @@ Similar to \cite{wei_convolutional_2016}, the authors compute \textit{belief map
 However, the authors refer to them as \textit{heatmaps}.
 
 Similar to the previously discussed approaches for convolutional architectures, the authors use a stacked architecture, where predictions get refined iteratively.
-They do, however, not crop the input down with each iterative step like \cite{toshev_deeppose:_2014} but keep the whole image in every step (similar to \cite{wei_convolutional_2016}).
+In contrast to \cite{toshev_deeppose:_2014}, they do not use crop the image around the estimated joint positions of the previous stage when passing the image to a later stage, but rather but keep the original image in every step (similar to \cite{wei_convolutional_2016}).
 The authors argue that refinement of joint positions inside a local subimage is not optimal since many errors occur when misattributing joint positions.
 Thus, limiting the network to local images might hinder its ability to make big changes in joint positions.
 
@@ -730,7 +737,7 @@ Thus, limiting the network to local images might hinder its ability to make big 
 \end{figure}
 
 % Architecture
-The building blocks of the stacked hourglass archtitecture are so-called \textit{hourglass modules}.
+The building blocks of the stacked hourglass architecture are so-called \textit{hourglass modules}.
 See \fref{fig:single-hourglass} for a visualization of a single hourglass module.
 The idea is to process the input of the module at different scales and then combine features from different scales using \textit{skip-connections}.
 
@@ -752,10 +759,10 @@ This way, tasks like pose estimation can incorporate global, high level features
 Skip-connections get used in \textit{residual blocks} \cite{he_deep_2016}, which are used for more efficient learning in deep networks.
 Consider two connected convolutional layer with input $x$.
 Let $f(x)$ be the output of the second convolutional layer.
-Residual models model $f(x) + x$ because they use the skip-connection to add the input back to the output.
-The authors of \cite{he_deep_2016} argue that this allows for deeper neural network architectures because it is easier to fit identity mappings.
-They evaluated deep neural networks and found that the error does not only not decrease for very deep networks but starts increasing.
-The authors argue that this would not happen if the layers would learn identity functions because then the error would stagnate instead of increase.
+Residual models model $f(x) + x$, because they use the skip-connection to add the input back to the output.
+The authors of \cite{he_deep_2016} argue that this allows for deeper neural network architectures, because it is easier to fit identity mappings.
+\cite{he_deep_2016} evaluated deep neural networks and they found that the error does not only not decrease for very deep networks but starts increasing.
+They argue that this would not happen if the layers would learn identity functions, because then the error would stagnate instead of increase.
 In addition, because residual blocks allow for very deep architectures, they achieved substantially better results in comparison to identical architectures without residual blocks.
 
 An example of a residual blocks used in the stacked hourglass network can be seen in \fref{fig:hg-residual}.
@@ -775,11 +782,10 @@ Consequently, the input and output dimensions of the hourglass module are identi
 
 The input to the module is scaled down using pooling layers, until it reaches a resolution of $4x4$ pixels.
 At each resolution level, features are extracted using a residual module.
-Before each pooling layer, a skip-connection is utilized to branch off the current feature maps.
-They get feed through another residual block and combined back later.
-Once image is scaled down to $4x4$ pixels, upsampling is utilized until the image is back to its original size.
+Once the image is scaled down to $4x4$ pixels, upsampling is utilized until the image is back to its original size.
 Again, residual blocks are used to extract features at the different levels of resolution.
-Also, after the feature extraction, the processed skip-connections from earlier get added onto the extracted features, effectively combining features from two different image scales, because they get combined before upsampling happens.
+Before each pooling layer, a skip-connection is utilized to apply another residual block, after which the resulting features are added to the output feature maps after upscaling.
+This effectively combines features from two different image scales, because they get combined before upsampling happens.
 
 The authors use another skip-connection between the input and output of the module.
 This means that the input to each module, which is the output of the previous module, is added onto its output.
@@ -795,7 +801,7 @@ In the final architecture, the authors use $8$ hourglass modules.
 
 While training, the output of each hourglass module is not only feed into the next module, but also processed into a \textit{heatmap} using a $1x1$ convolutional layer.
 Using this heatmap, a loss is computed after each hourglass module, which is then propagated back.
-The authors refer to this process as \textit{intermediate supervision} and argue that it increases the accuracy of the final prediction because the network needs to develop a high-level of understanding very early.
+The authors refer to this process as \textit{intermediate supervision} and they argue that it increases the accuracy of the final prediction, because the network needs to develop a high-level of understanding at each stage of the network.
 In their quantitative analysis, they showed an increase in validation accuracy of around $3$ percent when utilizing intermediate supervision. 
 
 % Evalutation
@@ -807,9 +813,9 @@ For \textit{FLIC}, they defined $\alpha = 0.2$, which means that $20\%$ of the l
 They compare their results to \cite{toshev_deeppose:_2014} and outperform their results on elbows and wrists by $6.7$ percentage points ($99.0\%$ compared to $92.6\%$) and $15$ percentage points ($97\%$ compared to $82\%$), respectively.
 In addition, they outperformed \cite{wei_convolutional_2016}, the state-of-the-art appraoch at that time \sref{sec:convolutional-pose-machine}.
 
-With \textit{MPII Human Pose}, the threshold was reduced to $50\%$ in accordance to the previous works they compared against.
+With \textit{MPII Human Pose}, the authors use a threshold of $\alpha = 0.5$ to compare their results to the state-of-the-art approaches.
 Also, PCKh was used instead of PCK, as described before, since PCKh was proposed in \cite{andriluka_2d_2014}, and thus most models using the MPII dataset use PCKh for evaluation.
-Similar to before, they outperformed the state-of-the-art approaches, including \cite{wei_convolutional_2016}.
+They outperformed the state-of-the-art approaches, including \cite{wei_convolutional_2016}.
 In particular, they achieved $90.9\%$ overall accuracy as compared to $88.5\%$ achieved by \cite{wei_convolutional_2016}.
 Also, they achieved significantly better results on each individual part, including a $3.5$ percentage point increase on the average over the most challenging joints (wrists, elbows, kness and ankles) in comparison to \cite{wei_convolutional_2016}. 
 
@@ -818,7 +824,7 @@ Also, they achieved significantly better results on each individual part, includ
 % \end{itemize}
 
 \section{Video-based Human Action Recognition}
-
+\label{sec:har_video}
 In the following chapter, approaches for Human Action Recognition on video data will be discussed.
 First, some prominent works utilizing hand-crafted features will be discussed.
 These approaches still perform well in modern scenarios and are sometimes used in conjunction with modern, neural network based approaches.

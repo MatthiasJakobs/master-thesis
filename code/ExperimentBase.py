@@ -12,6 +12,7 @@ import torch.utils.data as data
 import torch.optim as optim
 import torch.nn as nn
 from torch.utils.data.sampler import SubsetRandomSampler
+from torchvision.datasets import ImageNet
 
 import csv
 import numpy as np
@@ -29,6 +30,7 @@ from datasets.MixMPIIPenn import MixMPIIPenn
 from datasets.PennActionDataset import PennActionDataset
 from datasets.PennActionFragmentsDataset import PennActionFragmentsDataset
 from deephar.models import DeepHar, Mpii_1, Mpii_2, Mpii_4, Mpii_8, TimeDistributedPoseEstimation
+from deephar.blocks import Stem
 from deephar.utils import get_valid_joints, get_bbox_from_pose, transform_2d_point, transform_pose
 from deephar.measures import elastic_net_loss_paper, categorical_cross_entropy
 from deephar.evaluation import *
@@ -521,7 +523,7 @@ class HAR_PennAction(HAR_Testing_Experiment):
         if self.pretrained_model is not None:
             self.model.load_state_dict(torch.load(self.pretrained_model, map_location=self.device))
 
-        self.ds_train = PennActionFragmentsDataset("/data/mjakobs/data/pennaction_fragments/", train=True, val=False, use_random_parameters=True, augmentation_amount=3, use_gt_bb=self.use_gt_bb)
+        self.ds_train = PennActionFragmentsDataset("/data/mjakobs/data/pennaction_fragments/", train=True, val=False, use_random_parameters=True, augmentation_amount=6, use_gt_bb=self.use_gt_bb)
         self.ds_val = PennActionFragmentsDataset("/data/mjakobs/data/pennaction_fragments/", train=True, val=True, use_gt_bb=self.use_gt_bb)
         self.ds_test = PennActionDataset("/data/mjakobs/data/pennaction/", train=False)
 
@@ -1160,29 +1162,48 @@ class Pose_Mixed(ExperimentBase):
             for i in range(len(test_ds)):
                 print(i)
                 test_data = test_ds[i]
-                test_images = test_data["normalized_frames"].to(self.device)
-                test_poses = test_data["normalized_poses"].to(self.device)
+                start = 0
+                nr_frames = len(test_data["normalized_frames"])
+                stop = min(start + 20, nr_frames)
+                need_stop = False
+                while not need_stop:
+                    test_images = test_data["normalized_frames"][start:stop].to(self.device)
+                    test_poses = test_data["normalized_poses"][start:stop].to(self.device)
+                    trans_matrices = test_data["trans_matrices"][start:stop].to(self.device)
+                    original_window_sizes = test_data["original_window_size"][start:stop]
 
-                trans_matrices = test_data["trans_matrices"].to(self.device)
+                    _, predictions, _, _ = self.model(test_images)
+                    del test_images
+                    if torch.cuda.is_available():
+                        torch.cuda.empty_cache()
 
-                _, predictions, _, _ = self.model(test_images)
-                del test_images
-                if torch.cuda.is_available():
-                    torch.cuda.empty_cache()
 
-                predictions = predictions.squeeze(dim=0)
+                    predictions = predictions.squeeze(dim=0)
 
-                # get distance meassures
-                original_window_sizes = test_data["original_window_size"]
-                distance_meassures = torch.IntTensor(len(original_window_sizes))
+                    # get distance meassures
+                    distance_meassures = torch.IntTensor(len(original_window_sizes))
 
-                for i in range(len(distance_meassures)):
-                    distance = original_window_sizes[i][0]
-                    distance_meassures[i] = original_window_sizes[i][0]
+                    for i in range(len(distance_meassures)):
+                        distance = original_window_sizes[i][0]
+                        distance_meassures[i] = original_window_sizes[i][0]
 
-                pck_bb_02.append(eval_pck_batch(predictions[:, :, 0:2], test_poses[:, :, 0:2], trans_matrices, distance_meassures, threshold=0.2))
-                pck_bb_01.append(eval_pck_batch(predictions[:, :, 0:2], test_poses[:, :, 0:2], trans_matrices, distance_meassures, threshold=0.1))
+                    pck_bb_02.extend(eval_pck_batch(predictions[:, :, 0:2], test_poses[:, :, 0:2], trans_matrices, distance_meassures, threshold=0.2))
+                    pck_bb_01.extend(eval_pck_batch(predictions[:, :, 0:2], test_poses[:, :, 0:2], trans_matrices, distance_meassures, threshold=0.1))
 
+                    if stop == nr_frames:
+                        need_stop = True
+                    else:
+                        start = stop
+                        stop = min(stop + 20, nr_frames)
+
+                    del predictions
+                    del distance_meassures
+                    del test_poses
+                    del trans_matrices
+                    if torch.cuda.is_available():
+                        torch.cuda.empty_cache()
+
+        print("len", str(len(pck_bb_02)))
         mean_bb_02 = torch.mean(torch.FloatTensor(pck_bb_02)).item()
         mean_bb_01 = torch.mean(torch.FloatTensor(pck_bb_01)).item()
         return mean_bb_02, mean_bb_01
@@ -1315,3 +1336,41 @@ class MPIIExperiment(ExperimentBase):
 
             self.val_writer.write([self.iteration, mean_05, mean_02])
             return mean_05
+
+class StemImageNet(ExperimentBase):
+
+    def preparation(self):
+
+        self.ds_train = ImageNet("/vol/corpora/vision/ILSVRC2012", split="train")
+        self.ds_val = ImageNet("/vol/corpora/vision/ILSVRC2012", split="val")
+
+        self.model = Stem()
+
+        #train_indices, val_indices = self.limit_dataset(include_test=False)
+        train_indices = list(range(len(ds_train)))
+        val_indices = list(range(len(ds_val)))
+        
+        train_sampler = SubsetRandomSampler(train_indices)
+        val_sampler = SubsetRandomSampler(val_indices)
+
+        self.train_loader = data.DataLoader(
+            self.ds_train,
+            batch_size=self.conf["batch_size"],
+            sampler=train_sampler
+        )
+
+        self.val_loader = data.DataLoader(
+            self.ds_val,
+            batch_size=self.conf["batch_size"],
+            sampler=val_sampler
+        )
+
+        self.optimizer = optim.RMSprop(self.model.parameters(), lr=self.conf["learning_rate"])
+
+        self.train_writer.write(["iteration", "loss"])
+        self.val_writer.write(["iteration", "pckh_0.5", "pckh_0.2"])
+
+    def train(self, train_objects):
+        print(train_objects)
+    def evaluate(self):
+        print('not implemented')

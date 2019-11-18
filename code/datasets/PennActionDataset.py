@@ -311,7 +311,11 @@ class PennActionDataset(BaseDataset):
 
             bounding_boxes.append(self.bbox.clone().unsqueeze(0))
             processed_poses.append(norm_pose.unsqueeze(0))
-            processed_frames.append(norm_frame.numpy())
+            if self.use_random_parameters:
+                processed_frames.append(norm_frame.numpy())
+            else:
+                processed_frames.append(norm_frame.unsqueeze(0))
+
             trans_matrices.append(trans_matrix.clone().unsqueeze(0))
             original_window_sizes.append(self.original_window_size.clone().unsqueeze(0))
 

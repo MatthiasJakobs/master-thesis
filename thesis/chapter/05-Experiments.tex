@@ -1,5 +1,14 @@
 \chapter{Experiments}
 
+In the previous chapter, the method for Human Activity Recognition by \cite{luvizon_2d/3d_2018} was introduced.
+In addition, this thesis proposed experiments to gain a better insight into the authors method.
+This chapter first introduces the datasets used in the experiments in Section \ref{sec:exp-datasets}, specifcally the \textit{MPII Human Pose} dataset for $2D$ pose estimation, and the \textit{Penn Action} and \textit{JHMDB} datasets for Human Activity Recognition.
+Afterwards, the metrics used in the authors work, as well as the experiments done in this thesis, are discussed in Section \ref{sec:exp-metrics}.
+Lastly, this chapter discusses the experiment setups, as well as the results, in Section \ref{sec:exp-results}.
+First, some experiments from \cite{luvizon_2d/3d_2018} are recreated, focusing on the $2D$ pose estimation and $2D$ Human Activity Recognition experiments.
+Second, further experiementation towards understanding the capabilities of the model are presented, including a qualitative and quantitative evaluation of the Soft-argmax function, the accuracy of the authors model achieved on the complex JHMDB dataset, as well as an approach for training the model in an end-to-end approach, without using a pretrained pose estimator.
+% TODO: if time series model: introduce too
+
 \section{Datasets}
 \label{sec:exp-datasets}
 
@@ -130,6 +139,7 @@ The same procedure was used to map the joints to the format provided by the MPII
 Also, the approach for computing ground truth bounding boxes, as well as preprocessing the \textit{fragments} and augmentations is identical to the one presented earlier. % TODO: augmentation changed
 
 \section{Evaluation Metrics}
+\label{sec:exp-metrics}
 \subsection{PCK}
 \label{sec:exp-pck}
 
@@ -162,6 +172,7 @@ Then, for each fragment, they predict the action identical to the Single-Clip ac
 If the majority of the fragments estimated the same action, this is used to determine the Multi-Clip accuracy. 
 
 \section{Experimental Results}
+\label{sec:exp-results}
 \subsection{Accuracy of Soft-argmax function}
 For evaluating the accuracy of the Soft-argmax function, we performed two experiments.
 For both experiments, an estimated coordinate $(x_{est},y_{est})$ was considered to be correct in comparison to the ground truth coordinate $(x_{gt}, y_{gt}$ if both $\lvert x_{est} - x_{gt} \rvert \leq d$ and $\lvert y_{est} - y_{gt} \rvert \leq d$, allowing for a $d$ pixel discrepancy between prediction and ground truth.
@@ -215,6 +226,7 @@ In summary, while the Soft-argmax function appears to be less accurate around th
 \subsection{Replication of Original Work}
 \label{sec:exp-replication}
 % TODO
+% TODO: Mention optimizers, as well as parameters, for all models
 
 First, in order to recreate the work of \cite{luvizon_2d/3d_2018}, a pose estimator using the MPII dataset was trained.
 In addition to the authors work, the number of prediction blocks as well as the number of context heatmaps was varied to observe the effect on the overall accuracy of the model.
@@ -329,6 +341,7 @@ They do not, however, motivate this decision.
 The pose estimator contains $4$ prediction blocks, uses $2$ context heatmaps and was trained using a batch size of TODO and a learning rate of TODO.
 The validation accuracy scores can be seen in TODO.
 % TODO: talk about results
+% TODO: single and multi clip evaluation
 % TODO: Test on Penn action using PCK @ 0.2 and @ 0.1
 
 Afterwards, the pretrained pose estimator was inserted into the HAR model.
