@@ -566,7 +566,8 @@ class HAR_PennAction(HAR_Testing_Experiment):
 class HAR_E2E(HAR_Testing_Experiment):
 
     def preparation(self):
-        super().preparation(load_model=False, nr_aug=10)
+        super().preparation(load_model=False, nr_aug=17)
+        #self.optimizer = optim.SGD(self.model.parameters(), lr=self.conf["learning_rate"], weight_decay=0.9, momentum=0.98, nesterov=True)
 
     def train(self, train_objects):
         self.model.train()
