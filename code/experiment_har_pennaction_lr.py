@@ -18,10 +18,10 @@ conf["use_gt_pose"] = False
 conf["use_timedistributed"] = True
 conf["fine_tune"] = False 
 
-conf["learning_rate"] = 1e-3
-conf["name"] = "1e-3"
-har = HAR_PennAction(conf)
-har.run_experiment()
+# conf["learning_rate"] = 1e-3
+# conf["name"] = "1e-3"
+# har = HAR_PennAction(conf)
+# har.run_experiment()
 
 conf["learning_rate"] = 1e-4
 conf["name"] = "1e-4"
