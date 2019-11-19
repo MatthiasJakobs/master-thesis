@@ -1,4 +1,5 @@
 \chapter{Fundamentals}
+\label{sec:chapter2}
 After introducing and motivating the problems this thesis focuses on in the previous chapter, this chapter gives an overview over the fundamentals of Human Action Recognition, Pose estimation as well as Neural Networks in general.
 
 First, the fundamental concepts of Human Action recognition are discussed in Section \ref{sec:fund_har}, specifically in the context of video data.
@@ -321,7 +322,7 @@ This is done for each $x \in M$ in a random order.
 As $P$ and $N$ are required to be linearly separable and there are a finite number of examples it can be proven that, after a finite amount of steps, the error will be reduced to zero and the hyperplane will correctly separate the two sets \cite{rojas_neural_1996}.
 
 \subsubsection{Gradient Descent Learning}
-
+\label{sec:gradient_descent}
 Another approach to learning the weights of a Perceptron is \textit{gradient descent}.
 Given an error function $E$ with a set of initial weights $\bm{w_t}$ and an input example $\bm{x}$ the amount of error is given by $E(\bm{w}, \bm{x})$.
 If the error function is differentiable, one can calculate the gradient of the error function for each weight $w_i \in \bm{w}$ using
