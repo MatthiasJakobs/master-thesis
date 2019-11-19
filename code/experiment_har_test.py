@@ -21,20 +21,20 @@ conf["limit_data_percent"] = 1 # limit dataset to x percent (for testing)
 # conf["evaluate_rate"] = 5000
 # conf["limit_data_percent"] = 1 # limit dataset to x percent (for testing)
 
-# conf["name"] = "no_finetune_no_td"
-# conf["fine_tune"] = False
-# conf["use_timedistributed"] = False
-# har = HAR_Testing_Experiment(conf)
-# har.run_experiment()
-
-conf["name"] = "finetune_with_td"
-conf["fine_tune"] = True
-conf["start_finetuning"] = 0
-conf["batch_size"] = 12
-conf["learning_rate"] = 1e-6
+conf["name"] = "no_finetune_with_td_refined"
+conf["fine_tune"] = False
 conf["use_timedistributed"] = True
-har = HAR_Testing_Experiment(conf, pretrained_model="/data/mjakobs/data/har_jhmdb_5500")
+har = HAR_Testing_Experiment(conf, start_at="/data/mjakobs/code/master-thesis/experiments/har_initial/no_finetune_with_td_aug6/weights/weights_00012000")
 har.run_experiment()
+
+# conf["name"] = "finetune_with_td"
+# conf["fine_tune"] = True
+# conf["start_finetuning"] = 0
+# conf["batch_size"] = 12
+# conf["learning_rate"] = 1e-6
+# conf["use_timedistributed"] = True
+# har = HAR_Testing_Experiment(conf, pretrained_model="/data/mjakobs/data/har_jhmdb_5500")
+# har.run_experiment()
 
 # conf["name"] = "with_finetune"
 # conf["start_finetuning"] = 1500

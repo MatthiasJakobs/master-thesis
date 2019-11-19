@@ -206,7 +206,7 @@ class HAR_Testing_Experiment(ExperimentBase):
         super().__init__(conf)
         self.pretrained_model = pretrained_model
 
-    def preparation(self, load_model=True, nr_aug=6):
+    def preparation(self, load_model=True, start_at=None, nr_aug=6):
         if "fine_tune" in self.conf:
             self.fine_tune = self.conf["fine_tune"]
         else:
@@ -226,6 +226,12 @@ class HAR_Testing_Experiment(ExperimentBase):
             self.use_timedistributed = self.conf["use_timedistributed"]
         else:
             self.use_timedistributed = False
+
+        if start_at is not None:
+            print('startat')
+            self.model = DeepHar(num_actions=21, use_gt=True, nr_context=self.conf["nr_context"], use_timedistributed=self.use_timedistributed).to(self.device)
+            self.model.load_state_dict(torch.load(start_at, map_location=self.device))
+
 
         if load_model:
             self.model = DeepHar(num_actions=21, use_gt=True, nr_context=self.conf["nr_context"], model_path="/data/mjakobs/data/pretrained_jhmdb", use_timedistributed=self.use_timedistributed).to(self.device)
