@@ -1,6 +1,6 @@
 \chapter{Method}
 \section{Deep HAR}
-
+\label{sec:chapter4}
 In the previous chapter, approaches for estimating pose from still images and predicting actions from video were presented.
 Although some approaches for HAR incorporate pose information as features in their decision process, estimating pose and predicting actions were not used in conjunction during the training process.
 For example, \cite{choutas_potion:_2018} \sref{sec:potion} estimated pose using a dedicated model, before using the information to train their model. 
@@ -264,7 +264,7 @@ As an example, \cite{girdhar_detect-and-track:_2018} adopt a frame by frame appr
 They show an increase in accuracy when comparing predicting the pose for each frame individually, suggesting that capturing the temporal dimension can aid in learning pose in videos.
 
 \section{Proposed experiments}
-Apart from recreating some key findings of the authors and evaluating certain decisions by the authors as explained before, we propose two extensions to the network architecture and learning process.
+Apart from recreating some key findings of the authors and evaluating certain decisions by the authors as explained before, we propose the following extensions to the network architecture and learning process.
 
 First, we propose to combine the losses of the pose estimator with the losses of the overall action recognition pipeline in a similar manner to the intermediate supervision approach.
 A combination of the loss function allows for the network to be trained in an end-to-end fashion, as opposed to fine-tuning the network after pretraining certain components.
@@ -273,8 +273,16 @@ This will give an insight not only into the feasibility of the end-to-end traini
 Also, in the approaches discussed earlier \sref{sec:har_using_pose}, using pose information for action recognition significantly increases the overall accuracy.
 Thus, we propose that, by using an end-to-end learning approach, both pose estimation and action recognition networks could benefit from each other when learned jointly.
 
-Second, recent work utilize information gathered by \textit{Inertial Measurement Units (IMUs)} for action recognition in a warehouse setting \cite{reining_towards_2018}.
-IMUs are physical devices attached to a subjects body, containing accelerometers, gyroscopes and magnetometers.
-These sensors measure time-series data, which are then used for action recognition.
-We propose to change the encoding of the estimated pose into a similar, time-series representation, so that it can be used with IMU data in future work.
-In addition, since the authors did not evaluate different methods for encoding video pose information, this will lead to more insight into how such an encoding effects the overall performance of the network.
+Second, as explained before, evaluating the methods on a more complex video dataset is desirable.
+Thus, in this thesis, it was decided to train and evaluate the network on the JHMDB dataset.
+Even though this dataset is smaller in overall number of images, it contains more diverse classes.
+
+Third, the authors presented the Soft-argmax approach in \cite{luvizon_human_2017} without evaluating the accuracy of the approach.
+Thus, this thesis quantitavely and qualitatively evaluates the accuracy by using synthetic test images derived from the ground truth pose positions.
+These experiments will give an insight into whether or not the Soft-argmax is a suitable approach for computing the joint positions from heatmaps, when compared to using the Argmax in a postprocessing step.
+
+% Second, recent work utilize information gathered by \textit{Inertial Measurement Units (IMUs)} for action recognition in a warehouse setting \cite{reining_towards_2018}.
+% IMUs are physical devices attached to a subjects body, containing accelerometers, gyroscopes and magnetometers.
+% These sensors measure time-series data, which are then used for action recognition.
+% We propose to change the encoding of the estimated pose into a similar, time-series representation, so that it can be used with IMU data in future work.
+% In addition, since the authors did not evaluate different methods for encoding video pose information, this will lead to more insight into how such an encoding effects the overall performance of the network.

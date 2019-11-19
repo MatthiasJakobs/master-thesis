@@ -1,5 +1,5 @@
 \chapter{Experiments}
-
+\label{sec:chapter5}
 In the previous chapter, the method for Human Activity Recognition by \cite{luvizon_2d/3d_2018} was introduced.
 In addition, this thesis proposed experiments to gain a better insight into the authors method.
 This chapter first introduces the datasets used in the experiments in Section \ref{sec:exp-datasets}, specifcally the \textit{MPII Human Pose} dataset for $2D$ pose estimation, and the \textit{Penn Action} and \textit{JHMDB} datasets for Human Activity Recognition.
@@ -96,7 +96,14 @@ It was decided by \cite{luvizon_2d/3d_2018} that the number of joints should be 
 This then means that the network architecture does not need to be changed, no matter which dataset is used.
 Specifically, the \textit{pose cube} dimensionality does not need to be changed.
 To achieve this, the \textit{head} annotation of the Penn Action dataset is mapped to the \textit{upper neck} joint of the MPII dataset and the missing joints were interpreted as not visible.
-The augmentation is identical to the augmentation mentioned in \sref{sec:exp-mpii}. % TODO: Augmentation changed
+
+It was decided to introduce additional augmentation since the dataset is smaller in comparison to MPII and because it was observed that the HAR models were overfitting on the training data.
+Thus, two additional augmentation methods were used.
+First, with a probability of $0.5$, salt and pepper augmentation was applyied to the training images.
+In this augmentation method, random noise in the form of white and black pixels gets applied to the image.
+Second, using an augmentation strategy called Dropout, black rectangles are placed randomly inside the image, covering chunks of the original image.
+The last method was also introduced on half of the test images.
+The network then needs to make decisions on partially occluded images, making it more robust, because it forces the network to utilize alternative paths on some images, effectively making the model more general.
 
 For some experiments, we compute a ground truth bounding box of the person by calculating the minimum and maximum $x$ and $y$ coordinates of the pose and defining these as the corners of the bounding box.
 Additionally, to include more context, we decided to increase the bounding box by $30$ pixels in both dimensions.
@@ -116,7 +123,7 @@ See \fref{fig:puppet_tool_example} for a visualization of the annotation process
 \begin{figure}[htb!]
     \centering
     \includegraphics[width=0.4\textwidth]{puppet_tool_example.png}
-    \caption{Example of an image, annotated using the puppet flow. The dots indicate the joint positions, while the transparent human figure prior automatically adjusts, yielding the human segmentation map. Notice that, by using the figure, even joints that are not visible (like the ankles) still get anatomically plausible annotations. Image taken from \cite{noauthor_jhmdb_nodate}.}
+    \caption{Example of an image, annotated using the puppet flow. The dots indicate the joint positions, while the transparent human figure prior automatically adjusts, yielding the human segmentation map. Notice that, by using the figure, even joints that are not visible (like the ankles) still get anatomically plausible annotations. Image taken from \cite{max_planck_institute_for_intelligent_systems_jhmdb_nodate}.}
     \label{fig:puppet_tool_example}
 \end{figure}
 
@@ -136,7 +143,7 @@ Notice that the actions are more diverse, in comparison to the Penn Action datas
 The puppet tool defines $15$ different joints.
 They are identical to the ones annotated in the Penn Action dataset, but additionally contain \textit{neck} and \textit{belly}.
 The same procedure was used to map the joints to the format provided by the MPII dataset.
-Also, the approach for computing ground truth bounding boxes, as well as preprocessing the \textit{fragments} and augmentations is identical to the one presented earlier. % TODO: augmentation changed
+Also, the approach for computing ground truth bounding boxes, as well as preprocessing and augmenting the \textit{fragments} is identical to the one presented earlier in \sref{sec:exp-penn}.
 
 \section{Evaluation Metrics}
 \label{sec:exp-metrics}
@@ -226,7 +233,6 @@ In summary, while the Soft-argmax function appears to be less accurate around th
 \subsection{Replication of Original Work}
 \label{sec:exp-replication}
 % TODO
-% TODO: Mention optimizers, as well as parameters, for all models
 
 First, in order to recreate the work of \cite{luvizon_2d/3d_2018}, a pose estimator using the MPII dataset was trained.
 In addition to the authors work, the number of prediction blocks as well as the number of context heatmaps was varied to observe the effect on the overall accuracy of the model.
@@ -234,8 +240,6 @@ Second, the 2D HAR experiments performed by the authors on the Penn Action datas
 If not otherwise mentioned, the experiment settings mentioned are taken from \cite{luvizon_2d/3d_2018} as well as the supplemental material provided by the authors.
 
 \subsubsection{Pose estimation}
-% TODO
-
 In their work, the authors use $8$ prediction blocks in their pose estimator for evaluating the accuracy of the model on the MPII dataset.
 In this thesis, additional experiments using $2$ and $4$ prediction blocks were performed.
 In addition, we chose to evaluate all models without context heatmaps as well as with $2$ context heatmaps, since this what the authors chose for their experiment.
@@ -244,8 +248,29 @@ The training data of the MPII dataset was split into a training and validation s
 An iteration is defined as the processing of one batch.
 The batch size varies, depending on the experiment, since the models are of different size and thus allow for bigger batch sizes when using smaller models.
 The batch size was set to $45, 30$ and $20$ for $2, 4$ and $8$ prediction blocks, respectively.
+As an optimizer, the authors use the RMSProp algorithm.
 A initial learning rate of $1^{-3}$ was used in accordance to the work of the authors.
-% TODO: Evaluate using learning rate scheduling or remove the "initial"
+
+\begin{equation}
+    \label{eq:elasticnetloss}
+    L_p = \frac{1}{N_j} \sum_{i=1}^{N_j} \lVert(p_{est} - p)\rVert_1 + \lVert p_{est} - p \rVert^2_2.
+\end{equation}
+
+The authors define a loss function named \textit{Elastic Net Loss}.
+For each joint in the pose, the $L_1$ and $L_2$ norms between the estimated and ground truth joint are computed and added.
+Then, these sums are again summed and normalized by the number of joints in the pose.
+See \eref{eq:elasticnetloss} for the formula, where $p_{est}$ referrs to the estimated joint position by the pose estimator and $p$ referrs to the ground truth pose.
+In addition to computing the Elastic net loss, the authors predict the visibility of each joint.
+The annotations of MPII provide ground truth labels $v \in \{0,1\}$ of whether a joint is occluded or not.
+Binary cross-entropy is used to compute a loss $L_v$ between the predicted visibility vector $v_{est}$ and the ground truth $v$.
+Finally, both losses get combined in the following way:
+
+\begin{equation}
+    L = L_p + 0.01 \cdot L_v.
+\end{equation}
+
+For all subsequent pose estimation experiments, $L$ is used to compute the loss of the pose estimator.
+
 As discussed before, for evaluating a model on the test dataset, the estimations need to be send to the \textit{Max Planck Institute for Intelligent Systems} for evaluation.
 Because they limit the amount of submissions to $4$, it was not possible to evaluate each trained model on the test data, which is why it was decided to report the validation accuracy for comparison and only submit estimations from the best performing model.
 
@@ -334,25 +359,65 @@ Because the authors do not mention how this was done in detail, and since the nu
 % TODO: zwischenfazit
 
 \subsubsection{HAR using Penn Action dataset}
-% TODO
 In order to recreate the Human Activity Recognition results from \cite{luvizon_2d/3d_2018} on the Penn Action dataset, we first trained a pose estimator, which is later incorporated into the HAR model.
 The authors used a hybrid dataset for training, consisting of $75$ percent MPII and $25$ percent Penn Action training data.
 They do not, however, motivate this decision.
-The pose estimator contains $4$ prediction blocks, uses $2$ context heatmaps and was trained using a batch size of TODO and a learning rate of TODO.
-The validation accuracy scores can be seen in TODO.
-% TODO: talk about results
-% TODO: single and multi clip evaluation
-% TODO: Test on Penn action using PCK @ 0.2 and @ 0.1
+The pose estimator contains $4$ prediction blocks, uses $2$ context heatmaps and was trained using a batch size of $30$ and a learning rate of $1e-3$.
+The loss, as well as validation accuracy scores can be seen in \fref{fig:pose_mixed_results}.
+Since the authors did not provide validation accuracy results or test results on this experiment, it was decided to evaluate the trained pose estimator on the test set of the Penn Action dataset, to gain better insight into the performance of the network.
+With a PCK accuracy value of $0.84$ and a PCKu value of $0.67$, the network performs significantly worse on the Penn Action test dataset, in comparison to the results of the mixed validation set.
+This suggests that mixing the dataset in such a way might not lead to an optimal solution w.r.t. the intended target dataset.
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.7\textwidth]{pose_mixed_results.png}
+    \caption{Loss and validation accuracies, using PCK and PCKu, both with $\alpha = 0.2$.}
+    \label{fig:pose_mixed_results}
+\end{figure}
 
 Afterwards, the pretrained pose estimator was inserted into the HAR model.
 The model was trained using Penn Action data only.
 Also, the weights of the pose estimator were initially frozen.
 This was done in order to find the point in training where the validation accuracies plateaus, at which point the authors unfreeze the weights and lower the learning rate.
+As an optimizer, Stochastic Gradient Descend was used, with the addition of a momentum value $\gamma = 0.98$ and the use of a method called \textit{Nesterov Accelerated Gradient (NAG)} \cite{nesterov_method_1983}.
+Momentum is used to accelarate the gradient descent process by incorporating a fraction $\gamma$ of the previous step size to compute the next step size to take.
+Consider a regular update to the weights $w$ of a neuron using gradient descent, as explained in \sref{sec:gradient_descent}, given by the following formula:
+
+\begin{equation}
+    w_{t+1} = w_t - \eta \nabla w_t,
+\end{equation}
+
+where $\eta$ refers to the learning rate and $\nabla w_t$ contains the gradients computed using the loss function.
+When using momentum, a update term $\nu_t$ is computed in the following way:
+
+\begin{equation}
+    \nu_t = \gamma \nu_{t-1} + \eta \nabla w_t.
+\end{equation}
+
+Afterwards, the new weights are computed by subtracting $\nu_t$ from $w_t$:
+
+\begin{equation}
+    w_{t+1} = w_t - \nu_t.
+\end{equation}
+
+The intuition behind momentum is that the descend can be accelerated by incorporating previous descend operations.
+If the descent in a certain direction was used multiple times before, then the assumption is that the descend in a similar direction further descreases the loss.
+This assumption, however, can lead to the case where the minimum of the loss function surpassed.
+To minimize the probability of this happening while still accelerating the descend towards the local minimum, Nesterov Accelerated Gradient adds an additional step to the momentum process.
+It calculates a \textit{look-ahead} weight $w_{la} = w_{t} \gamma \nu_{t-1}$ and evaluates the gradient using this new weight.
+If the gradient at $w_{la}$ points to a different direction than $\gamma \nu_{t-1}$ it will correct the surpassing of the minimum to an extend by reducing the overall magnitude of the step taken.
+The following formula describes the update process of weights $w_t$ using the NAG:
+
+\begin{equation}
+    w_{t+1} = w_t - \gamma \nu_{t-1} - \eta \nabla w_{la}.
+\end{equation}
+
 In the experiment conducted in this thesis, the validation did not increase after the TODO iteration
-A learning rate of $2^{-5}$ was used, because this is what the authors suggested in their work.
+A learning rate of $2^{-5}$ was used, as suggested by the authors in their work.
 
 - Started finetuning at iteration X and reduce learning rate by X % TODO
 - Talk about results
+% TODO: single and multi clip evaluation
 % TODO: statistical significance testing between my results and authors
 % TODO: zwischenfazit
 
@@ -370,17 +435,29 @@ A learning rate of $2^{-5}$ was used, because this is what the authors suggested
 % TODO: general conclusion: is this dataset harder? why?
 
 \subsection{HAR on JHMDB Dataset}
-%all kinds of substitutions like using gt bb etc.
 - use the pretrained pose estimator from before, 4 blocks, 2 context heatmaps
 - parameters
 - Same as in pennaciton: first find the validation plateau point
 - afterwards: new experiment with finetune
+% TODO: Compare to PennAction
 
 \subsection{Effect of Combining Loss Functions}
+Next, this thesis proposes a method for training the network in an end-to-end approach.
+This means that no part of the network is pretrained.
+To achieve this, the loss of the pose estimator and the loss of the action recognition pipeline are combined.
+More specifically, during the training process, the losses of all intermediate results from the pose estimator are computed using the elastic net loss.
+Afterwards, the loss of all intermediate results from the action recognition are computed using categorical cross-entropy.
+It was decided to weigh both losses equally, i.e., sum them without weighting either the pose estimation or action recognition loss more.
+
+It was observed that the network started overfitting during training.
+This is most likely due to the small size of the dataset, compared to the size of the untrained network.
+It was decided to introduce $L_2$ regularization on the weights using a parameter of $\lambda = 0.9$ to make the network less suceptable to overfitting.
+% TODO: change this if parameters change
+
 - explain how e2e training was done (using pose loss etc.)
 - show results
 - explain why it didnt work (or why it did)
 
-\subsection{Effect of Using Different Representations of Pose}
-\label{sec:different_pose_representation_experiment}
+% \subsection{Effect of Using Different Representations of Pose}
+% \label{sec:different_pose_representation_experiment}
 
