@@ -96,7 +96,14 @@ It was decided by \cite{luvizon_2d/3d_2018} that the number of joints should be 
 This then means that the network architecture does not need to be changed, no matter which dataset is used.
 Specifically, the \textit{pose cube} dimensionality does not need to be changed.
 To achieve this, the \textit{head} annotation of the Penn Action dataset is mapped to the \textit{upper neck} joint of the MPII dataset and the missing joints were interpreted as not visible.
-The augmentation is identical to the augmentation mentioned in \sref{sec:exp-mpii}. % TODO: Augmentation changed
+
+It was decided to introduce additional augmentation since the dataset is smaller in comparison to MPII and because it was observed that the HAR models were overfitting on the training data.
+Thus, two additional augmentation methods were used.
+First, with a probability of $0.5$, salt and pepper augmentation was applyied to the training images.
+In this augmentation method, random noise in the form of white and black pixels gets applied to the image.
+Second, using an augmentation strategy called Dropout, black rectangles are placed randomly inside the image, covering chunks of the original image.
+The last method was also introduced on half of the test images.
+The network then needs to make decisions on partially occluded images, making it more robust, because it forces the network to utilize alternative paths on some images, effectively making the model more general.
 
 For some experiments, we compute a ground truth bounding box of the person by calculating the minimum and maximum $x$ and $y$ coordinates of the pose and defining these as the corners of the bounding box.
 Additionally, to include more context, we decided to increase the bounding box by $30$ pixels in both dimensions.
@@ -136,14 +143,7 @@ Notice that the actions are more diverse, in comparison to the Penn Action datas
 The puppet tool defines $15$ different joints.
 They are identical to the ones annotated in the Penn Action dataset, but additionally contain \textit{neck} and \textit{belly}.
 The same procedure was used to map the joints to the format provided by the MPII dataset.
-Also, the approach for computing ground truth bounding boxes, as well as preprocessing the \textit{fragments} is identical to the one presented earliner.
-However, it was decided to introduce additional augmentation since the dataset is smaller and because it was observed that the HAR models were overfitting on the training data.
-Thus, two additional augmentation methods were used.
-First, with a probability of $0.5$, salt and pepper augmentation was applyied to the training images.
-In this augmentation method, random noise in the form of white and black pixels gets applied to the image.
-Second, using an augmentation strategy called Dropout, black rectangles are placed randomly inside the image, covering chunks of the original image.
-The last method was also introduced on half of the test images.
-The network then needs to make decisions on partially occluded images, making it more robust, because it forces the network to utilize alternative paths on some images, effectively making the model more general.
+Also, the approach for computing ground truth bounding boxes, as well as preprocessing and augmenting the \textit{fragments} is identical to the one presented earlier in \sref{sec:exp-penn}.
 
 \section{Evaluation Metrics}
 \label{sec:exp-metrics}
