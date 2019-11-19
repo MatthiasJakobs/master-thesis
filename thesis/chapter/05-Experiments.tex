@@ -359,16 +359,21 @@ Because the authors do not mention how this was done in detail, and since the nu
 % TODO: zwischenfazit
 
 \subsubsection{HAR using Penn Action dataset}
-% TODO
-% TODO: Mention how loss was computed
 In order to recreate the Human Activity Recognition results from \cite{luvizon_2d/3d_2018} on the Penn Action dataset, we first trained a pose estimator, which is later incorporated into the HAR model.
 The authors used a hybrid dataset for training, consisting of $75$ percent MPII and $25$ percent Penn Action training data.
 They do not, however, motivate this decision.
-The pose estimator contains $4$ prediction blocks, uses $2$ context heatmaps and was trained using a batch size of TODO and a learning rate of TODO.
-The validation accuracy scores can be seen in TODO.
-% TODO: talk about results
-% TODO: Test on Penn action using PCK @ 0.2 and @ 0.1
-%test 83.95 and 66.92 for pck_bb_0.2 and pck_upper_0.2
+The pose estimator contains $4$ prediction blocks, uses $2$ context heatmaps and was trained using a batch size of $30$ and a learning rate of $1e-3$.
+The loss, as well as validation accuracy scores can be seen in \fref{fig:pose_mixed_results}.
+Since the authors did not provide validation accuracy results or test results on this experiment, it was decided to evaluate the trained pose estimator on the test set of the Penn Action dataset, to gain better insight into the performance of the network.
+With a PCK accuracy value of $0.84$ and a PCKu value of $0.67$, the network performs significantly worse on the Penn Action test dataset, in comparison to the results of the mixed validation set.
+This suggests that mixing the dataset in such a way might not lead to an optimal solution w.r.t. the intended target dataset.
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.7\textwidth]{pose_mixed_results.png}
+    \caption{Loss and validation accuracies, using PCK and PCKu, both with $\alpha = 0.2$.}
+    \label{fig:pose_mixed_results}
+\end{figure}
 
 Afterwards, the pretrained pose estimator was inserted into the HAR model.
 The model was trained using Penn Action data only.
@@ -407,10 +412,8 @@ The following formula describes the update process of weights $w_t$ using the NA
     w_{t+1} = w_t - \gamma \nu_{t-1} - \eta \nabla w_{la}.
 \end{equation}
 
-While the authors do not motivate their use of momentum, it is typically used for faster convergence, because it adds a fraction $\gamma$ of the previous 
-
 In the experiment conducted in this thesis, the validation did not increase after the TODO iteration
-A learning rate of $2^{-5}$ was used, because this is what the authors suggested in their work.
+A learning rate of $2^{-5}$ was used, as suggested by the authors in their work.
 
 - Started finetuning at iteration X and reduce learning rate by X % TODO
 - Talk about results
