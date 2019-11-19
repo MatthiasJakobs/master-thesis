@@ -709,10 +709,11 @@ class HAR_E2E(HAR_Testing_Experiment):
 
 class Pose_JHMDB(ExperimentBase):
 
-    def __init__(self, conf, validate=False, use_pretrained=False, nr_aug=3, use_flip=True):
+    def __init__(self, conf, validate=False, use_pretrained=False, pretrained=None, nr_aug=3, use_flip=True):
         super().__init__(conf, validate=validate)
         self.use_pretrained = use_pretrained
         self.nr_aug = nr_aug
+        self.pretrained_model = pretrained
 
     def preparation(self):
 
@@ -728,7 +729,7 @@ class Pose_JHMDB(ExperimentBase):
 
         if self.use_pretrained:
             print("Using pretrained model")
-            self.model.load_state_dict(torch.load("/data/mjakobs/data/pretrained_weights_4", map_location=self.device))
+            self.model.load_state_dict(torch.load(self.pretrained_model, map_location=self.device))
         self.model.train()
 
         if "use_random" in self.conf and self.conf["use_random"]:
