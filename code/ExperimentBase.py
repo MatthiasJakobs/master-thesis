@@ -1030,7 +1030,7 @@ class Pose_Mixed(ExperimentBase):
         self.model.train()
 
         self.ds_train = MixMPIIPenn(train=True, val=False, use_gt_bb=True)
-        self.ds_val = MixMPIIPenn(train=True, val=True, use_gt_bb=True)
+        self.ds_val = PennActionDataset("/data/mjakobs/data/pennaction/", train=True, val=True, use_gt_bb=True, use_saved_tensors=True)
 
         train_indices, val_indices = self.limit_dataset(include_test=False)
 
@@ -1052,7 +1052,7 @@ class Pose_Mixed(ExperimentBase):
         self.optimizer = optim.RMSprop(self.model.parameters(), lr=self.conf["learning_rate"])
 
         self.train_writer.write(["iteration", "loss"])
-        self.val_writer.write(["iteration", "pck_bb_0.2", "pck_upper_0.2"])
+        self.val_writer.write(["iteration", "pck_bb_0.2", "pck_bb_0.1"])
 
         self.create_experiment_folders()
 
@@ -1105,10 +1105,14 @@ class Pose_Mixed(ExperimentBase):
             self.create_dynamic_folders()
 
             for batch_idx, val_data in enumerate(self.val_loader):
-                val_images = val_data["normalized_image"].to(self.device)
-                val_poses = val_data["normalized_pose"].to(self.device)
+                val_images = val_data["normalized_frames"].to(self.device)
+                val_poses = val_data["normalized_poses"].to(self.device)
 
-                trans_matrices = val_data["trans_matrix"].to(self.device)
+                trans_matrices = val_data["trans_matrices"].to(self.device)
+
+                val_images = val_images.squeeze(dim=0)
+                val_poses = val_poses.squeeze(dim=0)
+                trans_matrices = trans_matrices.squeeze(dim=0)
 
                 _, predictions, _, _ = self.model(val_images)
                 predictions = predictions.squeeze(dim=0)
@@ -1121,7 +1125,7 @@ class Pose_Mixed(ExperimentBase):
                 gt_poses = val_poses
 
                 # get distance meassures
-                bboxes = val_data["bbox"]
+                bboxes = val_data["bbox"].squeeze(dim=0)
                 distance_meassures = torch.FloatTensor(len(bboxes))
 
                 for i in range(len(bboxes)):
@@ -1130,8 +1134,8 @@ class Pose_Mixed(ExperimentBase):
 
                     distance_meassures[i] = torch.max(width, height).item()
 
-                pck_bb_02.append(eval_pck_batch(predictions[:, :, 0:2], gt_poses[:, :, 0:2], trans_matrices, distance_meassures))
-                pck_bb_01.append(eval_pck_batch(predictions[:, :, 0:2], gt_poses[:, :, 0:2], trans_matrices, distance_meassures, threshold=0.1))
+                pck_bb_02.extend(eval_pck_batch(predictions[:, :, 0:2], gt_poses[:, :, 0:2], trans_matrices, distance_meassures))
+                pck_bb_01.extend(eval_pck_batch(predictions[:, :, 0:2], gt_poses[:, :, 0:2], trans_matrices, distance_meassures, threshold=0.1))
 
                 if batch_idx % 10 == 0:
                     prediction = predictions[0, :, 0:2]
