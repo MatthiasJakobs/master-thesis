@@ -28,7 +28,7 @@ from datasets.JHMDBDataset import JHMDBDataset
 from datasets.MixMPIIPenn import MixMPIIPenn
 from datasets.PennActionDataset import PennActionDataset
 from datasets.PennActionFragmentsDataset import PennActionFragmentsDataset
-from deephar.models import DeepHar, Mpii_1, Mpii_2, Mpii_4, Mpii_8, TimeDistributedPoseEstimation
+from deephar.models import DeepHar, DeepHar_Smaller, Mpii_1, Mpii_2, Mpii_4, Mpii_8, TimeDistributedPoseEstimation
 from deephar.blocks import Stem
 from deephar.utils import get_valid_joints, get_bbox_from_pose, transform_2d_point, transform_pose
 from deephar.measures import elastic_net_loss_paper, categorical_cross_entropy
@@ -584,6 +584,8 @@ class HAR_E2E(HAR_Testing_Experiment):
     def preparation(self):
         super().preparation(load_model=False, nr_aug=17)
         #self.optimizer = optim.SGD(self.model.parameters(), lr=self.conf["learning_rate"], weight_decay=0.9, momentum=0.98, nesterov=True)
+        if self.small_model:
+            self.model = DeepHar_Smaller(num_actions=21, use_gt=False, nr_context=self.conf["nr_context"], use_timedistributed=self.use_timedistributed).to(self.device)
 
     def train(self, train_objects):
         self.model.train()
