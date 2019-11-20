@@ -574,6 +574,13 @@ class HAR_PennAction(HAR_Testing_Experiment):
 
 class HAR_E2E(HAR_Testing_Experiment):
 
+    def __init__(self, conf, small_model=False):
+        super().__init__(conf)
+        self.small_model = small_model
+        self.nr_intermediate = 4
+        if self.small_model:
+            self.nr_intermediate = 2
+
     def preparation(self):
         super().preparation(load_model=False, nr_aug=17)
         #self.optimizer = optim.SGD(self.model.parameters(), lr=self.conf["learning_rate"], weight_decay=0.9, momentum=0.98, nesterov=True)
@@ -592,7 +599,7 @@ class HAR_E2E(HAR_Testing_Experiment):
             ground_poses = train_objects["poses"].to(self.device)
 
             actions = actions.unsqueeze(1)
-            actions = actions.expand(-1, 4, -1)
+            actions = actions.expand(-1, self.nr_intermediate, -1)
 
             predicted_poses, _, pose_predicted_actions, vis_predicted_actions, _ = self.model(frames, finetune=True)
             
@@ -617,8 +624,8 @@ class HAR_E2E(HAR_Testing_Experiment):
             binary_crossentropy = nn.BCELoss()
             vis_loss = binary_crossentropy(pred_vis, ground_vis)
 
-            pred_pose = pred_pose.contiguous().view(batch_size * 16, 4, 16, 2)
-            ground_pose = ground_pose.contiguous().view(batch_size * 16, 4, 16, 2)
+            pred_pose = pred_pose.contiguous().view(batch_size * 16, self.nr_intermediate, 16, 2)
+            ground_pose = ground_pose.contiguous().view(batch_size * 16, self.nr_intermediate, 16, 2)
 
             pose_loss = elastic_net_loss_paper(pred_pose, ground_pose)
             pose_loss = vis_loss * 0.01 + pose_loss

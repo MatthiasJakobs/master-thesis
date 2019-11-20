@@ -286,3 +286,181 @@ class DeepHar(nn.Module):
         final_output = self.softmax(final_output).squeeze(-1).squeeze(-1).unsqueeze(1)
 
         return train_poses, poses, torch.cat(pose_action_predictions, 1), torch.cat(vis_action_predictions, 1), final_output
+
+class DeepHar_Smaller(nn.Module):
+    def __init__(self, num_frames=16, num_joints=16, num_actions=10, nr_context=0, use_gt=True, model_path=None, alternate_time=False, use_timedistributed=False):
+        super(DeepHar_Smaller, self).__init__()
+
+        self.use_gt = use_gt # use pretrained pose estimator
+        self.alternate_time = alternate_time
+        self.pose_estimator = Mpii_2(num_context=nr_context)
+        self.use_timedistributed = use_timedistributed
+        if use_gt:
+            if torch.cuda.is_available():
+                device = "cuda"
+            else:
+                device = "cpu"
+
+            self.pose_estimator.load_state_dict(torch.load(model_path, map_location=device))
+
+        self.num_frames = num_frames
+        self.num_joints = num_joints
+        self.num_actions = num_actions
+
+        self.max_min_pooling = MaxMinPooling(kernel_size=(4,4))
+        self.softmax = nn.Softmax2d()
+
+        if self.use_timedistributed:
+            self.pose_estimator = TimeDistributedPoseEstimation(self.pose_estimator)
+
+        if self.alternate_time:
+            self.pose_model = PoseModelTimeSeries(num_frames, num_joints, num_actions, num_intermediate=2)
+        else:
+            self.pose_model = PoseModel(num_frames, num_joints, num_actions, num_intermediate=2)
+        self.visual_model = VisualModel(num_frames, num_joints, num_actions, num_intermediate=2)
+
+        self.heatmap_weighting = HeatmapWeighting(self.num_actions)
+
+        #self.action_predictions = []
+
+    def extract_pose_for_frames(self, x, gt_pose=None):
+        train_poses, poses, heatmaps, features = self.pose_estimator(x)
+        poses = poses.squeeze(0)
+        train_poses = train_poses.permute(1, 0, 2, 3)
+
+        if gt_pose is not None:
+            assert gt_pose.shape == (16, 16, 3)
+            train_poses = gt_pose.clone()
+            train_poses = train_poses.unsqueeze(1)
+            train_poses = train_poses.expand(-1, 4, -1, -1)
+
+            heatmaps = torch.FloatTensor(16, 16, 32, 32)
+            for i in range(16):
+                for o in range(16):
+                    pose = gt_pose[i, o]
+                    if pose[2] == 0:
+                        mean_x = 127
+                        mean_y = mean_x
+                        cov = 500
+                    else:
+                        mean_x = pose[0] * 255
+                        mean_y = pose[1] * 255
+                        cov = 10
+
+                    heatmap = create_heatmap(mean_x, mean_y, cov)
+                    heatmap = torch.FloatTensor(resize(heatmap, (32, 32)))
+                    heatmaps[i, o] = heatmap
+
+            poses = gt_pose.clone()
+
+        return train_poses, poses, heatmaps, features
+
+    def forward(self, x, finetune=False, gt_pose=None):
+
+        if finetune:
+            if self.use_timedistributed:
+                train_poses, poses, heatmaps, features = self.pose_estimator(x)
+            else:
+                train_poses, poses, heatmaps, features = self.extract_pose_for_frames(x, gt_pose=gt_pose)
+        else:
+            with torch.no_grad():
+                if self.use_timedistributed:
+                    train_poses, poses, heatmaps, features = self.pose_estimator(x)
+                else:
+                    train_poses, poses, heatmaps, features = self.extract_pose_for_frames(x, gt_pose=gt_pose)
+                    
+        if self.use_timedistributed:
+            offset = 1
+        else:
+            offset = 0
+
+        nj = poses.size()[1 + offset]
+        nf = features.size()[1 + offset]
+
+        assert nj == self.num_joints
+
+        features = features.unsqueeze(1 + offset)
+        heatmaps = heatmaps.unsqueeze(2 + offset )
+
+        if self.use_timedistributed:
+            features = features.expand(-1, -1, nj, -1, -1, -1)
+            heatmaps = heatmaps.expand(-1, -1, -1, nf, -1, -1)
+        else:
+            features = features.expand(-1, nj, -1, -1, -1)
+            heatmaps = heatmaps.expand(-1, -1, nf, -1, -1)
+
+        assert heatmaps.size() == features.size()
+        y = features * heatmaps
+        y = torch.sum(y, (3 + offset, 4 + offset))
+
+        del features
+        del heatmaps
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
+        action_cube = torch.from_numpy(np.empty((self.num_frames, self.num_joints, nf)))
+
+        action_cube = y
+        del y
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
+        pose_cube = torch.from_numpy(np.empty((self.num_frames, self.num_joints, 2)))
+        if self.use_timedistributed:
+            pose_cube = poses[:, :, :, 0:2]
+        else:
+            pose_cube = poses[:, :, 0:2]
+
+        if self.alternate_time:
+            if self.use_timedistributed:
+                pose_cube = pose_cube.permute(0, 3, 2, 1).float() # TODO
+            else:
+                pose_cube = pose_cube.permute(2, 1, 0).float()
+
+        else:
+            if self.use_timedistributed:
+                pose_cube = pose_cube.permute(0, 3, 1, 2).float()
+            else:
+                pose_cube = pose_cube.permute(2, 0, 1).float()
+
+        if self.use_timedistributed:
+            action_cube = action_cube.permute(0, 3, 1, 2).float()
+        else:
+            action_cube = action_cube.permute(2, 0, 1).float()
+
+        pose_action_predictions = []
+        vis_action_predictions = []
+        if torch.cuda.is_available():
+            pose_cube = pose_cube.to('cuda')
+            action_cube = action_cube.to('cuda')
+
+        intermediate_poses = self.pose_model(pose_cube, poses, use_timedistributed=self.use_timedistributed)
+        intermediate_vis = self.visual_model(action_cube, use_timedistributed=self.use_timedistributed)
+        del pose_cube
+        del action_cube
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
+        for y in intermediate_poses:
+            y = self.max_min_pooling(y)
+            y = self.softmax(y).squeeze(-1).squeeze(-1).unsqueeze(1)
+
+            pose_action_predictions.append(y)
+
+        for y in intermediate_vis:
+            y = self.max_min_pooling(y)
+            y = self.softmax(y).squeeze(-1).squeeze(-1).unsqueeze(1)
+
+            vis_action_predictions.append(y)
+
+        final_vis = intermediate_vis[-1]
+        final_pose = intermediate_poses[-1]
+
+        final_vis = self.heatmap_weighting(final_vis)
+        final_pose = self.heatmap_weighting(final_pose)
+
+        final_output = final_vis + final_pose
+        final_output = self.max_min_pooling(final_output)
+        final_output = self.softmax(final_output).squeeze(-1).squeeze(-1).unsqueeze(1)
+
+        return train_poses, poses, torch.cat(pose_action_predictions, 1), torch.cat(vis_action_predictions, 1), final_output
