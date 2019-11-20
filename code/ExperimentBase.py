@@ -1217,6 +1217,9 @@ class Pose_Mixed(ExperimentBase):
         return mean_bb_02, mean_bb_01
 
 class MPIIExperiment(ExperimentBase):
+    def __init__(self, conf, pretrained_model=None):
+        super().__init__(conf)
+        self.pretrained_model = pretrained_model
 
     def preparation(self):
 
@@ -1237,6 +1240,11 @@ class MPIIExperiment(ExperimentBase):
             self.model = Mpii_4(num_context=self.conf["nr_context"]).to(self.device)
         if self.conf["num_blocks"] == 8:
             self.model = Mpii_8(num_context=self.conf["nr_context"]).to(self.device)
+
+        if self.pretrained_model is not None:
+            print("Using pretrained model at " + self.pretrained_model)
+            self.model.load_state_dict(torch.load(self.pretrained_model, map_location=self.device))
+
 
         train_indices, val_indices = self.limit_dataset(include_test=False)
 
