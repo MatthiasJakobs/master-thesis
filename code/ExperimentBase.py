@@ -202,11 +202,13 @@ class ExperimentBase:
 
 
 class HAR_Testing_Experiment(ExperimentBase):
-    def __init__(self, conf, pretrained_model=None):
+    def __init__(self, conf, start_at=None, pretrained_model=None):
         super().__init__(conf)
         self.pretrained_model = pretrained_model
+        self.start_at = start_at
+        print(self.start_at)
 
-    def preparation(self, load_model=True, start_at=None, nr_aug=6):
+    def preparation(self, load_model=True, nr_aug=10):
         if "fine_tune" in self.conf:
             self.fine_tune = self.conf["fine_tune"]
         else:
@@ -227,20 +229,20 @@ class HAR_Testing_Experiment(ExperimentBase):
         else:
             self.use_timedistributed = False
 
-        if start_at is not None:
+        if self.start_at is not None:
             print('startat')
-            self.model = DeepHar(num_actions=21, use_gt=True, nr_context=self.conf["nr_context"], use_timedistributed=self.use_timedistributed).to(self.device)
-            self.model.load_state_dict(torch.load(start_at, map_location=self.device))
-
-
-        if load_model:
-            self.model = DeepHar(num_actions=21, use_gt=True, nr_context=self.conf["nr_context"], model_path="/data/mjakobs/data/pretrained_jhmdb", use_timedistributed=self.use_timedistributed).to(self.device)
-
-            if self.pretrained_model is not None:
-                self.model.load_state_dict(torch.load(self.pretrained_model, map_location=self.device))
-              
-        else:
+            print(self.start_at)
             self.model = DeepHar(num_actions=21, use_gt=False, nr_context=self.conf["nr_context"], use_timedistributed=self.use_timedistributed).to(self.device)
+            self.model.load_state_dict(torch.load(self.start_at, map_location=self.device))
+        else:
+            if load_model:
+                self.model = DeepHar(num_actions=21, use_gt=True, nr_context=self.conf["nr_context"], model_path="/data/mjakobs/data/pretrained_jhmdb", use_timedistributed=self.use_timedistributed).to(self.device)
+
+                if self.pretrained_model is not None:
+                    self.model.load_state_dict(torch.load(self.pretrained_model, map_location=self.device))
+                  
+            else:
+                self.model = DeepHar(num_actions=21, use_gt=False, nr_context=self.conf["nr_context"], use_timedistributed=self.use_timedistributed).to(self.device)
 
         self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False, use_random_parameters=True, augmentation_amount=nr_aug, use_gt_bb=self.use_gt_bb)
         self.ds_val = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=True, use_gt_bb=self.use_gt_bb)
