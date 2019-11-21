@@ -759,6 +759,8 @@ class HAR_E2E(HAR_Testing_Experiment):
     def evaluate(self):
         mean_action = torch.mean(torch.Tensor(self.action_train_accuracies)).item()
         mean_pose = torch.mean(torch.Tensor(self.pose_train_accuracies)).item()
+        print(self.action_train_accuracies)
+        print(self.pose_train_accuracies)
         self.train_accuracy_writer.write([self.iteration, mean_action, mean_pose])
 
         self.action_train_accuracies = []
