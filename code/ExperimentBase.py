@@ -655,7 +655,7 @@ class HAR_E2E(HAR_Testing_Experiment):
 
                 distance_meassures[i] = torch.max(width, height).item()
 
-            pose_train_accuracy = torch.mean(eval_pck_batch(pred_pose[:, -1, :, 0:2], ground_pose[:, -1, :, 0:2], trans_matrices, distance_meassures)).item() / batch_size
+            pose_train_accuracy = torch.mean(torch.Tensor(eval_pck_batch(pred_pose[:, -1, :, 0:2], ground_pose[:, -1, :, 0:2], trans_matrices, distance_meassures))).item() / batch_size
 
             self.train_accuracy_writer.write([self.iteration, action_train_accuracy, pose_train_accuracy])
 
