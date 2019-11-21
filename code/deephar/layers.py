@@ -160,10 +160,13 @@ class JointProbability(nn.Module):
 
 # based on https://discuss.pytorch.org/t/any-pytorch-function-can-work-as-keras-timedistributed/1346/4
 class TimeDistributedPoseEstimation(nn.Module):
-    def __init__(self, module):
+    def __init__(self, module, small_model=False):
         super(TimeDistributedPoseEstimation, self).__init__()
         self.pose_estimator = module
-
+        if small_model:
+            self.nr_output = 380
+        else:
+            self.nr_output = 576
     def forward(self, x):
 
         # Squash samples and timesteps into a single axis
@@ -175,7 +178,7 @@ class TimeDistributedPoseEstimation(nn.Module):
         train_poses = train_poses.permute(1, 0, 2, 3)
         poses = poses.squeeze(0)
 
-        features = features.contiguous().view((size_before[0], size_before[1], 576, 32, 32))
+        features = features.contiguous().view((size_before[0], size_before[1], self.nr_output, 32, 32))
         poses = poses.contiguous().view((size_before[0], size_before[1], 16, 3))
         train_poses = train_poses.contiguous().view((size_before[0], size_before[1], self.pose_estimator.blocks, 16, 3))
         heatmaps = heatmaps.contiguous().view((size_before[0], size_before[1], 16, 32, 32))
