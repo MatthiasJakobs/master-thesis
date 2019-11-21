@@ -20,12 +20,12 @@ class Mpii_1(nn.Module):
         return heatmaps, output
 
 class Mpii_2(nn.Module):
-    def __init__(self, num_context=0):
+    def __init__(self, num_context=0, small_model=False):
         super(Mpii_2, self).__init__()
 
         self.blocks = 2
 
-        self.stem = Stem()
+        self.stem = Stem(small_model=small_model)
         self.rec1 = ReceptionBlock(num_context=num_context)
         self.rec2 = ReceptionBlock(num_context=num_context)
 
@@ -293,7 +293,7 @@ class DeepHar_Smaller(nn.Module):
 
         self.use_gt = use_gt # use pretrained pose estimator
         self.alternate_time = alternate_time
-        self.pose_estimator = Mpii_2(num_context=nr_context)
+        self.pose_estimator = Mpii_2(num_context=nr_context, small_model=True)
         self.use_timedistributed = use_timedistributed
         if use_gt:
             if torch.cuda.is_available():

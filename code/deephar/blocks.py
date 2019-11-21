@@ -7,30 +7,34 @@ import time
 
 class Stem(nn.Module):
 
-    def __init__(self):
+    def __init__(self, small_model=False):
         super(Stem, self).__init__()
 
+        self.small_model = small_model
         self.cba1 = CBA(input_filters=3, output_filters=32, kernel_size=(3,3), stride=(2,2))
         self.cba2 = CBA(input_filters=32, output_filters=32, kernel_size=(3,3), stride=(1,1))
-        self.cba3 = CBA(input_filters=32, output_filters=64, kernel_size=(3,3), stride=(1,1))
-        self.cba4 = CBA(input_filters=64, output_filters=96, kernel_size=(3,3), stride=(2,2))
+        self.cba3 = CBA(input_filters=32, output_filters=50, kernel_size=(3,3), stride=(1,1))
+        self.cba4 = CBA(input_filters=64, output_filters=70, kernel_size=(3,3), stride=(2,2))
 
+        # cba 4 + cba 3
         self.maxpool1 = nn.MaxPool2d(kernel_size=(3,3), stride=(2,2), padding=1)
 
-        self.cba5 = CBA(input_filters=160, output_filters=64, kernel_size=(1,1), stride=(1,1), padding=0)
+        self.cba5 = CBA(input_filters=120, output_filters=50, kernel_size=(1,1), stride=(1,1), padding=0)
 
-        self.cb1 = CB(input_filters=64, output_filters=96, kernel_size=(3,3), stride=(1,1))
+        self.cb1 = CB(input_filters=50, output_filters=70, kernel_size=(3,3), stride=(1,1))
 
-        self.cba6 = CBA(input_filters=160, output_filters=64, kernel_size=(1,1), stride=(1,1), padding=0)
-        self.cba7 = CBA(input_filters=64, output_filters=64, kernel_size=(5,1), stride=(1,1), padding=1)
-        self.cba8 = CBA(input_filters=64, output_filters=64, kernel_size=(1,5), stride=(1,1), padding=1)
-        self.cb2 = CB(input_filters=64, output_filters=96, kernel_size=(3,3), stride=(1,1))
+        self.cba6 = CBA(input_filters=160, output_filters=50, kernel_size=(1,1), stride=(1,1), padding=0)
+        self.cba7 = CBA(input_filters=50, output_filters=50, kernel_size=(5,1), stride=(1,1), padding=1)
+        self.cba8 = CBA(input_filters=50, output_filters=50, kernel_size=(1,5), stride=(1,1), padding=1)
+        self.cb2 = CB(input_filters=50, output_filters=70, kernel_size=(3,3), stride=(1,1))
 
-        self.acb1 = ACB(input_filters=192, output_filters=192, kernel_size=(3,3), stride=(2,2))
+        # cb1 + cb2
+        # acb1 + (cb1 + cb2)
+        self.acb1 = ACB(input_filters=140, output_filters=140, kernel_size=(3,3), stride=(2,2))
         self.maxpool2 = nn.MaxPool2d(kernel_size=(2,2), stride=(2,2), padding=0)
 
-        self.acb2 = ACB(input_filters=384, output_filters=576, kernel_size=(1,1), stride=(1,1), padding=0)
-        self.sep_acb1 = Residual_Sep_ACB(input_filters=384, output_filters=576, kernel_size=(3,3), padding=1)
+        self.acb2 = ACB(input_filters=280, output_filters=380, kernel_size=(1,1), stride=(1,1), padding=0)
+        self.sep_acb1 = Residual_Sep_ACB(input_filters=280, output_filters=380, kernel_size=(3,3), padding=1)
 
 
     def forward(self, x):
@@ -375,13 +379,32 @@ class PoseModel(nn.Module):
 
         self.pooling = MaxMinPooling(kernel_size=(2,2))
 
-        self.act_pred1 = ActionPredictionBlock(num_actions, 112) # TODO: Kind of a magic number
         if self.num_intermediate == 4:
+            # feature extraction
+            self.cba1 = CBA(input_filters=2, output_filters=8, kernel_size=(3,1), padding=(1,0))
+            self.cba2 = CBA(input_filters=2, output_filters=16, kernel_size=(3,3))
+            self.cba3 = CBA(input_filters=2, output_filters=24, kernel_size=(3,5), padding=(1,2))
+
+            self.cb1 = CB(input_filters=48, output_filters=56, kernel_size=(3,3))
+            self.cb2 = CB(input_filters=48, output_filters=32, kernel_size=(1,1), padding=(0,0))
+            self.cb3 = CB(input_filters=32, output_filters=56, kernel_size=(3,3))
+
+            self.act_pred1 = ActionPredictionBlock(num_actions, 112) # TODO: Kind of a magic number
             self.act_pred2 = ActionPredictionBlock(num_actions, 112)
             self.act_pred3 = ActionPredictionBlock(num_actions, 112)
             self.act_pred4 = ActionPredictionBlock(num_actions, 112, last=True)
         else:
-            self.act_pred2 = ActionPredictionBlock(num_actions, 112, last=True)
+            # feature extraction
+            self.cba1 = CBA(input_filters=2, output_filters=4, kernel_size=(3,1), padding=(1,0))
+            self.cba2 = CBA(input_filters=2, output_filters=10, kernel_size=(3,3))
+            self.cba3 = CBA(input_filters=2, output_filters=18, kernel_size=(3,5), padding=(1,2))
+
+            self.cb1 = CB(input_filters=32, output_filters=48, kernel_size=(3,3))
+            self.cb2 = CB(input_filters=32, output_filters=16, kernel_size=(1,1), padding=(0,0))
+            self.cb3 = CB(input_filters=16, output_filters=48, kernel_size=(3,3))
+
+            self.act_pred1 = ActionPredictionBlock(num_actions, 96) # TODO: Kind of a magic number
+            self.act_pred2 = ActionPredictionBlock(num_actions, 96, last=True)
 
     def forward(self, x, p, use_timedistributed=False):
         if use_timedistributed:
@@ -433,17 +456,20 @@ class VisualModel(nn.Module):
         self.num_features = 576 # TODO: Can this be derived somehow? what if this changes?
         self.num_intermediate = num_intermediate
 
-        self.cb = CB(input_filters=self.num_features, output_filters=256, kernel_size=(1,1), padding=(0,0))
+        if num_intermediate == 4:
+            self.num_output_features = 256
+        else:
+            self.num_output_features = 128
 
         self.pooling = nn.MaxPool2d(kernel_size=(2,2))
 
-        self.act_pred1 = ActionPredictionBlock(num_actions, 256)
+        self.act_pred1 = ActionPredictionBlock(num_actions, self.num_output_features)
         if self.num_intermediate == 4:
-            self.act_pred2 = ActionPredictionBlock(num_actions, 256)
-            self.act_pred3 = ActionPredictionBlock(num_actions, 256)
-            self.act_pred4 = ActionPredictionBlock(num_actions, 256, last=True)
+            self.act_pred2 = ActionPredictionBlock(num_actions, self.num_output_features)
+            self.act_pred3 = ActionPredictionBlock(num_actions, self.num_output_features)
+            self.act_pred4 = ActionPredictionBlock(num_actions, self.num_output_features, last=True)
         else:
-            self.act_pred2 = ActionPredictionBlock(num_actions, 256, last=True)
+            self.act_pred2 = ActionPredictionBlock(num_actions, self.num_output_features, last=True)
 
 
     def forward(self, x, use_timedistributed):

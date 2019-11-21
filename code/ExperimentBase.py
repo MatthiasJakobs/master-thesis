@@ -587,6 +587,9 @@ class HAR_E2E(HAR_Testing_Experiment):
         if self.small_model:
             self.model = DeepHar_Smaller(num_actions=21, use_gt=False, nr_context=self.conf["nr_context"], use_timedistributed=self.use_timedistributed).to(self.device)
 
+        self.train_accuracy_writer = CSVWriter(self.experiment_name, "train_accuracy")
+        self.train_accuracy_writer.write(["iteration", "action_accuracy", "pose_accuracy"])
+
     def train(self, train_objects):
         self.model.train()
         self.optimizer.zero_grad()
@@ -599,12 +602,17 @@ class HAR_E2E(HAR_Testing_Experiment):
             frames = train_objects["frames"].to(self.device)
             actions = train_objects["action_1h"].to(self.device)
             ground_poses = train_objects["poses"].to(self.device)
+            trans_matrices = train_objects["trans_matrices"]
 
             actions = actions.unsqueeze(1)
             actions = actions.expand(-1, self.nr_intermediate, -1)
 
-            predicted_poses, _, pose_predicted_actions, vis_predicted_actions, _ = self.model(frames, finetune=True)
-            
+            predicted_poses, _, pose_predicted_actions, vis_predicted_actions, prediction = self.model(frames, finetune=True)
+
+            predicted_class = torch.argmax(prediction.squeeze(1), 1)
+            ground_class = torch.argmax(actions, 1)
+            action_train_accuracy = torch.sum(pred_class == ground_class).item() / batch_size
+
             partial_loss_pose = torch.sum(categorical_cross_entropy(pose_predicted_actions, actions))
             partial_loss_action = torch.sum(categorical_cross_entropy(vis_predicted_actions, actions))
             har_loss = partial_loss_pose + partial_loss_action
@@ -628,11 +636,27 @@ class HAR_E2E(HAR_Testing_Experiment):
 
             pred_pose = pred_pose.contiguous().view(batch_size * 16, self.nr_intermediate, 16, 2)
             ground_pose = ground_pose.contiguous().view(batch_size * 16, self.nr_intermediate, 16, 2)
+            trans_matrices = trans_matrices.contiguous().view(batch_size * 16, 3, 3).to(self.device)
 
             pose_loss = elastic_net_loss_paper(pred_pose, ground_pose)
             pose_loss = vis_loss * 0.01 + pose_loss
 
             loss = pose_loss + har_loss
+
+            bboxes = train_objects["bbox"]
+            bboxes = bboxes.contiguous().view(batch_size * 16, 4)
+
+            distance_meassures = torch.FloatTensor(len(bboxes))
+
+            for i in range(len(bboxes)):
+                width = torch.abs(bboxes[i, 0] - bboxes[i, 2])
+                height = torch.abs(bboxes[i, 1] - bboxes[i, 3])
+
+                distance_meassures[i] = torch.max(width, height).item()
+
+            pose_train_accuracy = eval_pck_batch(pred_pose[:, -1, :, 0:2], ground_pose[:, -1, :, 0:2], trans_matrices, distance_meassures).item() / batch_size
+
+            self.train_accuracy_writer.write([self.iteration, action_train_accuracy, pose_train_accuracy])
 
             del actions
             del ground_poses
