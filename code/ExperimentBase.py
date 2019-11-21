@@ -753,15 +753,15 @@ class HAR_E2E(HAR_Testing_Experiment):
 
         print("iteration {} train-loss {}".format(self.iteration, batch_loss))
 
-def evaluate(self):
-    mean_action = torch.mean(torch.Tensor(self.action_train_accuracies)).item()
-    mean_pose = torch.mean(torch.Tensor(self.pose_train_accuracies)).item()
-    self.train_accuracy_writer.write([self.iteration, mean_action, mean_pose])
+    def evaluate(self):
+        mean_action = torch.mean(torch.Tensor(self.action_train_accuracies)).item()
+        mean_pose = torch.mean(torch.Tensor(self.pose_train_accuracies)).item()
+        self.train_accuracy_writer.write([self.iteration, mean_action, mean_pose])
 
-    self.action_train_accuracies = []
-    self.pose_train_accuracies = []
+        self.action_train_accuracies = []
+        self.pose_train_accuracies = []
 
-    return super().evaluate()
+        return super().evaluate()
 
 
 class Pose_JHMDB(ExperimentBase):
@@ -1064,6 +1064,11 @@ class Pose_Mixed(ExperimentBase):
     def __init__(self, conf, validate=False):
         super().__init__(conf, validate=validate)
 
+        self.train_accuracy_writer = CSVWriter(self.experiment_name, "train_accuracy", remove=True)
+        self.train_accuracy_writer.write(["iteration", "pose_accuracy"])
+
+        self.pose_train_accuracies = []
+
     def preparation(self):
 
         nr_blocks = self.conf["num_blocks"]
@@ -1111,6 +1116,7 @@ class Pose_Mixed(ExperimentBase):
         self.model.train()
         images = train_objects["normalized_image"].to(self.device)
         poses = train_objects["normalized_pose"].to(self.device)
+        trans_matrices = train_objects["trans_matrix"].to(self.device)
 
         predictions, _, _, _ = self.model(images)
 
@@ -1134,6 +1140,19 @@ class Pose_Mixed(ExperimentBase):
 
         loss = vis_loss * 0.01 + pose_loss
 
+        bboxes = train_objects["bbox"]
+
+        distance_meassures = torch.FloatTensor(len(bboxes))
+
+        for i in range(len(bboxes)):
+            width = torch.abs(bboxes[i, 0] - bboxes[i, 2])
+            height = torch.abs(bboxes[i, 1] - bboxes[i, 3])
+
+            distance_meassures[i] = torch.max(width, height).item()
+
+        self.pose_train_accuracies.append(torch.mean(torch.Tensor(eval_pck_batch(pred_pose[:, -1, :, 0:2], ground_pose[:, -1, :, 0:2], trans_matrices, distance_meassures))).item())
+
+
         loss.backward()
 
         self.optimizer.step()
@@ -1152,6 +1171,11 @@ class Pose_Mixed(ExperimentBase):
             pck_bb_01 = []
 
             self.create_dynamic_folders()
+
+            mean_pose = torch.mean(torch.Tensor(self.pose_train_accuracies)).item()
+            self.train_accuracy_writer.write([self.iteration, mean_pose])
+
+            self.pose_train_accuracies = []
 
             for batch_idx, val_data in enumerate(self.val_loader):
                 val_images = val_data["normalized_frames"].to(self.device)
