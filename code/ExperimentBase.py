@@ -582,7 +582,7 @@ class HAR_E2E(HAR_Testing_Experiment):
             self.nr_intermediate = 2
 
     def preparation(self):
-        super().preparation(load_model=False, nr_aug=17)
+        super().preparation(load_model=False, nr_aug=10)
         #self.optimizer = optim.SGD(self.model.parameters(), lr=self.conf["learning_rate"], weight_decay=0.9, momentum=0.98, nesterov=True)
         if self.small_model:
             self.model = DeepHar_Smaller(num_actions=21, use_gt=False, nr_context=self.conf["nr_context"], use_timedistributed=self.use_timedistributed).to(self.device)
