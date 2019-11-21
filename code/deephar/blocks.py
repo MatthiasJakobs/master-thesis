@@ -15,7 +15,7 @@ class Stem(nn.Module):
             self.cba1 = CBA(input_filters=3, output_filters=32, kernel_size=(3,3), stride=(2,2))
             self.cba2 = CBA(input_filters=32, output_filters=32, kernel_size=(3,3), stride=(1,1))
             self.cba3 = CBA(input_filters=32, output_filters=50, kernel_size=(3,3), stride=(1,1))
-            self.cba4 = CBA(input_filters=64, output_filters=70, kernel_size=(3,3), stride=(2,2))
+            self.cba4 = CBA(input_filters=50, output_filters=70, kernel_size=(3,3), stride=(2,2))
 
             # cba 4 + cba 3
             self.maxpool1 = nn.MaxPool2d(kernel_size=(3,3), stride=(2,2), padding=1)
