@@ -600,20 +600,18 @@ class HAR_E2E(HAR_Testing_Experiment):
 
         if self.use_timedistributed:
             frames = train_objects["frames"].to(self.device)
-            actions = train_objects["action_1h"].to(self.device)
-            print(actions.shape)
+            actions_1h = train_objects["action_1h"].to(self.device)
             ground_poses = train_objects["poses"].to(self.device)
             trans_matrices = train_objects["trans_matrices"]
 
-            actions = actions.unsqueeze(1)
+            actions = actions_1h.unsqueeze(1)
             actions = actions.expand(-1, self.nr_intermediate, -1)
 
             predicted_poses, _, pose_predicted_actions, vis_predicted_actions, prediction = self.model(frames, finetune=True)
 
-            actions = actions[:, 0]
             predicted_class = torch.argmax(prediction, 1)
             print(predicted_class.shape)
-            ground_class = torch.argmax(actions, 1)
+            ground_class = torch.argmax(actions_1h, 1)
             print(ground_class.shape)
             action_train_accuracy = torch.sum(predicted_class == ground_class).item() / batch_size
 
