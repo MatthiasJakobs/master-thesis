@@ -311,7 +311,7 @@ class DeepHar_Smaller(nn.Module):
         self.softmax = nn.Softmax2d()
 
         if self.use_timedistributed:
-            self.pose_estimator = TimeDistributedPoseEstimation(self.pose_estimator)
+            self.pose_estimator = TimeDistributedPoseEstimation(self.pose_estimator, small_model=True)
 
         if self.alternate_time:
             self.pose_model = PoseModelTimeSeries(num_frames, num_joints, num_actions, num_intermediate=2)
