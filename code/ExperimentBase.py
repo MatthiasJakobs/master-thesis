@@ -611,7 +611,7 @@ class HAR_E2E(HAR_Testing_Experiment):
 
             predicted_class = torch.argmax(prediction.squeeze(1), 1)
             ground_class = torch.argmax(actions, 1)
-            action_train_accuracy = torch.sum(pred_class == ground_class).item() / batch_size
+            action_train_accuracy = torch.sum(predicted_class == ground_class).item() / batch_size
 
             partial_loss_pose = torch.sum(categorical_cross_entropy(pose_predicted_actions, actions))
             partial_loss_action = torch.sum(categorical_cross_entropy(vis_predicted_actions, actions))
