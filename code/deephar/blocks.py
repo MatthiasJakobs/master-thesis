@@ -24,7 +24,7 @@ class Stem(nn.Module):
 
             self.cb1 = CB(input_filters=50, output_filters=70, kernel_size=(3,3), stride=(1,1))
 
-            self.cba6 = CBA(input_filters=160, output_filters=50, kernel_size=(1,1), stride=(1,1), padding=0)
+            self.cba6 = CBA(input_filters=120, output_filters=50, kernel_size=(1,1), stride=(1,1), padding=0)
             self.cba7 = CBA(input_filters=50, output_filters=50, kernel_size=(5,1), stride=(1,1), padding=1)
             self.cba8 = CBA(input_filters=50, output_filters=50, kernel_size=(1,5), stride=(1,1), padding=1)
             self.cb2 = CB(input_filters=50, output_filters=70, kernel_size=(3,3), stride=(1,1))
