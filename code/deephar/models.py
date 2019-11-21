@@ -26,8 +26,8 @@ class Mpii_2(nn.Module):
         self.blocks = 2
 
         self.stem = Stem(small_model=small_model)
-        self.rec1 = ReceptionBlock(num_context=num_context)
-        self.rec2 = ReceptionBlock(num_context=num_context)
+        self.rec1 = ReceptionBlock(num_context=num_context, small_model=small_model)
+        self.rec2 = ReceptionBlock(num_context=num_context, small_model=small_model)
 
     def forward(self, x):
         a = self.stem(x)
