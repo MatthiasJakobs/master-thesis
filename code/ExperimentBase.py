@@ -609,6 +609,7 @@ class HAR_E2E(HAR_Testing_Experiment):
 
             predicted_poses, _, pose_predicted_actions, vis_predicted_actions, prediction = self.model(frames, finetune=True)
 
+            print(prediction.shape)
             predicted_class = torch.argmax(prediction, 1)
             print(predicted_class.shape)
             ground_class = torch.argmax(actions_1h, 1)
