@@ -508,7 +508,7 @@ class VisualModel(nn.Module):
 
         self.pooling = nn.MaxPool2d(kernel_size=(2,2))
 
-        self.cb = CB(input_filters=self.number_features, output_filters=num_output_features, kernel_size=(1,1), padding=(0,0))
+        self.cb = CB(input_filters=self.num_features, output_filters=self.num_output_features, kernel_size=(1,1), padding=(0,0))
 
         self.act_pred1 = ActionPredictionBlock(num_actions, self.num_output_features)
         if self.num_intermediate == 4:
