@@ -440,6 +440,10 @@ A learning rate of $2^{-5}$ was used, as suggested by the authors in their work.
 - Same as in pennaciton: first find the validation plateau point
 - afterwards: new experiment with finetune
 % TODO: Compare to PennAction
+% TODO: We used gt bb because the model would not be able to achieve scores high enough
+
+trained for 12k iterations with lr of 2e-5. Noticed that overfitting. Increased ratio of augmented to non-augmented to 1 to 10 from 1 to 6. Also, decreased learning rate to 1e-6. Trained until validation plateau at iteration 15k.
+% TODO: Do graphic with all different experiments combined (validation). Until 12k: ares/no_finetune_with_td_aug6. Refine: kronos/no_finetune_with_td_refined_smaller_lr. Finetuning: kronos/with_finetune_with_td_refine start at 15k, batch size 2 because otherwise model does not fit because more gradients need to be stored in gpu memory.
 
 \subsection{Effect of Combining Loss Functions}
 Next, this thesis proposes a method for training the network in an end-to-end approach.
