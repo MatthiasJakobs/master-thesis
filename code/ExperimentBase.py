@@ -43,10 +43,11 @@ class CSVWriter:
         self.file_name = file_name
         self.remove = remove
 
-    def write(self, row):
         if self.remove:
             if os.path.exists("experiments/{}/{}.csv".format(self.experiment_name, self.file_name)):
                 os.remove("experiments/{}/{}.csv".format(self.experiment_name, self.file_name))
+
+    def write(self, row):
         with open("experiments/{}/{}.csv".format(self.experiment_name, self.file_name), mode="a+") as csv_file:
             self.writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
             self.writer.writerow(row)
@@ -618,7 +619,8 @@ class HAR_E2E(HAR_Testing_Experiment):
 
             predicted_class = torch.argmax(prediction.squeeze(1), 1)
             ground_class = torch.argmax(actions_1h, 1)
-            self.action_train_accuracies.append(torch.sum(predicted_class == ground_class).item() / batch_size)
+            self.action_train_accuracies.append(torch.sum(predicted_class == ground_class).item())
+#            self.action_train_accuracies.append(torch.sum(predicted_class == ground_class).item() / batch_size)
 
             partial_loss_pose = torch.sum(categorical_cross_entropy(pose_predicted_actions, actions))
             partial_loss_action = torch.sum(categorical_cross_entropy(vis_predicted_actions, actions))
@@ -661,7 +663,8 @@ class HAR_E2E(HAR_Testing_Experiment):
 
                 distance_meassures[i] = torch.max(width, height).item()
 
-            self.pose_train_accuracies.append(torch.mean(torch.Tensor(eval_pck_batch(pred_pose[:, -1, :, 0:2], ground_pose[:, -1, :, 0:2], trans_matrices, distance_meassures))).item() / batch_size)
+#            self.pose_train_accuracies.append(torch.mean(torch.Tensor(eval_pck_batch(pred_pose[:, -1, :, 0:2], ground_pose[:, -1, :, 0:2], trans_matrices, distance_meassures))).item() / batch_size)
+            self.pose_train_accuracies.append(torch.mean(torch.Tensor(eval_pck_batch(pred_pose[:, -1, :, 0:2], ground_pose[:, -1, :, 0:2], trans_matrices, distance_meassures))).item())
 
             del actions
             del ground_poses
