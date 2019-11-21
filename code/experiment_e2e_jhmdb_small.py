@@ -2,9 +2,9 @@ from ExperimentBase import HAR_E2E
 
 conf = {}
 
-conf["batch_size"] = 1
+conf["batch_size"] = 2
 conf["val_batch_size"] = 1
-conf["learning_rate"] = 1e-5
+conf["learning_rate"] = 1e-6
 conf["validation_amount"] = 0.1 # 10 percent
 conf["limit_data_percent"] = 1 # limit dataset to x percent (for testing)
 conf["numpy_seed"] = 30004
