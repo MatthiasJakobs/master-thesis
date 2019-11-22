@@ -1212,7 +1212,7 @@ class Pose_Mixed(ExperimentBase):
 
                 pck_bb_02.extend(eval_pck_batch(predictions[:, :, 0:2], gt_poses[:, :, 0:2], trans_matrices, distance_meassures))
                 pck_bb_01.extend(eval_pck_batch(predictions[:, :, 0:2], gt_poses[:, :, 0:2], trans_matrices, distance_meassures, threshold=0.1))
-                pck_upper_02.append(eval_pcku_batch(predictions[:, :, 0:2], gt_poses[:, :, 0:2], trans_matrices))
+                pck_upper_02.append(eval_pcku_batch(predictions[:, :, 0:2], gt_poses[:, :, 0:2], trans_matrices, compute_upperbody=True))
 
                 if batch_idx % 10 == 0:
                     prediction = predictions[0, :, 0:2]
