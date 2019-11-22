@@ -1108,7 +1108,7 @@ class Pose_Mixed(ExperimentBase):
         self.optimizer = optim.RMSprop(self.model.parameters(), lr=self.conf["learning_rate"])
 
         self.train_writer.write(["iteration", "loss"])
-        self.val_writer.write(["iteration", "pck_bb_0.2", "pck_bb_0.1"])
+        self.val_writer.write(["iteration", "pck_bb_0.2", "pck_bb_0.1", "pck_upper_0.2"])
 
         self.create_experiment_folders()
 
@@ -1171,6 +1171,7 @@ class Pose_Mixed(ExperimentBase):
         with torch.no_grad():
             pck_bb_02 = []
             pck_bb_01 = []
+            pck_upper_02 = []
 
             self.create_dynamic_folders()
 
@@ -1211,6 +1212,7 @@ class Pose_Mixed(ExperimentBase):
 
                 pck_bb_02.extend(eval_pck_batch(predictions[:, :, 0:2], gt_poses[:, :, 0:2], trans_matrices, distance_meassures))
                 pck_bb_01.extend(eval_pck_batch(predictions[:, :, 0:2], gt_poses[:, :, 0:2], trans_matrices, distance_meassures, threshold=0.1))
+                pck_upper_02.append(eval_pcku_batch(predictions[:, :, 0:2], gt_poses[:, :, 0:2], trans_matrices, compute_upperbody=True))
 
                 if batch_idx % 10 == 0:
                     prediction = predictions[0, :, 0:2]
@@ -1230,7 +1232,8 @@ class Pose_Mixed(ExperimentBase):
 
         mean_bb_02 = torch.mean(torch.FloatTensor(pck_bb_02)).item()
         mean_bb_01 = torch.mean(torch.FloatTensor(pck_bb_01)).item()
-        self.val_writer.write([self.iteration, mean_bb_02, mean_bb_01])
+        mean_upper_02 = torch.mean(torch.FloatTensor(pck_upper_02)).item()
+        self.val_writer.write([self.iteration, mean_bb_02, mean_bb_01, mean_upper_02])
         return mean_bb_02
 
     def test(self, pretrained_model=None):

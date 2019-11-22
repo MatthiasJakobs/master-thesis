@@ -11,7 +11,7 @@ conf["numpy_seed"] = 30004
 conf["project_dir"] = ""
 conf["evaluate_rate"] = 1000
 
-conf["total_iterations"] = 30000
+conf["total_iterations"] = 35000
 conf["num_blocks"] = 4
 conf["nr_context"] = 2
 conf["name"] = "pose_mixed_diffval"

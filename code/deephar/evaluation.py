@@ -39,9 +39,15 @@ def pck_bounding_box(y_true, y_pred, distance_meassure, distance_threshold=0.2):
 
     return torch.sum(matches) / torch.sum(valid)
 
-def pck_upperbody(y_true, y_pred, distance_threshold=0.5):
-    upper_body_size_difference = y_true[8] - y_true[6] # distance between neck and belly, because there is no head size given by the dataset
-    upper_body_size = torch.sqrt(torch.sum(torch.mul(upper_body_size_difference, upper_body_size_difference)))
+def pck_upperbody(y_true, y_pred, distance_threshold=0.5, compute_upperbody=False):
+    if compute_upperbody:
+        upper_middle = y_true[12] + (y_true[13] - y_true[12]) / 2.0
+        lower_middle = y_true[3] + (y_true[2] - y_true[3]) / 2.0
+        upper_body_size_difference = upper_middle - lower_middle
+        upper_body_size = torch.sqrt(torch.sum(torch.mul(upper_body_size_difference, upper_body_size_difference)))
+    else:
+        upper_body_size_difference = y_true[8] - y_true[6] # distance between neck and belly, because there is no head size given by the dataset
+        upper_body_size = torch.sqrt(torch.sum(torch.mul(upper_body_size_difference, upper_body_size_difference)))
 
     assert upper_body_size != 0
 
@@ -63,7 +69,7 @@ def pck_upperbody(y_true, y_pred, distance_threshold=0.5):
 
     return torch.sum(matches) / torch.sum(valid)
 
-def eval_pcku_batch(predictions, poses, matrices):
+def eval_pcku_batch(predictions, poses, matrices, compute_upperbody=False):
     scores_02 = []
 
     for i, prediction in enumerate(predictions):
@@ -72,7 +78,7 @@ def eval_pcku_batch(predictions, poses, matrices):
         pred_pose = torch.from_numpy(transform_pose(matrices[i], predictions[i], inverse=True))
         ground_pose = torch.from_numpy(transform_pose(matrices[i], poses[i], inverse=True))
 
-        scores_02.append(pck_upperbody(ground_pose, pred_pose, distance_threshold=0.2))
+        scores_02.append(pck_upperbody(ground_pose, pred_pose, distance_threshold=0.2, compute_upperbody=compute_upperbody))
         #pck_upperbody(poses, predictions, distance_threshold=0.2)
 
     return scores_02
