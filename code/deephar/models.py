@@ -20,14 +20,14 @@ class Mpii_1(nn.Module):
         return heatmaps, output
 
 class Mpii_2(nn.Module):
-    def __init__(self, num_context=0):
+    def __init__(self, num_context=0, small_model=False):
         super(Mpii_2, self).__init__()
 
         self.blocks = 2
 
-        self.stem = Stem()
-        self.rec1 = ReceptionBlock(num_context=num_context)
-        self.rec2 = ReceptionBlock(num_context=num_context)
+        self.stem = Stem(small_model=small_model)
+        self.rec1 = ReceptionBlock(num_context=num_context, small_model=small_model)
+        self.rec2 = ReceptionBlock(num_context=num_context, small_model=small_model)
 
     def forward(self, x):
         a = self.stem(x)
@@ -293,7 +293,7 @@ class DeepHar_Smaller(nn.Module):
 
         self.use_gt = use_gt # use pretrained pose estimator
         self.alternate_time = alternate_time
-        self.pose_estimator = Mpii_2(num_context=nr_context)
+        self.pose_estimator = Mpii_2(num_context=nr_context, small_model=True)
         self.use_timedistributed = use_timedistributed
         if use_gt:
             if torch.cuda.is_available():
@@ -311,7 +311,7 @@ class DeepHar_Smaller(nn.Module):
         self.softmax = nn.Softmax2d()
 
         if self.use_timedistributed:
-            self.pose_estimator = TimeDistributedPoseEstimation(self.pose_estimator)
+            self.pose_estimator = TimeDistributedPoseEstimation(self.pose_estimator, small_model=True)
 
         if self.alternate_time:
             self.pose_model = PoseModelTimeSeries(num_frames, num_joints, num_actions, num_intermediate=2)
