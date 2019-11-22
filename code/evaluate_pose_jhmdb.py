@@ -22,52 +22,52 @@ conf["nr_context"] = 0
 conf["num_blocks"] = 2
 model = Pose_JHMDB(conf, validate=True)
 print("without context, nr_blocks = 2")
-print("refined")
-print(model.test(pretrained_model="/data/mjakobs/code/master-thesis/code/experiments/scratch_jhmdb/without_context_2/weights/weights_00130000", refine_bounding_box=True))
+# print("refined")
+# print(model.test(pretrained_model="/data/mjakobs/code/master-thesis/code/experiments/scratch_jhmdb/without_context_2/weights/weights_00130000", refine_bounding_box=True))
 print("not refined")
-print(model.test(pretrained_model="/data/mjakobs/code/master-thesis/code/experiments/scratch_jhmdb/without_context_2/weights/weights_00130000", refine_bounding_box=False))
+print(model.test(pretrained_model="/data/mjakobs/code/master-thesis/code/experiments/refine_jhmdb/without_context_2/weights/weights_00018000", refine_bounding_box=False))
 
 conf["nr_context"] = 0
 conf["num_blocks"] = 4
 model = Pose_JHMDB(conf, validate=True)
 print("without context, nr_blocks = 4")
-print("refined")
-print(model.test(pretrained_model="/data/mjakobs/code/master-thesis/code/experiments/scratch_jhmdb/without_context_4/weights/weights_00160000", refine_bounding_box=True))
+# print("refined")
+# print(model.test(pretrained_model="/data/mjakobs/code/master-thesis/code/experiments/scratch_jhmdb/without_context_4/weights/weights_00160000", refine_bounding_box=True))
 print("not refined")
-print(model.test(pretrained_model="/data/mjakobs/code/master-thesis/code/experiments/scratch_jhmdb/without_context_4/weights/weights_00160000", refine_bounding_box=False))
+print(model.test(pretrained_model="/data/mjakobs/code/master-thesis/code/experiments/refine_jhmdb/without_context_4/weights/weights_00017000", refine_bounding_box=False))
 
-# conf["nr_context"] = 0
-# conf["num_blocks"] = 8
-# model = Pose_JHMDB(conf, validate=True)
-# print("without context, nr_blocks = 8")
+conf["nr_context"] = 0
+conf["num_blocks"] = 8
+model = Pose_JHMDB(conf, validate=True)
+print("without context, nr_blocks = 8")
 # print("refined")
 # print(model.test(pretrained_model="/data/mjakobs/code/master-thesis/code/experiments/scratch_jhmdb/without_context_8/weights/weights_00", refine_bounding_box=True))
-# print("not refined")
-# print(model.test(pretrained_model="/data/mjakobs/code/master-thesis/code/experiments/scratch_jhmdb/without_context_8/weights/weights_00", refine_bounding_box=False))
+print("not refined")
+print(model.test(pretrained_model="/data/mjakobs/code/master-thesis/code/experiments/refine_jhmdb/without_context_8/weights/weights_00009000", refine_bounding_box=False))
 
 conf["nr_context"] = 2
 conf["num_blocks"] = 2
 model = Pose_JHMDB(conf, validate=True)
 print("with context, nr_blocks = 2")
-print("refined")
-print(model.test(pretrained_model="/data/mjakobs/code/master-thesis/code/experiments/scratch_jhmdb/with_context_2/weights/weights_00140000", refine_bounding_box=True))
+# print("refined")
+# print(model.test(pretrained_model="/data/mjakobs/code/master-thesis/code/experiments/scratch_jhmdb/with_context_2/weights/weights_00140000", refine_bounding_box=True))
 print("not refined")
-print(model.test(pretrained_model="/data/mjakobs/code/master-thesis/code/experiments/scratch_jhmdb/with_context_2/weights/weights_00140000", refine_bounding_box=False))
+print(model.test(pretrained_model="/data/mjakobs/code/master-thesis/code/experiments/refine_jhmdb/with_context_2/weights/weights_00001000", refine_bounding_box=False))
 
 conf["nr_context"] = 2
 conf["num_blocks"] = 4
 model = Pose_JHMDB(conf, validate=True)
 print("with context, nr_blocks = 4")
-print("refined")
-print(model.test(pretrained_model="/data/mjakobs/code/master-thesis/code/experiments/scratch_jhmdb/with_context_4/weights/weights_00160000", refine_bounding_box=True))
+# print("refined")
+# print(model.test(pretrained_model="/data/mjakobs/code/master-thesis/code/experiments/scratch_jhmdb/with_context_4/weights/weights_00160000", refine_bounding_box=True))
 print("not refined")
-print(model.test(pretrained_model="/data/mjakobs/code/master-thesis/code/experiments/scratch_jhmdb/with_context_4/weights/weights_00160000", refine_bounding_box=False))
+print(model.test(pretrained_model="/data/mjakobs/code/master-thesis/code/experiments/refine_jhmdb/with_context_4/weights/weights_00009000", refine_bounding_box=False))
 
 conf["nr_context"] = 2
 conf["num_blocks"] = 8
 model = Pose_JHMDB(conf, validate=True)
-# print("with context, nr_blocks = 8")
+print("with context, nr_blocks = 8")
 # print("refined")
 # print(model.test(pretrained_model="/data/mjakobs/code/master-thesis/code/experiments/scratch_jhmdb/with_context_8/weights/weights_00", refine_bounding_box=True))
-# print("not refined")
-# print(model.test(pretrained_model="/data/mjakobs/code/master-thesis/code/experiments/scratch_jhmdb/with_context_8/weights/weights_00", refine_bounding_box=False))
+print("not refined")
+print(model.test(pretrained_model="/data/mjakobs/code/master-thesis/code/experiments/refine_jhmdb/with_context_8/weights/weights_00009000", refine_bounding_box=False))
