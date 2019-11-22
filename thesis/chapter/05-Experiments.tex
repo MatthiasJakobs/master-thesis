@@ -179,6 +179,8 @@ Then, for each fragment, they predict the action identical to the Single-Clip ac
 If the majority of the fragments estimated the same action, this is used to determine the Multi-Clip accuracy. 
 
 \section{Experimental Results}
+% TODO: Think about if the network was actually overfitting everytime you write it. Hard to say without train accuracy. On the other hand, who will know...
+
 \label{sec:exp-results}
 \subsection{Accuracy of Soft-argmax function}
 For evaluating the accuracy of the Soft-argmax function, we performed two experiments.
@@ -310,7 +312,7 @@ This suggests that, while keeping the number of prediction blocks constant, the 
         \begin{tabular}{@{}c@{}} 4 \\ 8 \end{tabular} & \begin{tabular}{@{}c@{}} 2 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 82.97 \\ 84.66  \end{tabular} & \textbf{0.081}  \\ \hline
 
     \end{tabular}
-    \caption{Different model configurations and their corresponding PCKh validation score. The $p$-values were computed using a randomization test. $p$-values below the significance level of $0.05$ are shown in bold.} % TODO
+    \caption{Different model configurations and their corresponding PCKh validation score. The $p$-values were computed using a randomization test. $p$-values below the significance level of $0.05$ are shown in bold, indicating that the change in accuracy is significant.} % TODO
     \label{tab:mpii_results}
 \end{table}
 
@@ -326,22 +328,6 @@ Because the authors do not mention how this was done in detail, and since the nu
 % TODO: Do small displacement once experiments are done and then say: I dont know exactly how they did it, which might explain why its worse
 
 % TODO: authors report 89 percent accuracy on val and 91.2 on test. Mention that, because it supports the theory that the way the test data was estimated is the reason for discrepancy
-
-% \begin{table}[]
-%     \small
-%     \begin{tabular}{|l|c|c|c|c|}
-%     \hline
-%         & \textbf{nr\_blocks} & \textbf{nr\_context} & \textbf{PCKh @ 0.5 (validation)} & \textbf{PCKh @ 0.5 (test)} \\ \hline
-%     \textbf{Own} & 2 & 0 & 80.96 &  \\
-%     \textbf{} & 2 & 2 & 81.56 &  \\
-%     \textbf{} & 4 & 0 & 83.22 &  \\
-%     \textbf{} & 4 & 2 & 82.97 &  \\
-%     \textbf{} & 8 & 0 & 84.67 &  \\
-%     \textbf{} & 8 & 2 & 84.66 & 81.2 \\ \hline
-%     \textbf{\cite{luvizon_2d/3d_2018}} & 8 & 2 & 89.00 & 91.2 \\ \hline
-%     \end{tabular}
-%     \label{tab:mpii_results}
-% \end{table}
 
 \begin{table}[]
     \centering
@@ -422,16 +408,46 @@ A learning rate of $2^{-5}$ was used, as suggested by the authors in their work.
 % TODO: zwischenfazit
 
 \subsection{Pose estimation on JHMDB dataset}
-
 - same ablation study as before
     - evaluate different number of blocks and context heatmaps
 - parameters
     - learning rate 1e-3, as discussed in MPII
 
+Similar to the experiment performed in \sref{sec:exp-replication}, this thesis evaluated different pose estimator configurations using the JHMDB dataset.
+Specifically, pose estimators with $2, 4$ and $8$ prediction blocks are trained with and without context heatmaps to assess the performance of the network on a more challenging video dataset.
+In terms of architecture, there are no changes to the experiments on the MPII dataset.
+The pose estimators are trained using an augmentation ratio of $1:6$, which means that for each original frame there are $6$ randomly augmented frames in the dataset.
+The test accuracies, computed on the JHMDB test split, are shown for each configuration in \tref{tab:jhmdb_results}.
+
+\begin{table}[]
+    \small
+    \centering
+    \begin{tabular}{|l|l|c|c|c|}
+    \hline
+        \textbf{nr\_blocks} & \textbf{nr\_context}  & \textbf{PCK @ 0.2} & \textbf{PCKu @ 0.2} & \textbf{p-value} \\ \hline
+        \begin{tabular}{@{}c@{}} 2 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}}80.96 \\ 81.56  \end{tabular} & 0.54  \\ \hline
+    
+        \begin{tabular}{@{}c@{}} 4 \\ 4 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}}83.22 \\ 82.97  \end{tabular} & 0.78  \\ \hline
+
+        \begin{tabular}{@{}c@{}} 8 \\ 8 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}}84.67 \\ 84.66  \end{tabular} & 0.97  \\ \hline
+
+        \begin{tabular}{@{}c@{}} 2 \\ 4 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 0 \end{tabular} & \begin{tabular}{@{}c@{}} 80.96 \\ 83.22  \end{tabular} & \textbf{0.02}  \\ \hline
+
+        \begin{tabular}{@{}c@{}} 2 \\ 4 \end{tabular} & \begin{tabular}{@{}c@{}} 2 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 81.56 \\ 82.97  \end{tabular} & 0.16  \\ \hline
+
+        \begin{tabular}{@{}c@{}} 4 \\ 8 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 0 \end{tabular} & \begin{tabular}{@{}c@{}} 83.22 \\ 84.67  \end{tabular} & 0.14  \\ \hline
+
+        \begin{tabular}{@{}c@{}} 4 \\ 8 \end{tabular} & \begin{tabular}{@{}c@{}} 2 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 82.97 \\ 84.66  \end{tabular} & \textbf{0.081}  \\ \hline
+
+    \end{tabular}
+    \caption{Different model configurations for estimating pose on the JHMDB dataset, with their corresponding PCK and PCKu test accuracies. The $p$-values were computed using a randomization test. $p$-values below the significance level of $0.05$ are shown in bold, indicating that the change in accuracy is significant.}
+    \label{tab:jhmdb_results}
+\end{table}
+
+
 % TODO: talk about a general conclusion like \textit{the higher the number of blocks the better} when comparing MPII and JHMDB results
 
 % TODO: report the number of iterations used
-% TODO: do plot of all validation accuracy cuvers
 % TODO: general conclusion: is this dataset harder? why?
 
 \subsection{HAR on JHMDB Dataset}
@@ -468,6 +484,7 @@ It was decided to introduce $L_2$ regularization on the weights using a paramete
         \item 2 prediction blocks in pose and action
         \item lowerd amount of filters in pose and visual model (create graphic?)
         \item lowerd amount of filters in stem
+        \item idea: bigger batch size than 1 
     \end{itemize}
 \end{itemize}
 
