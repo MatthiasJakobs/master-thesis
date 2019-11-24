@@ -963,6 +963,7 @@ class Pose_JHMDB(ExperimentBase):
                 self.model.load_state_dict(torch.load(pretrained_model, map_location=self.device))
 
             pck_bb_02 = []
+            pck_bb_01 = []
             pck_upper_02 = []
 
             self.model.eval()
@@ -1030,6 +1031,7 @@ class Pose_JHMDB(ExperimentBase):
 
                 try:
                     pck_bb_02.extend(eval_pck_batch(predictions[:, :, 0:2], test_poses[:, :, 0:2], trans_matrices, distance_meassures))
+                    pck_bb_01.extend(eval_pck_batch(predictions[:, :, 0:2], test_poses[:, :, 0:2], trans_matrices, distance_meassures, threshold=0.1))
                     pck_upper_02.extend(eval_pcku_batch(predictions[:, :, 0:2], test_poses[:, :, 0:2], trans_matrices))
                 except np.linalg.linalg.LinAlgError:
                     print("hello")
@@ -1057,9 +1059,10 @@ class Pose_JHMDB(ExperimentBase):
                     show_prediction_jhmbd(image, test_poses, prediction, matrix, path=path)
 
             bb_mean = torch.mean(torch.FloatTensor(pck_bb_02)).item()
+            bb_01_mean = torch.mean(torch.FloatTensor(pck_bb_01)).item()
             upper_mean = torch.mean(torch.FloatTensor(pck_upper_02)).item()
-            print("bb, upper")
-            return [bb_mean, upper_mean]
+            print("bb@02, bb@01, upper")
+            return [bb_mean, bb_01_mean, upper_mean]
 
 class Pose_Mixed(ExperimentBase):
 
