@@ -9,10 +9,10 @@ conf["num_blocks"] = 4
 conf["nr_context"] = 2
 conf["project_dir"] = "har_pennaction"
 
-conf["batch_size"] = 12
+conf["batch_size"] = 10
 conf["val_batch_size"] = 1
 conf["total_iterations"] = 80000
-conf["evaluate_rate"] =  500
+conf["evaluate_rate"] =  1000
 conf["limit_data_percent"] = 1 # limit dataset to x percent (for testing)
 conf["use_gt_bb"] = True
 conf["use_gt_pose"] = False
