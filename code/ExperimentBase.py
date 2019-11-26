@@ -313,6 +313,7 @@ class HAR_Testing_Experiment(ExperimentBase):
             frames = train_objects["frames"].to(self.device)
             actions = train_objects["action_1h"].to(self.device)
             ground_poses = train_objects["poses"].to(self.device)
+            trans_matrices = train_objects["trans_matrices"]
             actions_1h = actions.clone()
 
             #frames = frames.contiguous().view(batch_size * frames.size()[1], 3, 255, 255)
