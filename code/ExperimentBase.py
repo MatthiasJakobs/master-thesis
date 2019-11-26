@@ -13,6 +13,8 @@ import torch.optim as optim
 import torch.nn as nn
 from torch.utils.data.sampler import SubsetRandomSampler
 
+from sklearn.metrics import confusion_matrix
+
 import csv
 import numpy as np
 import math
@@ -27,6 +29,7 @@ from datasets.JHMDBDataset import actions as jhmdb_actions
 from datasets.JHMDBDataset import JHMDBDataset
 from datasets.MixMPIIPenn import MixMPIIPenn
 from datasets.PennActionDataset import PennActionDataset
+from datasets.PennActionDataset import actions as pennaction_actions
 from datasets.PennActionFragmentsDataset import PennActionFragmentsDataset
 from deephar.models import DeepHar, DeepHar_Smaller, Mpii_1, Mpii_2, Mpii_4, Mpii_8, TimeDistributedPoseEstimation
 from deephar.blocks import Stem
@@ -505,7 +508,7 @@ class HAR_Testing_Experiment(ExperimentBase):
     def test(self, pretrained_model=None):
         with torch.no_grad():
             if pretrained_model is not None:
-                self.preparation()
+                self.preparation(load_model=False)
                 self.model.load_state_dict(torch.load(pretrained_model, map_location=self.device))
 
             self.model.eval()
@@ -516,6 +519,10 @@ class HAR_Testing_Experiment(ExperimentBase):
             correct_single = 0
             correct_multi = 0
             total = 0
+            accuracies_single = []
+            accuracies_multi = []
+            conf_x = []
+            conf_y = []
             for batch_idx, test_objects in enumerate(self.test_loader):
                 frames = test_objects["normalized_frames"].to(self.device)
                 actions = test_objects["action_1h"].to(self.device)
@@ -529,16 +536,18 @@ class HAR_Testing_Experiment(ExperimentBase):
                 spacing = 8
                 nr_multiple_clips = int((sequence_length - 16) / spacing) + 1
 
-                single_clip = single_clip.to(self.device)
+                single_clip = single_clip.unsqueeze(0).to(self.device)
                 _, _, _, _, single_result = self.model(single_clip)
 
-                pred_class_multi = torch.IntTensor(nr_multiple_clips)
+                pred_class_multi = torch.IntTensor(nr_multiple_clips).to(self.device)
                 for i in range(nr_multiple_clips):
-                    multi_clip = frames[0, i * spacing : i * spacing + 16].to(self.device)
+                    multi_clip = frames[0, i * spacing : i * spacing + 16].unsqueeze(0).to(self.device)
                     _, _, _, _, estimated_class = self.model(multi_clip)
                     pred_class_multi[i] = torch.argmax(estimated_class.squeeze(1), 1)
 
                 pred_class_single = torch.argmax(single_result.squeeze(1), 1)
+                conf_x.append(pred_class_single.item())
+                conf_y.append(ground_class.item())
 
                 correct_single = correct_single + (pred_class_single == ground_class).item()
 
@@ -551,10 +560,16 @@ class HAR_Testing_Experiment(ExperimentBase):
 
                 accuracy_single = correct_single / float(total)
                 accuracy_multi = correct_multi / float(total)
+                accuracies_single.append(accuracy_single)
+                accuracies_multi.append(accuracy_multi)
                 
                 current = current + 1
 
-            return accuracy_single, accuracy_multi
+            cm = confusion_matrix(np.array(conf_y), np.array(conf_x))
+            np.save("experiments/{}/cm.np".format(self.experiment_name), cm)
+            mean_acc_single = torch.mean(torch.Tensor(accuracies_single)).item()
+            mean_acc_multi = torch.mean(torch.Tensor(accuracies_multi)).item()
+            return mean_acc_single, mean_acc_multi
 
 class HAR_PennAction(HAR_Testing_Experiment):
 
