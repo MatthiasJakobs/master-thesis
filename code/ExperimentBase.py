@@ -330,7 +330,7 @@ class HAR_Testing_Experiment(ExperimentBase):
             if "start_finetuning" in self.conf and self.iteration < self.conf["start_finetuning"]:
                 predicted_poses, _, pose_predicted_actions, vis_predicted_actions, prediction = self.model(frames, finetune=False, gt_pose=gt_pose)
             else:
-                if self.finetune:
+                if self.fine_tune:
                     print("FINETUNE")
                 predicted_poses, _, pose_predicted_actions, vis_predicted_actions, prediction = self.model(frames, finetune=self.fine_tune, gt_pose=gt_pose)
             
