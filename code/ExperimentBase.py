@@ -333,6 +333,8 @@ class HAR_Testing_Experiment(ExperimentBase):
             if "start_finetuning" in self.conf and self.iteration < self.conf["start_finetuning"]:
                 predicted_poses, _, pose_predicted_actions, vis_predicted_actions, prediction = self.model(frames, finetune=False, gt_pose=gt_pose)
             else:
+                if self.fine_tune:
+                    print("FINETUNE")
                 predicted_poses, _, pose_predicted_actions, vis_predicted_actions, prediction = self.model(frames, finetune=self.fine_tune, gt_pose=gt_pose)
             
             partial_loss_pose = torch.sum(categorical_cross_entropy(pose_predicted_actions, actions))
@@ -364,7 +366,13 @@ class HAR_Testing_Experiment(ExperimentBase):
             pred_pose = pred_pose.contiguous().view(batch_size * pred_pose.size()[1], 4, 16, 2)
             ground_pose = ground_pose.contiguous().view(batch_size * ground_pose.size()[1], 4, 16, 2)
             trans_matrices = trans_matrices.contiguous().view(batch_size * trans_matrices.size()[1], 3, 3)
-            self.pose_train_accuracies.append(torch.mean(torch.Tensor(eval_pck_batch(pred_pose[:, -1, :, 0:2], ground_pose[:, -1, :, 0:2], trans_matrices, distance_meassures))).item())
+            estimates = eval_pck_batch(pred_pose[:, -1, :, 0:2], ground_pose[:, -1, :, 0:2], trans_matrices, distance_meassures)
+            estimates = np.array(list(map(lambda x: x.item(), estimates)))
+            estimates = estimates[np.logical_not(np.isnan(estimates))]
+            self.pose_train_accuracies.append(torch.mean(torch.Tensor(estimates)).item())
+            if np.isnan(np.array(self.pose_train_accuracies)).any():
+                print("NAN IN GLOBAL LIST")
+
 
             predicted_class = torch.argmax(prediction.squeeze(1), 1)
             ground_class = torch.argmax(actions_1h, 1)
