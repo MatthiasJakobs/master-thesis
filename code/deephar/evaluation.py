@@ -45,6 +45,7 @@ def pck_upperbody(y_true, y_pred, distance_threshold=0.5, compute_upperbody=Fals
         lower_middle = y_true[3] + (y_true[2] - y_true[3]) / 2.0
         upper_body_size_difference = upper_middle - lower_middle
         upper_body_size = torch.sqrt(torch.sum(torch.mul(upper_body_size_difference, upper_body_size_difference)))
+        print(upper_body_size)
     else:
         upper_body_size_difference = y_true[8] - y_true[6] # distance between neck and belly, because there is no head size given by the dataset
         upper_body_size = torch.sqrt(torch.sum(torch.mul(upper_body_size_difference, upper_body_size_difference)))
