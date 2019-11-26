@@ -364,11 +364,11 @@ class HAR_Testing_Experiment(ExperimentBase):
             ground_pose = ground_pose.contiguous().view(batch_size * ground_pose.size()[1], 4, 16, 2)
             trans_matrices = trans_matrices.contiguous().view(batch_size * trans_matrices.size()[1], 3, 3)
             estimates = eval_pck_batch(pred_pose[:, -1, :, 0:2], ground_pose[:, -1, :, 0:2], trans_matrices, distance_meassures)
-            if np.isnan(estimates).any():
+            if np.isnan(np.array(estimates)).any():
                 print("NAN IN LIST")
             self.pose_train_accuracies.append(torch.mean(torch.Tensor(estimates)).item())
             print(self.pose_train_accuracies)
-            if np.isnan(self.pose_train_accuracies).any():
+            if np.isnan(np.array(self.pose_train_accuracies)).any():
                 print("NAN IN GLOBAL LIST")
 
 
