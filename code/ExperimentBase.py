@@ -363,7 +363,9 @@ class HAR_Testing_Experiment(ExperimentBase):
             pred_pose = pred_pose.contiguous().view(batch_size * pred_pose.size()[1], 4, 16, 2)
             ground_pose = ground_pose.contiguous().view(batch_size * ground_pose.size()[1], 4, 16, 2)
             trans_matrices = trans_matrices.contiguous().view(batch_size * trans_matrices.size()[1], 3, 3)
-            self.pose_train_accuracies.append(torch.mean(torch.Tensor(eval_pck_batch(pred_pose[:, -1, :, 0:2], ground_pose[:, -1, :, 0:2], trans_matrices, distance_meassures))).item())
+            estimates = eval_pck_batch(pred_pose[:, -1, :, 0:2], ground_pose[:, -1, :, 0:2], trans_matrices, distance_meassures)
+            print(estimates)
+            self.pose_train_accuracies.append(torch.mean(torch.Tensor(estimates)).item())
 
             predicted_class = torch.argmax(prediction.squeeze(1), 1)
             ground_class = torch.argmax(actions_1h, 1)
