@@ -346,6 +346,18 @@ class HAR_Testing_Experiment(ExperimentBase):
             ground_vis = ground_vis.unsqueeze(2)
             ground_vis = ground_vis.expand(-1, -1, self.conf["num_blocks"], -1)
 
+            bboxes = train_objects["bbox"]
+            bboxes = bboxes.contiguous().view(batch_size * 16, 4)
+
+            distance_meassures = torch.FloatTensor(len(bboxes))
+
+            for i in range(len(bboxes)):
+                width = torch.abs(bboxes[i, 0] - bboxes[i, 2])
+                height = torch.abs(bboxes[i, 1] - bboxes[i, 3])
+
+                distance_meassures[i] = torch.max(width, height).item()
+
+
             self.pose_train_accuracies.append(torch.mean(torch.Tensor(eval_pck_batch(pred_pose[:, -1, :, 0:2], ground_pose[:, -1, :, 0:2], trans_matrices, distance_meassures))).item())
 
 
