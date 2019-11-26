@@ -11,8 +11,8 @@ conf["project_dir"] = "har_initial"
 
 conf["batch_size"] = 12
 conf["val_batch_size"] = 1
-conf["total_iterations"] = 10000
-conf["evaluate_rate"] =  500
+conf["total_iterations"] = 200000
+conf["evaluate_rate"] =  1000
 conf["limit_data_percent"] = 1 # limit dataset to x percent (for testing)
 
 # conf["batch_size"] = 6
@@ -29,9 +29,25 @@ conf["limit_data_percent"] = 1 # limit dataset to x percent (for testing)
 # har = HAR_Testing_Experiment(conf, start_at="/data/mjakobs/data/har_jhmdb_12000")
 # har.run_experiment()
 
+# conf["learning_rate"] = 1e-5
+# conf["batch_size"] = 2
+# conf["name"] = "with_finetune_with_td_refined"
+# conf["fine_tune"] = True
+# conf["use_timedistributed"] = True
+# har = HAR_Testing_Experiment(conf, start_at="/data/mjakobs/code/master-thesis/code/experiments/har_initial/no_finetune_with_td_refined_smaller_lr/weights/weights_00003000")
+# har.run_experiment()
+
+# conf["learning_rate"] = 1e-6
+# conf["batch_size"] = 1
+# conf["name"] = "with_finetune_with_td_refined_smaller_lr"
+# conf["fine_tune"] = True
+# conf["use_timedistributed"] = True
+# har = HAR_Testing_Experiment(conf, start_at="/data/mjakobs/code/master-thesis/code/experiments/har_initial/no_finetune_with_td_refined_smaller_lr/weights/weights_00003000")
+# har.run_experiment()
+
 conf["learning_rate"] = 1e-6
 conf["batch_size"] = 2
-conf["name"] = "with_finetune_with_td_refined"
+conf["name"] = "with_finetune_with_td_refined_smaller_lr_bs2"
 conf["fine_tune"] = True
 conf["use_timedistributed"] = True
 har = HAR_Testing_Experiment(conf, start_at="/data/mjakobs/code/master-thesis/code/experiments/har_initial/no_finetune_with_td_refined_smaller_lr/weights/weights_00003000")

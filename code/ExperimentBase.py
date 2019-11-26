@@ -294,6 +294,12 @@ class HAR_Testing_Experiment(ExperimentBase):
 
         self.shrunk = False
 
+        self.train_accuracy_writer = CSVWriter(self.experiment_name, "train_accuracy", remove=True)
+        self.train_accuracy_writer.write(["iteration", "action_accuracy", "pose_accuracy"])
+
+        self.pose_train_accuracies = []
+        self.action_train_accuracies = []
+
 
     def train(self, train_objects):
         self.model.train()
@@ -306,6 +312,9 @@ class HAR_Testing_Experiment(ExperimentBase):
         if self.use_timedistributed:
             frames = train_objects["frames"].to(self.device)
             actions = train_objects["action_1h"].to(self.device)
+            ground_poses = train_objects["poses"].to(self.device)
+            trans_matrices = train_objects["trans_matrices"]
+            actions_1h = actions.clone()
 
             #frames = frames.contiguous().view(batch_size * frames.size()[1], 3, 255, 255)
             #actions = actions.contiguous().view(batch_size * actions.size()[1], 21)
@@ -319,13 +328,44 @@ class HAR_Testing_Experiment(ExperimentBase):
                 gt_pose = None
 
             if "start_finetuning" in self.conf and self.iteration < self.conf["start_finetuning"]:
-                _, _, pose_predicted_actions, vis_predicted_actions, _ = self.model(frames, finetune=False, gt_pose=gt_pose)
+                predicted_poses, _, pose_predicted_actions, vis_predicted_actions, prediction = self.model(frames, finetune=False, gt_pose=gt_pose)
             else:
-                _, _, pose_predicted_actions, vis_predicted_actions, _ = self.model(frames, finetune=self.fine_tune, gt_pose=gt_pose)
+                predicted_poses, _, pose_predicted_actions, vis_predicted_actions, prediction = self.model(frames, finetune=self.fine_tune, gt_pose=gt_pose)
             
             partial_loss_pose = torch.sum(categorical_cross_entropy(pose_predicted_actions, actions))
             partial_loss_action = torch.sum(categorical_cross_entropy(vis_predicted_actions, actions))
             losses = partial_loss_pose + partial_loss_action
+
+            pred_pose = predicted_poses[:, :, :, :, 0:2]
+            ground_pose = ground_poses[:, :, :, 0:2]
+            ground_pose = ground_pose.unsqueeze(2)
+            ground_pose = ground_pose.expand(-1, -1, self.conf["num_blocks"], -1, -1)
+
+            pred_vis = predicted_poses[:, :, :, :, 2]
+            ground_vis = ground_poses[:, :, :, 2]
+            ground_vis = ground_vis.unsqueeze(2)
+            ground_vis = ground_vis.expand(-1, -1, self.conf["num_blocks"], -1)
+
+            bboxes = train_objects["bbox"]
+            bboxes = bboxes.contiguous().view(batch_size * 16, 4)
+
+            distance_meassures = torch.FloatTensor(len(bboxes))
+
+            for i in range(len(bboxes)):
+                width = torch.abs(bboxes[i, 0] - bboxes[i, 2])
+                height = torch.abs(bboxes[i, 1] - bboxes[i, 3])
+
+                distance_meassures[i] = torch.max(width, height).item()
+
+
+            pred_pose = pred_pose.contiguous().view(batch_size * pred_pose.size()[1], 4, 16, 2)
+            ground_pose = ground_pose.contiguous().view(batch_size * ground_pose.size()[1], 4, 16, 2)
+            trans_matrices = trans_matrices.contiguous().view(batch_size * trans_matrices.size()[1], 3, 3)
+            self.pose_train_accuracies.append(torch.mean(torch.Tensor(eval_pck_batch(pred_pose[:, -1, :, 0:2], ground_pose[:, -1, :, 0:2], trans_matrices, distance_meassures))).item())
+
+            predicted_class = torch.argmax(prediction.squeeze(1), 1)
+            ground_class = torch.argmax(actions_1h, 1)
+            self.action_train_accuracies.append(torch.sum(predicted_class == ground_class).item() / batch_size)
 
             del frames
             del actions
@@ -383,6 +423,12 @@ class HAR_Testing_Experiment(ExperimentBase):
 
     def evaluate(self):
         self.model.eval()
+        mean_action = torch.mean(torch.Tensor(self.action_train_accuracies)).item()
+        mean_pose = torch.mean(torch.Tensor(self.pose_train_accuracies)).item()
+        self.train_accuracy_writer.write([self.iteration, mean_action, mean_pose])
+
+        self.action_train_accuracies = []
+        self.pose_train_accuracies = []
 
         with torch.no_grad():
             correct = 0
@@ -577,6 +623,13 @@ class HAR_PennAction(HAR_Testing_Experiment):
 
         self.create_experiment_folders(heatmaps=False)
 
+        self.train_accuracy_writer = CSVWriter(self.experiment_name, "train_accuracy", remove=True)
+        self.train_accuracy_writer.write(["iteration", "action_accuracy", "pose_accuracy"])
+
+        self.pose_train_accuracies = []
+        self.action_train_accuracies = []
+
+
 class HAR_E2E(HAR_Testing_Experiment):
 
     def __init__(self, conf, small_model=False):
@@ -591,12 +644,6 @@ class HAR_E2E(HAR_Testing_Experiment):
         #self.optimizer = optim.SGD(self.model.parameters(), lr=self.conf["learning_rate"], weight_decay=0.9, momentum=0.98, nesterov=True)
         if self.small_model:
             self.model = DeepHar_Smaller(num_actions=21, use_gt=False, nr_context=self.conf["nr_context"], use_timedistributed=self.use_timedistributed).to(self.device)
-
-        self.train_accuracy_writer = CSVWriter(self.experiment_name, "train_accuracy", remove=True)
-        self.train_accuracy_writer.write(["iteration", "action_accuracy", "pose_accuracy"])
-
-        self.pose_train_accuracies = []
-        self.action_train_accuracies = []
 
     def train(self, train_objects):
         self.model.train()
@@ -963,6 +1010,7 @@ class Pose_JHMDB(ExperimentBase):
                 self.model.load_state_dict(torch.load(pretrained_model, map_location=self.device))
 
             pck_bb_02 = []
+            pck_bb_01 = []
             pck_upper_02 = []
 
             self.model.eval()
@@ -1030,6 +1078,7 @@ class Pose_JHMDB(ExperimentBase):
 
                 try:
                     pck_bb_02.extend(eval_pck_batch(predictions[:, :, 0:2], test_poses[:, :, 0:2], trans_matrices, distance_meassures))
+                    pck_bb_01.extend(eval_pck_batch(predictions[:, :, 0:2], test_poses[:, :, 0:2], trans_matrices, distance_meassures, threshold=0.1))
                     pck_upper_02.extend(eval_pcku_batch(predictions[:, :, 0:2], test_poses[:, :, 0:2], trans_matrices))
                 except np.linalg.linalg.LinAlgError:
                     print("hello")
@@ -1057,9 +1106,10 @@ class Pose_JHMDB(ExperimentBase):
                     show_prediction_jhmbd(image, test_poses, prediction, matrix, path=path)
 
             bb_mean = torch.mean(torch.FloatTensor(pck_bb_02)).item()
+            bb_01_mean = torch.mean(torch.FloatTensor(pck_bb_01)).item()
             upper_mean = torch.mean(torch.FloatTensor(pck_upper_02)).item()
-            print("bb, upper")
-            return [bb_mean, upper_mean]
+            print("bb@02, bb@01, upper")
+            return [bb_mean, bb_01_mean, upper_mean]
 
 class Pose_Mixed(ExperimentBase):
 
