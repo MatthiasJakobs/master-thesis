@@ -7,7 +7,6 @@ Afterwards, the metrics used in the authors work, as well as the experiments don
 Lastly, this chapter discusses the experiment setups, as well as the results, in Section \ref{sec:exp-results}.
 First, some experiments from \cite{luvizon_2d/3d_2018} are recreated, focusing on the $2D$ pose estimation and $2D$ Human Activity Recognition experiments.
 Second, further experiementation towards understanding the capabilities of the model are presented, including a qualitative and quantitative evaluation of the Soft-argmax function, the accuracy of the authors model achieved on the complex JHMDB dataset, as well as an approach for training the model in an end-to-end approach, without using a pretrained pose estimator.
-% TODO: if time series model: introduce too
 
 \section{Datasets}
 \label{sec:exp-datasets}
@@ -22,7 +21,7 @@ The $16$ joints are \textit{left / right ankle}, \textit{left / right knee}, \te
 See \fref{fig:mpii_example_images} for example images of the dataset.
 In addition, the body center coordinates are given in addition to a scale indicating the size of the person bounding box w.r.t. $200$ pixels.
 Also, a bounding box of the head is given, which is used to compute the \textit{PCKh} metric (see \sref{sec:exp-pckh}).
-The images were extracted from YouTube videos and do not contain artifacts commonly found in videos like compression or blur.
+The images are extracted from YouTube videos and do not contain artifacts commonly found in videos like compression or blur.
 Additionally, each image is assigned an activity performed in the video it was extracted from, totalling $401$ total activities.
 However, these annotations were not used for Human Action Recognition since they are too fine-grained and the number of samples per activity is too low for training a deep neural network.
 
@@ -48,7 +47,7 @@ These values are sampled from their respective sets whenever augmentation is per
 Specifically, they introduce $s_{aug} \in \{0.7, 1, 1.3\}$ which gets multiplied with $s_{new}$ computed earlier.
 Also, $r_{aug} \in \{-40, -35, \dots, 35, 40\}$ is introduced to rotate the image $r_{aug}$ degrees around its center, possibly introducing black borders around the image.
 Moreover, when augmenting, the image is horizontally flipped with a chance of $50$ percent.
-See \fref{fig:mpii_example_augmentation} for multiple examples of different augmented images, including augmented pose. 
+See \fref{fig:mpii_example_augmentation} for multiple examples of different augmented images, including augmented pose.
 
 \begin{figure}[htb!]
     \centering
@@ -71,9 +70,9 @@ As an example, the right arm (from the perspective of the subject in the image) 
 \end{figure}
 
 The dataset does not contain annotations for the test data, other than the scale and center coordinates.
-To evaluate the test images, the joints need to be evaluated and the results need to be send to the authors for comparison to the ground truth pose.
+To evaluate the test images, the joints need to be evaluated and the results need to be send to the authors of the dataset at the \textit{Max Planck Institute for Intelligent Systems} for comparison to the ground truth pose.
 This ensures that the test data annotations are not mistakenly or maliciously used in training.
-For all datasets used in the experiments, $10$ percent of the training datapoints were withheld from training and used as validation data.
+For all datasets used in the experiments, $10$ percent of the training datapoints are withheld from training and used as validation data.
 
 \subsection{Penn Action}
 \label{sec:exp-penn}
@@ -97,20 +96,20 @@ This then means that the network architecture does not need to be changed, no ma
 Specifically, the \textit{pose cube} dimensionality does not need to be changed.
 To achieve this, the \textit{head} annotation of the Penn Action dataset is mapped to the \textit{upper neck} joint of the MPII dataset and the missing joints were interpreted as not visible.
 
-It was decided to introduce additional augmentation since the dataset is smaller in comparison to MPII and because it was observed that the HAR models were overfitting on the training data.
-Thus, two additional augmentation methods were used.
-First, with a probability of $0.5$, salt and pepper augmentation was applyied to the training images.
+Additional augmentation is introduced since the dataset is smaller in comparison to MPII and because it was observed that the HAR models were overfitting on the training data.
+Thus, two additional augmentation methods are used.
+First, with a probability of $0.5$, salt and pepper augmentation is applyied to the training images.
 In this augmentation method, random noise in the form of white and black pixels gets applied to the image.
 Second, using an augmentation strategy called Dropout, black rectangles are placed randomly inside the image, covering chunks of the original image.
-The last method was also introduced on half of the test images.
 The network then needs to make decisions on partially occluded images, making it more robust, because it forces the network to utilize alternative paths on some images, effectively making the model more general.
+Dropout is applied with a probability of $0.5$ as well.
 
 For some experiments, we compute a ground truth bounding box of the person by calculating the minimum and maximum $x$ and $y$ coordinates of the pose and defining these as the corners of the bounding box.
-Additionally, to include more context, we decided to increase the bounding box by $30$ pixels in both dimensions.
+Additionally, to include more context, the bounding box is increased by $30$ pixels in both dimensions to add more context around the subject.
 
 Additionally, the authors in \cite{luvizon_2d/3d_2018} decide to process the video clips in chunks of $16$ frames.
 This is again important since the network architecture can be kept the same because \textit{pose cube} dimensions do not change that way.
-Thus, we decided to precompute $16$ frames subclips, which we call \textit{fragments}, and save them separately to increase the training speed, since the preprocessing and extraction of the subclips does not need to be done at training time. 
+Thus, it was decided to precompute $16$ frames subclips, which this thesis refers to as \textit{fragments}, and save them separately to increase the training speed, since the preprocessing and extraction of the subclips does not need to be done at training time. 
 
 \subsection{JHMDB}
 \label{sec:exp-jhmdb}
@@ -127,7 +126,7 @@ See \fref{fig:puppet_tool_example} for a visualization of the annotation process
     \label{fig:puppet_tool_example}
 \end{figure}
 
-The clips in the HMDB dataset were taken from YouTube.
+The clips in the HMDB dataset are taken from YouTube.
 The annotated subset contains the following actions:
 \textit{brush hair}, \textit{catch}, \textit{clap}, \textit{climb stair}, \textit{golf}, \textit{jump}, \textit{kick ball}, \textit{pick}, \textit{pour}, \textit{pullup}, \textit{push}, \textit{run}, \textit{shoot ball}, \textit{shoot bow}, \textit{shoot gun}, \textit{sit}, \textit{stand}, \textit{swing baseball}, \textit{throw}, \textit{walk} as well as \textit{wave}.
 Some example images of the dataset can be seen in \fref{fig:jhmdb_example_images}.
@@ -142,7 +141,7 @@ Notice that the actions are more diverse, in comparison to the Penn Action datas
 
 The puppet tool defines $15$ different joints.
 They are identical to the ones annotated in the Penn Action dataset, but additionally contain \textit{neck} and \textit{belly}.
-The same procedure was used to map the joints to the format provided by the MPII dataset.
+The same procedure is used to map the joints to the format provided by the MPII dataset.
 Also, the approach for computing ground truth bounding boxes, as well as preprocessing and augmenting the \textit{fragments} is identical to the one presented earlier in \sref{sec:exp-penn}.
 
 \section{Evaluation Metrics}
@@ -170,7 +169,7 @@ In most cases, $\alpha$ is set to $0.5$ and $0.2$.
 \subsection{Single- and Multi-Clip Accuracy}
 To evaluate the accuracy of the HAR pipeline, the authors in \cite{luvizon_2d/3d_2018} use two different approaches.
 First, they take the video clip to evaluate and extract a $16$ frame fragment from the middle of the clip.
-Then, they estimate the action performed.
+Second, they estimate the action performed.
 Since the output of the network is a Softmax activation, they use the \textit{argmax} function to determine the action with the highest score.
 This is referred to further as Single-Clip accuracy.
 
@@ -183,16 +182,16 @@ If the majority of the fragments estimated the same action, this is used to dete
 
 \label{sec:exp-results}
 \subsection{Accuracy of Soft-argmax function}
-For evaluating the accuracy of the Soft-argmax function, we performed two experiments.
-For both experiments, an estimated coordinate $(x_{est},y_{est})$ was considered to be correct in comparison to the ground truth coordinate $(x_{gt}, y_{gt}$ if both $\lvert x_{est} - x_{gt} \rvert \leq d$ and $\lvert y_{est} - y_{gt} \rvert \leq d$, allowing for a $d$ pixel discrepancy between prediction and ground truth.
-The reason for using a threshold of $d$ pixels was that the output of the Soft-argmax function are fractions of width and height with $(x_{frac}, y_{frac}) \in [0,1]$.
+For evaluating the accuracy of the Soft-argmax function, two experiments are performed.
+For both experiments, an estimated coordinate $(x_{est},y_{est})$ is considered to be correct in comparison to the ground truth coordinate $(x_{gt}, y_{gt}$ if both $\lvert x_{est} - x_{gt} \rvert \leq d$ and $\lvert y_{est} - y_{gt} \rvert \leq d$, allowing for a $d$ pixel discrepancy between prediction and ground truth.
+The reason for using a threshold of $d$ pixels is that the output of the Soft-argmax function are fractions of width and height with $(x_{frac}, y_{frac}) \in [0,1]$.
 To compute the image coordinate, a multiplication with the width and height of the input image as well as a rounding step is necessary, possibly introducing rounding errors.
+Thus, $d$ is set to $d=2$.
 
-First, synthetic images of size $255 \times 255$ pixels were created, since this is the size of the input images to the network after preprocessing.
-At each $x,y$ position, a two-dimensional gaussian with mean $(x,y)$ and covariance $c$ was placed.
-Afterwards, the expectations were computed using the Soft-argmax function and compared to the ground truth mean value.
-We chose to set $d=2$.
-Performing this for each pixel coordinate and different covariances $c$, it was observed that the Soft-argmax function accurately regressed the true expectation for small covariances.
+First, synthetic images of size $255 \times 255$ pixels are created, since this is the size of the input images to the network after preprocessing.
+At each $x,y$ position, a two-dimensional gaussian with mean $(x,y)$ and covariance $c$ is placed.
+Afterwards, the expectations are computed using the Soft-argmax function and compared to the ground truth mean value.
+Performing this for each pixel coordinate and different covariances $c$, it was observed that the Soft-argmax function accurately regresses the true expectation for small covariances.
 As the covariance increases, the accuracy decreases, especially around the borders.
 See \fref{fig:softargmax_variance_test} for a visualization, where violett pixels indicate a wrong prediction and yellow pixels indicate a correct prediction.
 As can be seen, the Soft-argmax function gets less accurate the higher the covariance is, as well as the closer the mean is to the border of the image.
@@ -205,13 +204,13 @@ This could lead to wrong estimations for training images where the joint coordin
     \label{fig:softargmax_variance_test}
 \end{figure}
 
-Second, to evaluate the impact of this behaviour on actual data, we analyzed the accuracy quantitatively.
-Synthetic joint heatmaps were generated by placing gaussians at the position of the ground truth pose coordinates of a subset of the MPII dataset and the distance between the computed coordinates and ground truth coordinate was computed with different covariance values $c$.
-We evaluated different values for $d$ and found that the the Soft-argmax function is generally accurate within a $2$ pixel window for reasonable covariance values.
-The experiment was conducted on $1000$ random images from the MPII dataset.
+Second, to evaluate the impact of this behaviour on actual data, we analyze the accuracy quantitatively.
+Synthetic joint heatmaps are generated by placing gaussians at the position of the ground truth pose coordinates of a subset of the MPII dataset and the distance between the computed coordinates and ground truth coordinate is computed with different covariance values $c$.
+We evaluate different values for $d$ and find that the the Soft-argmax function is generally accurate within a $2$ pixel window for reasonable covariance values.
+The experiment is conducted on $1000$ random images from the MPII dataset.
 See  for the mean accuracies achieved for covariances $c \in \{1, 2, 5, 10, 20, 50 \}$ and distances $d \in \{1, 2, 3, 4\}$.
 
-As can be seen in \tref{tab:softargmax_numeric_eval}, the Soft-argmax function is accurate in practice for a $2$ pixer threshold.
+As can be seen in \tref{tab:softargmax_numeric_eval}, the Soft-argmax function is accurate in practice for a $2$ pixel threshold.
 Notice that the accuracies are significantly lower for a $1$ pixel threshold.
 This contrast between $d=1$ and $d=2$ is most likely due to the rounding errors discussed earlier.
 
@@ -230,28 +229,31 @@ This contrast between $d=1$ and $d=2$ is most likely due to the rounding errors 
     \label{tab:softargmax_numeric_eval}
 \end{table}
 
-In summary, while the Soft-argmax function appears to be less accurate around the borders of the image, this does not effect the accuracy significantly when estimating actual pose coordinates, according to our experiments.
+In summary, while the Soft-argmax function appears to be less accurate around the borders of the image, this does not effect the accuracy significantly when estimating actual pose coordinates, according to the quantitative experiment.
 
 \subsection{Replication of Original Work}
 \label{sec:exp-replication}
 % TODO
 
-First, in order to recreate the work of \cite{luvizon_2d/3d_2018}, a pose estimator using the MPII dataset was trained.
-In addition to the authors work, the number of prediction blocks as well as the number of context heatmaps was varied to observe the effect on the overall accuracy of the model.
-Second, the 2D HAR experiments performed by the authors on the Penn Action datasets were recreated.
+First, in order to recreate the work of \cite{luvizon_2d/3d_2018}, a pose estimator using the MPII dataset is trained.
+In addition to the authors work, the number of prediction blocks as well as the number of context heatmaps is varied to observe the effect on the overall accuracy of the model.
+Second, the 2D HAR experiments performed by the authors on the Penn Action datasets are recreated.
 If not otherwise mentioned, the experiment settings mentioned are taken from \cite{luvizon_2d/3d_2018} as well as the supplemental material provided by the authors.
+From now on, for each experiment, an augmentation ratio is given.
+The ratio of $1:a$ expresses that for each training image there are $a$ randomly augmented images in the dataset.
 
 \subsubsection{Pose estimation}
 In their work, the authors use $8$ prediction blocks in their pose estimator for evaluating the accuracy of the model on the MPII dataset.
-In this thesis, additional experiments using $2$ and $4$ prediction blocks were performed.
+In this thesis, additional experiments using $2$ and $4$ prediction blocks are performed.
 In addition, we chose to evaluate all models without context heatmaps as well as with $2$ context heatmaps, since this what the authors chose for their experiment.
 
-The training data of the MPII dataset was split into a training and validation set for evaluating the models accuracy on unseen data in intervals of $1000$ iterations.
+The training data of the MPII dataset is split into a training and validation set for evaluating the models accuracy on unseen data in intervals of $1000$ iterations.
 An iteration is defined as the processing of one batch.
 The batch size varies, depending on the experiment, since the models are of different size and thus allow for bigger batch sizes when using smaller models.
-The batch size was set to $45, 30$ and $20$ for $2, 4$ and $8$ prediction blocks, respectively.
+The batch size is set to $45, 30$ and $20$ for $2, 4$ and $8$ prediction blocks, respectively.
 As an optimizer, the authors use the RMSProp algorithm.
-A initial learning rate of $1^{-3}$ was used in accordance to the work of the authors.
+A initial learning rate of $10^{-3}$ is used in accordance to the work of the authors.
+The augmentation ratio is set to $1:3$, because more augmentation did not lead to higher accuracy in the performed experiments.
 
 \begin{equation}
     \label{eq:elasticnetloss}
@@ -265,7 +267,7 @@ See \eref{eq:elasticnetloss} for the formula, where $p_{est}$ referrs to the est
 In addition to computing the Elastic net loss, the authors predict the visibility of each joint.
 The annotations of MPII provide ground truth labels $v \in \{0,1\}$ of whether a joint is occluded or not.
 Binary cross-entropy is used to compute a loss $L_v$ between the predicted visibility vector $v_{est}$ and the ground truth $v$.
-Finally, both losses get combined in the following way:
+Finally, both losses are combined in the following way:
 
 \begin{equation}
     L = L_p + 0.01 \cdot L_v.
@@ -274,7 +276,7 @@ Finally, both losses get combined in the following way:
 For all subsequent pose estimation experiments, $L$ is used to compute the loss of the pose estimator.
 
 As discussed before, for evaluating a model on the test dataset, the estimations need to be send to the \textit{Max Planck Institute for Intelligent Systems} for evaluation.
-Because they limit the amount of submissions to $4$, it was not possible to evaluate each trained model on the test data, which is why it was decided to report the validation accuracy for comparison and only submit estimations from the best performing model.
+Because they limit the amount of submissions to $4$, it is not possible to evaluate each trained model on the test data, which is why it was decided to report the validation accuracy for comparison and only submit estimations from the best performing model.
 
 \begin{figure}[htb!]
     \centering
@@ -285,9 +287,9 @@ Because they limit the amount of submissions to $4$, it was not possible to eval
 
 As can be seen in \fref{fig:mpii_vals} as well as \tref{tab:mpii_results}, the higher the number of prediction blocks, the more accurate the model performs on the validation data.
 In addition, using context heatmaps appears to increase the accuracy as well, especially so when using $2$ prediction blocks.
-To test whether or not the increase in accuracy is statistically significant, randomization tests with a significance level of $0.05$ were performed.
-For the randomization test, $3000$ permutations were used.
-As can be seen in \tref{tab:mpii_results}, the only statistically significant increases in accuracy where observed when comparing $2$ and $4$ prediction block models without context heatmaps, as well as between $4$ and $8$ prediction block models when using $2$ context heatmaps.
+To test whether or not the increase in accuracy is statistically significant, randomization tests with a significance level of $0.05$ are performed.
+For the randomization test, $3000$ permutations are used.
+As can be seen in \tref{tab:mpii_results}, the only statistically significant increases in accuracy are observed when comparing $2$ and $4$ prediction block models without context heatmaps, as well as between $4$ and $8$ prediction block models when using $2$ context heatmaps.
 This suggests that, while keeping the number of prediction blocks constant, the use of context heatmaps does not influence the accuracy of the model in a significant way.
 % TODO: Talk more about results after rerunning experiments of figure something out
 
@@ -316,10 +318,10 @@ This suggests that, while keeping the number of prediction blocks constant, the 
     \label{tab:mpii_results}
 \end{table}
 
-Next, the best performing model ($8$ prediction blocks, $2$ context heatmaps) was used to estimate the pose on the test dataset and the results were submitted to the \textit{Max Planck Institute for Intelligent Systems}.
+Next, the best performing model ($8$ prediction blocks, $2$ context heatmaps) is used to estimate the pose on the test dataset and the results were submitted to the \textit{Max Planck Institute for Intelligent Systems}.
 The results can be seen in \tref{tab:mpii_test}, in direct comparison to the values reported by the authors.
 As can be seen, our model performs significantly worse in comparison to the reported values.
-One possible reason is the way the test poses were estimated.
+One possible reason is the way the test poses are estimated.
 The authors report that they averaged multiple estimations to compute a final estimation.
 More specifically, they first computed the pose for the regular test image.
 Afterwards, they flipped the image, computed the pose again, and flipped the pose again.
@@ -345,27 +347,26 @@ Because the authors do not mention how this was done in detail, and since the nu
 % TODO: zwischenfazit
 
 \subsubsection{HAR using Penn Action dataset}
-In order to recreate the Human Activity Recognition results from \cite{luvizon_2d/3d_2018} on the Penn Action dataset, we first trained a pose estimator, which is later incorporated into the HAR model.
+In order to recreate the Human Activity Recognition results from \cite{luvizon_2d/3d_2018} on the Penn Action dataset, we first train a pose estimator, which is later incorporated into the HAR model.
 The authors used a hybrid dataset for training, consisting of $75$ percent MPII and $25$ percent Penn Action training data.
 They do not, however, motivate this decision.
-The pose estimator contains $4$ prediction blocks, uses $2$ context heatmaps and was trained using a batch size of $30$ and a learning rate of $1e-3$.
-The loss, as well as validation accuracy scores can be seen in \fref{fig:pose_mixed_results}.
-Since the authors did not provide validation accuracy results or test results on this experiment, it was decided to evaluate the trained pose estimator on the test set of the Penn Action dataset, to gain better insight into the performance of the network.
-With a PCK accuracy value of $0.84$ and a PCKu value of $0.67$, the network performs significantly worse on the Penn Action test dataset, in comparison to the results of the mixed validation set.
-This suggests that mixing the dataset in such a way might not lead to an optimal solution w.r.t. the intended target dataset.
+The pose estimator contains $4$ prediction blocks, uses $2$ context heatmaps and was trained using a batch size of $30$ and a learning rate of $10^{-3}$.
+The loss, as well as validation accuracy scores achieved on the Penn Action dataset can be seen in \fref{fig:pose_mixed_results}.
+% TODO: test on test dataset aswell
+% TODO: Discuss results 
 
 \begin{figure}[htb!]
     \centering
     \includegraphics[width=0.7\textwidth]{pose_mixed_results.png}
-    \caption{Loss and validation accuracies, using PCK and PCKu, both with $\alpha = 0.2$.}
+    \caption{Loss and validation accuracies after training the pose estimator using a mixture dataset of MPII and Penn Action.}
     \label{fig:pose_mixed_results}
 \end{figure}
 
-Afterwards, the pretrained pose estimator was inserted into the HAR model.
-The model was trained using Penn Action data only.
-Also, the weights of the pose estimator were initially frozen.
-This was done in order to find the point in training where the validation accuracies plateaus, at which point the authors unfreeze the weights and lower the learning rate.
-As an optimizer, Stochastic Gradient Descend was used, with the addition of a momentum value $\gamma = 0.98$ and the use of a method called \textit{Nesterov Accelerated Gradient (NAG)} \cite{nesterov_method_1983}.
+Afterwards, the pretrained pose estimator is inserted into the HAR model.
+The model is trained using Penn Action data only.
+Also, the weights of the pose estimator are initially frozen.
+This is done in order to find the point in training where the validation accuracies plateaus, at which point the authors unfreeze the weights and lower the learning rate.
+As an optimizer, Stochastic Gradient Descend is used, with the addition of a momentum value $\gamma = 0.98$ and the use of a method called \textit{Nesterov Accelerated Gradient (NAG)} \cite{nesterov_method_1983}.
 Momentum is used to accelarate the gradient descent process by incorporating a fraction $\gamma$ of the previous step size to compute the next step size to take.
 Consider a regular update to the weights $w$ of a neuron using gradient descent, as explained in \sref{sec:gradient_descent}, given by the following formula:
 
@@ -398,8 +399,15 @@ The following formula describes the update process of weights $w_t$ using the NA
     w_{t+1} = w_t - \gamma \nu_{t-1} - \eta \nabla w_{la}.
 \end{equation}
 
-In the experiment conducted in this thesis, the validation did not increase after the TODO iteration
-A learning rate of $2^{-5}$ was used, as suggested by the authors in their work.
+In the experiment conducted in this thesis, the validation does not increase after the TODO iteration
+A learning rate of $2^{-5}$ is used, as suggested by the authors in their work.
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.8\textwidth]{har_pennaction_results.png}
+    \caption{TODO}
+    \label{fig:har_pennaction_results}
+\end{figure}
 
 - Started finetuning at iteration X and reduce learning rate by X % TODO
 - Talk about results
@@ -408,12 +416,7 @@ A learning rate of $2^{-5}$ was used, as suggested by the authors in their work.
 % TODO: zwischenfazit
 
 \subsection{Pose estimation on JHMDB dataset}
-- same ablation study as before
-    - evaluate different number of blocks and context heatmaps
-- parameters
-    - learning rate 1e-3, as discussed in MPII
-
-Similar to the experiment performed in \sref{sec:exp-replication}, this thesis evaluated different pose estimator configurations using the JHMDB dataset.
+Similar to the experiment performed in \sref{sec:exp-replication}, this thesis evaluates different pose estimator configurations using the JHMDB dataset.
 Specifically, pose estimators with $2, 4$ and $8$ prediction blocks are trained with and without context heatmaps to assess the performance of the network on a more challenging video dataset.
 In terms of architecture, there are no changes to the experiments on the MPII dataset.
 The pose estimators are trained using an augmentation ratio of $1:6$, which means that for each original frame there are $6$ randomly augmented frames in the dataset.
@@ -422,26 +425,36 @@ The test accuracies, computed on the JHMDB test split, are shown for each config
 \begin{table}[]
     \small
     \centering
-    \begin{tabular}{|l|l|c|c|c|}
+    \begin{tabular}{|l|c|c|c|c|c|c|}
     \hline
-        \textbf{nr\_blocks} & \textbf{nr\_context}  & \textbf{PCK @ 0.2} & \textbf{PCKu @ 0.2} & \textbf{p-value} \\ \hline
-        \begin{tabular}{@{}c@{}} 2 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}}80.96 \\ 81.56  \end{tabular} & 0.54  \\ \hline
+        \textbf{nr\_blocks} & 2 & 2 & 4 & 4 & 8 & 8 \\ \hline
+        \textbf{nr\_context} & 0 & 2 & 0 & 2 & 0 & 2 \\ \hline
+        \textbf{PCK @ 0.2} & \textbf{96.23} & 94.99 & 96.21 & 95.55 & 76.01 & 75.80 \\ \hline
+        \textbf{PCK @ 0.1} & 90.84 & 89.42 & \textbf{90.98} & 90.33 & 53.30 & 55.46 \\ \hline
+        \textbf{PCKu @ 0.2} & 87.34 & 86.57 & \textbf{87.60} & 87.14 & 46.01 & 47.86 \\ \hline
+    \end{tabular}
+    \caption{Test accuracies of the different pose estimator configurations, computed on the JHMDB test set. PCK is computed for two threshold values, $\alpha = 0.2$ as well as $\alpha = 0.1$. Additionally, PCKu is computed using $\alpha = 0.2$. Maximum values per metric are shown in bold.}
+    \label{tab:jhmdb_results}
+\end{table}
+
+
+\begin{table}[]
+    \small
+    \centering
+    \begin{tabular}{|l|l|c|c|}
+    \hline
+        \textbf{nr\_blocks} & \textbf{nr\_context}  & \textbf{PCK @ 0.1} & \textbf{p-value} \\ \hline
+        \begin{tabular}{@{}c@{}} 2 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 90.84 \\ 89.42  \end{tabular} & \textbf{0.0016}  \\ \hline
     
-        \begin{tabular}{@{}c@{}} 4 \\ 4 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}}83.22 \\ 82.97  \end{tabular} & 0.78  \\ \hline
+        \begin{tabular}{@{}c@{}} 4 \\ 4 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 90.98 \\ 90.33  \end{tabular} & 0.127  \\ \hline
 
-        \begin{tabular}{@{}c@{}} 8 \\ 8 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}}84.67 \\ 84.66  \end{tabular} & 0.97  \\ \hline
+        \begin{tabular}{@{}c@{}} 2 \\ 4 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 0 \end{tabular} & \begin{tabular}{@{}c@{}} 90.84 \\ 90.98  \end{tabular} & 0.748  \\ \hline
 
-        \begin{tabular}{@{}c@{}} 2 \\ 4 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 0 \end{tabular} & \begin{tabular}{@{}c@{}} 80.96 \\ 83.22  \end{tabular} & \textbf{0.02}  \\ \hline
-
-        \begin{tabular}{@{}c@{}} 2 \\ 4 \end{tabular} & \begin{tabular}{@{}c@{}} 2 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 81.56 \\ 82.97  \end{tabular} & 0.16  \\ \hline
-
-        \begin{tabular}{@{}c@{}} 4 \\ 8 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 0 \end{tabular} & \begin{tabular}{@{}c@{}} 83.22 \\ 84.67  \end{tabular} & 0.14  \\ \hline
-
-        \begin{tabular}{@{}c@{}} 4 \\ 8 \end{tabular} & \begin{tabular}{@{}c@{}} 2 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 82.97 \\ 84.66  \end{tabular} & \textbf{0.081}  \\ \hline
+        \begin{tabular}{@{}c@{}} 2 \\ 4 \end{tabular} & \begin{tabular}{@{}c@{}} 2 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 89.41 \\ 90.33  \end{tabular} & \textbf{0.037}  \\ \hline
 
     \end{tabular}
-    \caption{Different model configurations for estimating pose on the JHMDB dataset, with their corresponding PCK and PCKu test accuracies. The $p$-values were computed using a randomization test. $p$-values below the significance level of $0.05$ are shown in bold, indicating that the change in accuracy is significant.}
-    \label{tab:jhmdb_results}
+    \caption{Different model configurations for estimating pose on the JHMDB dataset, with their corresponding PCK accuracy values, estimated on the test set using $\alpha = 0.1$. The configurations using $8$ prediction blocks are ommited because the results are significantly worse in comparion to the other configurations. The $p$-values were computed using a randomization test. $p$-values below the significance level of $0.05$ are shown in bold, indicating that the change in accuracy is significant.}
+    \label{tab:jhmdb_results_confidence}
 \end{table}
 
 
@@ -451,14 +464,34 @@ The test accuracies, computed on the JHMDB test split, are shown for each config
 % TODO: general conclusion: is this dataset harder? why?
 
 \subsection{HAR on JHMDB Dataset}
-- use the pretrained pose estimator from before, 4 blocks, 2 context heatmaps
-- parameters
-- Same as in pennaciton: first find the validation plateau point
-- afterwards: new experiment with finetune
+To assess the performance of the action recognition model on the JHMDB dataset, the pretrained pose estimator with $4$ blocks and $2$ context maps from TODO is used, in order to compare the results to the performance on the Penn Action dataset experiment TODO.
+The batch size is set to $12$ since the GPU used for experimentation did not allow for a bigger batch size.
+Keep in mind that, since JHMDB is a video dataset, each item in the batch contains $16$ frames (see \sref{sec:exp-jhmdb}).
+Effectively, this leads to a batch size of $16 \cdot batch\_size$ for the pose estimator since the pose for each frame is computed independently, before aggregating the estimated poses into the pose cube (see \sref{sec:pose_based_action_recognition}).
+Similar to before, the point where the validation data accuracy does not increase further is found by training the model with a pose estimator whos weights are initially fixed.
+As an initial learning rate, $2^{-5}$ is chosen, since this is the value used in the Penn Action HAR experiment.
+Additionally, an augmentation ratio $1:6$ is used.
+
+% TODO: reference the following image
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.8\textwidth]{har_jhmdb_combined.png}
+    \caption{HAR JHMDB. TODO}
+    \label{fig:har_jhmdb_combined}
+\end{figure}
+
+%bal
+
+After approximately $15.000$ iterations, the validation accuracy plateaus.
+At iteration $12.000$, the augmentation ratio is increased to $1:10$, and the learning rate is reduced to $10^{-6}$ since the model started overfitting.
+Afterwards, the weights of the pose estimator are unfrozen and the finetuning process is started.
+A smaller batch size of $2$ is used since the additional storage of computed gradients of the model inside the GPU virtual memory does not allow for a higher batch size.
+
+% TODO: show validation and test accuracies
 % TODO: Compare to PennAction
 % TODO: We used gt bb because the model would not be able to achieve scores high enough
 
-trained for 12k iterations with lr of 2e-5. Noticed that overfitting. Increased ratio of augmented to non-augmented to 1 to 10 from 1 to 6. Also, decreased learning rate to 1e-6. Trained until validation plateau at iteration 15k.
 % TODO: Do graphic with all different experiments combined (validation). Until 12k: ares/no_finetune_with_td_aug6. Refine: kronos/no_finetune_with_td_refined_smaller_lr. Finetuning: kronos/with_finetune_with_td_refine start at 15k, batch size 2 because otherwise model does not fit because more gradients need to be stored in gpu memory.
 
 \subsection{Effect of Combining Loss Functions}
@@ -469,25 +502,17 @@ More specifically, during the training process, the losses of all intermediate r
 Afterwards, the loss of all intermediate results from the action recognition are computed using categorical cross-entropy.
 It was decided to weigh both losses equally, i.e., sum them without weighting either the pose estimation or action recognition loss more.
 
-It was observed that the network started overfitting during training.
-This is most likely due to the small size of the dataset, compared to the size of the untrained network.
-It was decided to introduce $L_2$ regularization on the weights using a parameter of $\lambda = 0.9$ to make the network less suceptable to overfitting.
+% It was observed that the network started overfitting during training.
+% This is most likely due to the small size of the dataset, compared to the size of the untrained network.
+% It was decided to introduce $L_2$ regularization on the weights using a parameter of $\lambda = 0.9$ to make the network less suceptable to overfitting.
 % TODO: change this if parameters change
 
-- explain how e2e training was done (using pose loss etc.)
-- show results
-- explain why it didnt work (or why it did)
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width=0.8\textwidth]{e2e_big.png}
+    \caption{Loss and validation accuracies of the pipeline trained using an end-to-end approach, without pretraining individual parts of the model. Validation accuracy given as percentage of correctly classified validation datapoints.}
+    \label{fig:e2e_big}
+\end{figure}
 
-\begin{itemize}
-    \item Smaller model
-    \begin{itemize}
-        \item 2 prediction blocks in pose and action
-        \item lowerd amount of filters in pose and visual model (create graphic?)
-        \item lowerd amount of filters in stem
-        \item idea: bigger batch size than 1 
-    \end{itemize}
-\end{itemize}
-
-% \subsection{Effect of Using Different Representations of Pose}
-% \label{sec:different_pose_representation_experiment}
+%TODO: explain why it didnt work (or why it did)
 
