@@ -919,10 +919,9 @@ class HAR_E2E(HAR_Testing_Experiment):
 
                 matches, valids = eval_pck_batch(predicted_poses[:, :, 0:2], ground_poses[:, :, 0:2], trans_matrices, distance_meassures, threshold=0.1, return_perjoint=True)
 
-                for i in range(batch_size):
-                    number_valids = number_valids + np.array(valids[i])
-                    for u in range(16):
-                        if valids[i][u]:
+                number_valids = number_valids + np.array(valids[0])
+                for u in range(16):
+                    if valids[i][u]:
                             per_joint_accuracy[u] = per_joint_accuracy[u] + matches[i][u]
 
 
