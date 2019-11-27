@@ -368,5 +368,6 @@ class PennActionDataset(BaseDataset):
             "parameters": t_parameters,
             "index": t_index,
             "original_window_size": original_window_sizes,
-            "bbox": t_bounding_boxes
+            "bbox": t_bounding_boxes,
+            "frame_folder": frame_folder
         }

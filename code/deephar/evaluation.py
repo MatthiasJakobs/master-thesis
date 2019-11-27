@@ -16,7 +16,7 @@ def pckh(y_true, y_pred, head_size, distance_threshold=0.5):
 
     matches = (distances <= distance_threshold) * valid
 
-    return np.sum(matches) / np.sum(valid)
+    return matches, valid, np.sum(matches) / np.sum(valid)
 
 def pck_bounding_box(y_true, y_pred, distance_meassure, distance_threshold=0.2):
     assert distance_meassure != 0
@@ -37,7 +37,7 @@ def pck_bounding_box(y_true, y_pred, distance_meassure, distance_threshold=0.2):
         matches = (distances <= distance_threshold).float() * valid
 
 
-    return torch.sum(matches) / torch.sum(valid)
+    return matches, valid, torch.sum(matches) / torch.sum(valid)
 
 def pck_upperbody(y_true, y_pred, distance_threshold=0.5, compute_upperbody=False):
     if compute_upperbody:
@@ -68,10 +68,12 @@ def pck_upperbody(y_true, y_pred, distance_threshold=0.5, compute_upperbody=Fals
         matches = (distances <= distance_threshold).float() * valid
 
 
-    return torch.sum(matches) / torch.sum(valid)
+    return matches, valid, torch.sum(matches) / torch.sum(valid)
 
-def eval_pcku_batch(predictions, poses, matrices, compute_upperbody=False):
+def eval_pcku_batch(predictions, poses, matrices, compute_upperbody=False, return_perjoint=False):
     scores_02 = []
+    matches = []
+    valids = []
 
     for i, prediction in enumerate(predictions):
 
@@ -79,13 +81,24 @@ def eval_pcku_batch(predictions, poses, matrices, compute_upperbody=False):
         pred_pose = torch.from_numpy(transform_pose(matrices[i], predictions[i], inverse=True))
         ground_pose = torch.from_numpy(transform_pose(matrices[i], poses[i], inverse=True))
 
-        scores_02.append(pck_upperbody(ground_pose, pred_pose, distance_threshold=0.2, compute_upperbody=compute_upperbody))
-        #pck_upperbody(poses, predictions, distance_threshold=0.2)
+        match, valid, scores = pck_upperbody(ground_pose, pred_pose, distance_threshold=0.2, compute_upperbody=compute_upperbody)
+        if torch.cuda.is_available():
+            matches.append(match.cpu().numpy())
+            valids.append(valid.cpu().numpy())
+        else:
+            matches.append(match.numpy())
+            valids.append(valid.numpy())
+        scores_02.append(scores)
 
-    return scores_02
+    if return_perjoint:
+        return matches, valids
+    else:
+        return scores_02
 
-def eval_pck_batch(predictions, poses, matrices, distance_meassures, threshold=0.2):
+def eval_pck_batch(predictions, poses, matrices, distance_meassures, threshold=0.2, return_perjoint=False):
     scores_02 = []
+    matches = []
+    valids = []
 
     for i, prediction in enumerate(predictions):
 
@@ -93,15 +106,28 @@ def eval_pck_batch(predictions, poses, matrices, distance_meassures, threshold=0
         pred_pose = torch.from_numpy(transform_pose(matrices[i], predictions[i], inverse=True))
         ground_pose = torch.from_numpy(transform_pose(matrices[i], poses[i], inverse=True))
 
-        scores_02.append(pck_bounding_box(ground_pose, pred_pose, distance_meassures[i], distance_threshold=threshold))
-        #pck_upperbody(poses, predictions, distance_threshold=0.2)
+        match, valid, scores = pck_bounding_box(ground_pose, pred_pose, distance_meassures[i], distance_threshold=threshold)
+        scores_02.append(scores)
+        if torch.cuda.is_available():
+            matches.append(match.cpu().numpy())
+            valids.append(valid.cpu().numpy())
+        else:
+            valids.append(valid.numpy())
+            matches.append(match.numpy())
 
-    return scores_02
+    if return_perjoint:
+        return matches, valids
+    else:
+        return scores_02
 
 
-def eval_pckh_batch(predictions, poses, headsizes, matrices):
+def eval_pckh_batch(predictions, poses, headsizes, matrices, return_perjoint=False):
     scores_05 = []
     scores_02 = []
+    matches_05 = []
+    matches_02 = []
+    valids_02 = []
+    valids_05 = []
 
     for i, prediction in enumerate(predictions):
         pred_pose = prediction[:, 0:2]
@@ -111,8 +137,25 @@ def eval_pckh_batch(predictions, poses, headsizes, matrices):
         pred_pose = transform_pose(matrices[i], pred_pose, inverse=True)
         ground_pose = transform_pose(matrices[i], ground_pose, inverse=True)
 
-        scores_05.append(pckh(ground_pose, pred_pose, headsizes[i]))
-        scores_02.append(pckh(ground_pose, pred_pose, headsizes[i], distance_threshold=0.2))
+        match, valid, scores = pckh(ground_pose, pred_pose, headsizes[i])
+        if torch.cuda.is_available():
+            matches_05.append(match.cpu().numpy())
+            valids_05.append(valid.cpu().numpy())
+        else:
+            matches_05.append(match.numpy())
+            valids_05.append(valid.numpy())
+        scores_05.append(scores)
+        match, scores = pckh(ground_pose, pred_pose, headsizes[i], distance_threshold=0.2)
+        if torch.cuda.is_available():
+            matches_02.append(match.cpu().numpy())
+            valids_02.append(valid.cpu().numpy())
+        else:
+            matches_02.append(match.numpy())
+            valids_02.append(valid.numpy())
+        scores_02.append(scores)
 
-    return scores_05, scores_02
+    if return_perjoint:
+        return matches_05, matches_02, valids_05, valids_02
+    else:
+        return scores_05, scores_02
 
