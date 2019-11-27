@@ -329,6 +329,8 @@ Moreover, they report that they additionally displaced the bounding box used for
 Because the authors do not mention how this was done in detail, and since the number of submissions allowed was limited, it was decided to not use displacement and merely averaging the estimated pose with and without mirroring the image.
 % TODO: Do small displacement once experiments are done and then say: I dont know exactly how they did it, which might explain why its worse
 
+% TODO: Show some images
+
 % TODO: authors report 89 percent accuracy on val and 91.2 on test. Mention that, because it supports the theory that the way the test data was estimated is the reason for discrepancy
 
 \begin{table}[]
@@ -411,6 +413,8 @@ A learning rate of $2^{-5}$ is used, as suggested by the authors in their work.
 
 - Started finetuning at iteration X and reduce learning rate by X % TODO
 - Talk about results
+% TODO: on test: confusion matrix for action and per-joint accuracy before and after finetuning. discuss changes
+% TODO: show good / bad example images
 % TODO: single and multi clip evaluation
 % TODO: statistical significance testing between my results and authors
 % TODO: zwischenfazit
@@ -457,7 +461,7 @@ The test accuracies, computed on the JHMDB test split, are shown for each config
     \label{tab:jhmdb_results_confidence}
 \end{table}
 
-
+% TODO: Per-joint accuracy
 % TODO: talk about a general conclusion like \textit{the higher the number of blocks the better} when comparing MPII and JHMDB results
 
 % TODO: report the number of iterations used
@@ -488,7 +492,10 @@ At iteration $12.000$, the augmentation ratio is increased to $1:10$, and the le
 Afterwards, the weights of the pose estimator are unfrozen and the finetuning process is started.
 A smaller batch size of $2$ is used since the additional storage of computed gradients of the model inside the GPU virtual memory does not allow for a higher batch size.
 
+% TODO: Validation without finetune: 82.81, 89.11 (single / multi)
 % TODO: show validation and test accuracies
+% TODO: on test: confusion matrix for action and per-joint accuracy before and after finetuning. discuss changes
+% TODO: show good / bad example images
 % TODO: Compare to PennAction
 % TODO: We used gt bb because the model would not be able to achieve scores high enough
 
@@ -506,6 +513,8 @@ It was decided to weigh both losses equally, i.e., sum them without weighting ei
 % This is most likely due to the small size of the dataset, compared to the size of the untrained network.
 % It was decided to introduce $L_2$ regularization on the weights using a parameter of $\lambda = 0.9$ to make the network less suceptable to overfitting.
 % TODO: change this if parameters change
+% TODO: on test: confusion matrix for action and per-joint accuracy before and after finetuning. discuss changes
+% TODO: show good / bad example images
 
 \begin{figure}[htb!]
     \centering
