@@ -347,7 +347,7 @@ class MPIIDataset(BaseDataset):
         t_parameters[3] = float(self.aug_conf["trans_x"])
         t_parameters[4] = float(self.aug_conf["trans_y"])
 
-        image_number = int(full_image_path[-13:-4])
+        image_number = int(label["image_name"][0:-4])
         
         image_number_np = np.array([image_number])
         t_filepath = torch.from_numpy(image_number_np).int()
