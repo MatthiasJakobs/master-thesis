@@ -1036,6 +1036,9 @@ class Pose_JHMDB(ExperimentBase):
             pck_bb_01 = []
             pck_upper_02 = []
 
+            per_joint_accuracy = np.zeros(16)
+            number_valids = np.zeros(16)
+
             self.model.eval()
             for batch_idx, test_data in enumerate(self.test_loader):
 
@@ -1100,7 +1103,15 @@ class Pose_JHMDB(ExperimentBase):
                     trans_matrices = trans_matrices.contiguous().view(test_data["trans_matrices"].size()[0] * test_data["trans_matrices"].size()[1], 3, 3)
 
                 try:
-                    pck_bb_02.extend(eval_pck_batch(predictions[:, :, 0:2], test_poses[:, :, 0:2], trans_matrices, distance_meassures))
+                    pck_bb_02.extend(eval_pck_batch(predictions[:, :, 0:2], test_poses[:, :, 0:2], trans_matrices, distance_meassures, threshold=0.2))
+                    matches, valids = eval_pck_batch(predictions[:, :, 0:2], test_poses[:, :, 0:2], trans_matrices, distance_meassures, threshold=0.1, return_perjoint=True)
+
+                    for i in range(batch_size):
+                        number_valids = number_valids + np.array(valids[i])
+                        for u in range(16):
+                            if valids[i][u]:
+                                per_joint_accuracy[u] = per_joint_accuracy[u] + matches[i][u]
+
                     pck_bb_01.extend(eval_pck_batch(predictions[:, :, 0:2], test_poses[:, :, 0:2], trans_matrices, distance_meassures, threshold=0.1))
                     pck_upper_02.extend(eval_pcku_batch(predictions[:, :, 0:2], test_poses[:, :, 0:2], trans_matrices))
                 except np.linalg.linalg.LinAlgError:
@@ -1128,6 +1139,8 @@ class Pose_JHMDB(ExperimentBase):
 
                     show_prediction_jhmbd(image, test_poses, prediction, matrix, path=path)
 
+            number_valids[7] = 1 # joint never visible
+            print(per_joint_accuracy / number_valids)
             bb_mean = torch.mean(torch.FloatTensor(pck_bb_02)).item()
             bb_01_mean = torch.mean(torch.FloatTensor(pck_bb_01)).item()
             upper_mean = torch.mean(torch.FloatTensor(pck_upper_02)).item()
