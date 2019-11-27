@@ -857,12 +857,16 @@ class HAR_E2E(HAR_Testing_Experiment):
             number_valids = np.zeros(16)
 
             for i in range(len(test_ds)):
+                print(i)
                 test_objects = test_ds[i]
                 frames = test_objects["normalized_frames"].to(self.device)
                 actions = test_objects["action_1h"].to(self.device)
                 ground_poses = test_objects["normalized_poses"].to(self.device)
                 sequence_length = test_objects["sequence_length"].to(self.device).item()
                 padding = int((sequence_length - 16) / 2.0)
+                if sequence_length < 16:
+                    print("length smaller than 16")
+                    continue
 
                 ground_class = torch.argmax(actions, 0)
                 single_clip = frames[padding:(16 + padding)]
