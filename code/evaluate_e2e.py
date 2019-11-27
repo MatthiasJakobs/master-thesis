@@ -18,4 +18,4 @@ conf["use_gt_bb"] = True
 conf["use_timedistributed"] = True
 
 har = HAR_E2E(conf)
-har.test(pretrained_model="/data/mjakobs/data/e2e_final")
+print(har.test(pretrained_model="/data/mjakobs/data/e2e_final"))

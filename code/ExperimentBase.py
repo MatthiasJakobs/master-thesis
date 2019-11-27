@@ -853,7 +853,7 @@ class HAR_E2E(HAR_Testing_Experiment):
             pck_bb_02 = []
             pck_bb_01 = []
             pck_upper_02 = []
-            for i in range(len(test_ds)):
+            for i in [1, 15, 50, 100, 140, 150, 200]:
                 test_objects = test_ds[i]
                 frames = test_objects["normalized_frames"].to(self.device)
                 actions = test_objects["action_1h"].to(self.device)
@@ -861,11 +861,12 @@ class HAR_E2E(HAR_Testing_Experiment):
                 sequence_length = test_objects["sequence_length"].to(self.device).item()
                 padding = int((sequence_length - 16) / 2.0)
 
-                ground_class = torch.argmax(actions)
-                single_clip = frames[:, padding:(16 + padding)].squeeze(0)
+                ground_class = torch.argmax(actions, 0)
+                single_clip = frames[padding:(16 + padding)]
 
-                bboxes = test_objects["bbox"][:, padding:(16 + padding)]
-                trans_matrices = test_objects["trans_matrices"][:, padding:(16 + padding)]
+                bboxes = test_objects["bbox"][padding:(16 + padding)]
+                trans_matrices = test_objects["trans_matrices"][padding:(16 + padding)]
+                ground_poses = ground_poses[padding:(16 + padding)]
 
                 assert len(single_clip) == 16
 
@@ -877,7 +878,7 @@ class HAR_E2E(HAR_Testing_Experiment):
 
                 pred_class_multi = torch.IntTensor(nr_multiple_clips).to(self.device)
                 for i in range(nr_multiple_clips):
-                    multi_clip = frames[0, i * spacing : i * spacing + 16].unsqueeze(0).to(self.device)
+                    multi_clip = frames[i * spacing : i * spacing + 16].unsqueeze(0).to(self.device)
                     _, _, _, _, estimated_class = self.model(multi_clip)
                     pred_class_multi[i] = torch.argmax(estimated_class.squeeze(1), 1)
 
@@ -899,15 +900,7 @@ class HAR_E2E(HAR_Testing_Experiment):
                 accuracies_single.append(accuracy_single)
                 accuracies_multi.append(accuracy_multi)
                 
-                current = current + 1
-
-                bboxes = bboxes.contiguous().view(val_data["bbox"].size()[0] * val_data["bbox"].size()[1], 4)
-
-                print("pred", str(predicted_poses.shape))
-                print("gt", str(ground_poses.shape))
-                print("bbox", str(bboxes.shape))
-                print("matrix", str(trans_matrices.shape))
-                
+                predicted_poses = predicted_poses.squeeze(0)
 
                 distance_meassures = torch.FloatTensor(len(bboxes))
 
