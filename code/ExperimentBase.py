@@ -853,6 +853,9 @@ class HAR_E2E(HAR_Testing_Experiment):
             pck_bb_02 = []
             pck_bb_01 = []
             pck_upper_02 = []
+            per_joint_accuracy = np.zeros(16)
+            number_valids = np.zeros(16)
+
             for i in [1, 15, 50, 100, 140, 150, 200]:
                 test_objects = test_ds[i]
                 frames = test_objects["normalized_frames"].to(self.device)
@@ -914,6 +917,15 @@ class HAR_E2E(HAR_Testing_Experiment):
                 pck_bb_01.append(eval_pck_batch(predicted_poses[:, :, 0:2], ground_poses[:, :, 0:2], trans_matrices, distance_meassures, threshold=0.1))
                 pck_upper_02.append(eval_pcku_batch(predicted_poses[:, :, 0:2], ground_poses[:, :, 0:2], trans_matrices))
 
+                matches, valids = eval_pck_batch(predicted_poses[:, :, 0:2], ground_poses[:, :, 0:2], trans_matrices, distance_meassures, threshold=0.1, return_perjoint=True)
+
+                    for i in range(batch_size):
+                        number_valids = number_valids + np.array(valids[i])
+                        for u in range(16):
+                            if valids[i][u]:
+                                per_joint_accuracy[u] = per_joint_accuracy[u] + matches[i][u]
+
+
             cm = confusion_matrix(np.array(conf_y), np.array(conf_x))
             np.save("experiments/{}/cm.np".format(self.experiment_name), cm)
             mean_acc_single = torch.mean(torch.Tensor(accuracies_single)).item()
@@ -921,6 +933,9 @@ class HAR_E2E(HAR_Testing_Experiment):
             mean_bb_02 = torch.mean(torch.Tensor(pck_bb_02)).item()
             mean_bb_01 = torch.mean(torch.Tensor(pck_bb_01)).item()
             mean_upper_02 = torch.mean(torch.Tensor(pck_upper_02)).item()
+
+            number_valids[7] = 1 # joint never visible
+            print(per_joint_accuracy / number_valids)
 
             print("mean_acc_single, mean_acc_multi, mean_bb_02, mean_bb_01, mean_upper_02")
             return mean_acc_single, mean_acc_multi, mean_bb_02, mean_bb_01, mean_upper_02
