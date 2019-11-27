@@ -732,7 +732,6 @@ class HAR_E2E(HAR_Testing_Experiment):
 
                 distance_meassures[i] = torch.max(width, height).item()
 
-#            self.pose_train_accuracies.append(torch.mean(torch.Tensor(eval_pck_batch(pred_pose[:, -1, :, 0:2], ground_pose[:, -1, :, 0:2], trans_matrices, distance_meassures))).item() / batch_size)
             self.pose_train_accuracies.append(torch.mean(torch.Tensor(eval_pck_batch(pred_pose[:, -1, :, 0:2], ground_pose[:, -1, :, 0:2], trans_matrices, distance_meassures))).item())
 
             del actions
@@ -834,6 +833,104 @@ class HAR_E2E(HAR_Testing_Experiment):
         self.pose_train_accuracies = []
 
         return super().evaluate()
+
+    def test(self, pretrained_model=None):
+        with torch.no_grad():
+            test_ds = JHMDBDataset("/data/mjakobs/data/jhmdb/", train=False, use_gt_bb=True)
+            if pretrained_model is not None:
+                self.preparation()
+                self.model.load_state_dict(torch.load(pretrained_model, map_location=self.device))
+    
+            self.model.eval()
+
+            correct_single = 0
+            correct_multi = 0
+            total = 0
+            accuracies_single = []
+            accuracies_multi = []
+            conf_x = []
+            conf_y = []
+            pck_bb_02 = []
+            pck_bb_01 = []
+            pck_upper_02 = []
+            for i in range(len(test_ds)):
+                test_objects = test_ds[i]
+                frames = test_objects["normalized_frames"].to(self.device)
+                actions = test_objects["action_1h"].to(self.device)
+                ground_poses = test_objects["normalized_poses"].to(self.device)
+                sequence_length = test_objects["sequence_length"].to(self.device).item()
+                padding = int((sequence_length - 16) / 2.0)
+
+                ground_class = torch.argmax(actions, 1)
+                single_clip = frames[:, padding:(16 + padding)].squeeze(0)
+
+                bboxes = test_objects["bbox"][:, padding:(16 + padding)]
+                trans_matrices = test_objects["trans_matrices"][:, padding:(16 + padding)]
+
+                assert len(single_clip) == 16
+
+                spacing = 8
+                nr_multiple_clips = int((sequence_length - 16) / spacing) + 1
+
+                single_clip = single_clip.unsqueeze(0).to(self.device)
+                _, predicted_poses, _, _, single_result = self.model(single_clip)
+
+                pred_class_multi = torch.IntTensor(nr_multiple_clips).to(self.device)
+                for i in range(nr_multiple_clips):
+                    multi_clip = frames[0, i * spacing : i * spacing + 16].unsqueeze(0).to(self.device)
+                    _, _, _, _, estimated_class = self.model(multi_clip)
+                    pred_class_multi[i] = torch.argmax(estimated_class.squeeze(1), 1)
+
+                pred_class_single = torch.argmax(single_result.squeeze(1), 1)
+                conf_x.append(pred_class_single.item())
+                conf_y.append(ground_class.item())
+
+                correct_single = correct_single + (pred_class_single == ground_class).item()
+
+                ground_class = ground_class.expand(nr_multiple_clips).long()
+
+                majority_correct = torch.sum((pred_class_multi.long() == ground_class).float()) >= (nr_multiple_clips / 2.0)
+
+                correct_multi = correct_multi + majority_correct.int().item()
+                total = total + 1
+
+                accuracy_single = correct_single / float(total)
+                accuracy_multi = correct_multi / float(total)
+                accuracies_single.append(accuracy_single)
+                accuracies_multi.append(accuracy_multi)
+                
+                current = current + 1
+
+                bboxes = bboxes.contiguous().view(val_data["bbox"].size()[0] * val_data["bbox"].size()[1], 4)
+
+                print("pred", str(predicted_poses.shape))
+                print("gt", str(ground_poses.shape))
+                print("bbox", str(bboxes.shape))
+                print("matrix", str(trans_matrices.shape))
+                
+
+                distance_meassures = torch.FloatTensor(len(bboxes))
+
+                for i in range(len(bboxes)):
+                    width = torch.abs(bboxes[i, 0] - bboxes[i, 2])
+                    height = torch.abs(bboxes[i, 1] - bboxes[i, 3])
+
+                    distance_meassures[i] = torch.max(width, height).item()
+
+                pck_bb_02.append(eval_pck_batch(predicted_poses[:, :, 0:2], ground_poses[:, :, 0:2], trans_matrices, distance_meassures))
+                pck_bb_01.append(eval_pck_batch(predicted_poses[:, :, 0:2], ground_poses[:, :, 0:2], trans_matrices, distance_meassures, threshold=0.1))
+                pck_upper_02.append(eval_pcku_batch(predicted_poses[:, :, 0:2], ground_poses[:, :, 0:2], trans_matrices))
+
+            cm = confusion_matrix(np.array(conf_y), np.array(conf_x))
+            np.save("experiments/{}/cm.np".format(self.experiment_name), cm)
+            mean_acc_single = torch.mean(torch.Tensor(accuracies_single)).item()
+            mean_acc_multi = torch.mean(torch.Tensor(accuracies_multi)).item()
+            mean_bb_02 = torch.mean(torch.Tensor(pck_bb_02)).item()
+            mean_bb_01 = torch.mean(torch.Tensor(pck_bb_01)).item()
+            mean_upper_02 = torch.mean(torch.Tensor(pck_upper_02)).item()
+
+            print("mean_acc_single, mean_acc_multi, mean_bb_02, mean_bb_01, mean_upper_02")
+            return mean_acc_single, mean_acc_multi, mean_bb_02, mean_bb_01, mean_upper_02
 
 
 class Pose_JHMDB(ExperimentBase):
