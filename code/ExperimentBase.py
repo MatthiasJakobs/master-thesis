@@ -861,7 +861,7 @@ class HAR_E2E(HAR_Testing_Experiment):
                 sequence_length = test_objects["sequence_length"].to(self.device).item()
                 padding = int((sequence_length - 16) / 2.0)
 
-                ground_class = torch.argmax(actions, 1)
+                ground_class = torch.argmax(actions)
                 single_clip = frames[:, padding:(16 + padding)].squeeze(0)
 
                 bboxes = test_objects["bbox"][:, padding:(16 + padding)]
@@ -881,7 +881,7 @@ class HAR_E2E(HAR_Testing_Experiment):
                     _, _, _, _, estimated_class = self.model(multi_clip)
                     pred_class_multi[i] = torch.argmax(estimated_class.squeeze(1), 1)
 
-                pred_class_single = torch.argmax(single_result.squeeze(1), 1)
+                pred_class_single = torch.argmax(single_result.squeeze(1))
                 conf_x.append(pred_class_single.item())
                 conf_y.append(ground_class.item())
 
