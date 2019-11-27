@@ -604,7 +604,7 @@ class HAR_PennAction(HAR_Testing_Experiment):
         if self.pretrained_model is not None:
             self.model.load_state_dict(torch.load(self.pretrained_model, map_location=self.device))
 
-        self.ds_train = PennActionFragmentsDataset("/data/mjakobs/data/pennaction_fragments/", train=True, val=False, use_random_parameters=True, augmentation_amount=6, use_gt_bb=self.use_gt_bb)
+        self.ds_train = PennActionFragmentsDataset("/data/mjakobs/data/pennaction_fragments/", train=True, val=False, use_random_parameters=True, augmentation_amount=10, use_gt_bb=self.use_gt_bb)
         self.ds_val = PennActionFragmentsDataset("/data/mjakobs/data/pennaction_fragments/", train=True, val=True, use_gt_bb=self.use_gt_bb)
         self.ds_test = PennActionDataset("/data/mjakobs/data/pennaction/", train=False)
 
