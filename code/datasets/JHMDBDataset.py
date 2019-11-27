@@ -394,5 +394,6 @@ class JHMDBDataset(BaseDataset):
             "parameters": t_parameters,
             "original_window_size": original_window_sizes,
             "index": t_index,
-            "bbox": t_bounding_boxes
+            "bbox": t_bounding_boxes,
+            "all_frames": all_frames
         }
