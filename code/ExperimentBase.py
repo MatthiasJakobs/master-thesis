@@ -856,7 +856,7 @@ class HAR_E2E(HAR_Testing_Experiment):
             per_joint_accuracy = np.zeros(16)
             number_valids = np.zeros(16)
 
-            for i in [1, 15, 50, 100, 140, 150, 200]:
+            for i in range(len(test_ds)):
                 test_objects = test_ds[i]
                 frames = test_objects["normalized_frames"].to(self.device)
                 actions = test_objects["action_1h"].to(self.device)
@@ -922,7 +922,7 @@ class HAR_E2E(HAR_Testing_Experiment):
                 number_valids = number_valids + np.array(valids[0])
                 for u in range(16):
                     if valids[i][u]:
-                            per_joint_accuracy[u] = per_joint_accuracy[u] + matches[i][u]
+                        per_joint_accuracy[u] = per_joint_accuracy[u] + matches[0][u]
 
 
             cm = confusion_matrix(np.array(conf_y), np.array(conf_x))
