@@ -125,9 +125,9 @@ class PennActionDataset(BaseDataset):
 
             if not self.train and not train_indicator:
                 self.indices.append(i)
-
-        for action in actions:
-            np.random.shuffle(self.classes[action])
+        if self.train:
+            for action in actions:
+                np.random.shuffle(self.classes[action])
 
         if self.train:
             self.train_val_split()
