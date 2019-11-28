@@ -126,13 +126,16 @@ class PennActionDataset(BaseDataset):
             if not self.train and not train_indicator:
                 self.indices.append(i)
 
+        for action in actions:
+            np.random.shuffle(self.classes[action])
+
         if self.train:
             self.train_val_split()
 
         np.random.set_state(st0)
 
         self.indices = sorted(self.indices)
-        self.items = sorted(self.items)
+        #self.items = sorted(self.items)
 
     # TODO: Identical to JHMDB, need refactor
     def train_val_split(self):
