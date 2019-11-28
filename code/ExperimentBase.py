@@ -938,7 +938,24 @@ class HAR_E2E(HAR_Testing_Experiment):
             mean_upper_02 = torch.mean(torch.Tensor(pck_upper_02)).item()
 
             number_valids[7] = 1 # joint never visible
-            print(per_joint_accuracy / number_valids)
+            per_joint_final = per_joint_accuracy / number_valids
+            print(per_joint_final)
+            left_arm = per_joint_final[13] + per_joint_final[14] + per_joint_final[15]
+            right_arm = per_joint_final[10] + per_joint_final[11] + per_joint_final[12]
+            right_leg = per_joint_final[0] + per_joint_final[1] + per_joint_final[2]
+            left_leg = per_joint_final[3] + per_joint_final[4] + per_joint_final[5]
+            legs_both = left_leg + right_leg
+            arms_both = left_arm + right_arm
+            upper_body_total = arms_both + per_joint_final[8] + per_joint_final[9]
+            lower_body_total = legs_both + per_joint_final[6]
+            print("left_arm", str(left_arm / 3))
+            print("right_arm", str(right_arm / 3))
+            print("left_leg", str(left_leg / 3))
+            print("right_leg", str(right_leg / 3))
+            print("legs_both", str(legs_both / 6))
+            print("arms_both", str(arms_both / 6))
+            print("upper_body", str(upper_body_total / 8))
+            print("lower_body", str(lower_body_total / 7))
 
             print("mean_acc_single, mean_acc_multi, mean_bb_02, mean_bb_01, mean_upper_02")
             return mean_acc_single, mean_acc_multi, mean_bb_02, mean_bb_01, mean_upper_02
