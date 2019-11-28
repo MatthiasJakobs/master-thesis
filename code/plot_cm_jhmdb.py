@@ -20,7 +20,7 @@ def plot_jhmdb(exp_dir):
             ax.text(j, i, format(cm[i, j], fmt), ha="center", va="center", color="white" if cm[i, j] > thresh else "black", fontsize=5)
     fig.tight_layout()
 
-    plt.savefig(exp_dir + "cm.png", dpi=399)
+    plt.savefig(exp_dir + "cm.png", dpi=500)
     plt.close()
 
 # exp_dir = "/data/mjakobs/code/master-thesis/code/experiments/eval_har_jhmdb/"
