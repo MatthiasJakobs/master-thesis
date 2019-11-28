@@ -420,11 +420,14 @@ A learning rate of $2^{-5}$ is used, as suggested by the authors in their work.
 % TODO: zwischenfazit
 
 \subsection{Pose estimation on JHMDB dataset}
+\label{sec:exp-pose-jhmdb}
 Similar to the experiment performed in \sref{sec:exp-replication}, this thesis evaluates different pose estimator configurations using the JHMDB dataset.
 Specifically, pose estimators with $2, 4$ and $8$ prediction blocks are trained with and without context heatmaps to assess the performance of the network on a more challenging video dataset.
 In terms of architecture, there are no changes to the experiments on the MPII dataset.
 The pose estimators are trained using an augmentation ratio of $1:6$, which means that for each original frame there are $6$ randomly augmented frames in the dataset.
 The test accuracies, computed on the JHMDB test split, are shown for each configuration in \tref{tab:jhmdb_results}.
+
+% TODO: Explain why 8 prediction block results are so bad
 
 \begin{table}[]
     \small
@@ -505,36 +508,100 @@ A smaller batch size of $2$ is used since the additional storage of computed gra
 Next, this thesis proposes a method for training the network in an end-to-end approach.
 This means that no part of the network is pretrained.
 To achieve this, the loss of the pose estimator and the loss of the action recognition pipeline are combined.
-More specifically, during the training process, the losses of all intermediate results from the pose estimator are computed using the elastic net loss.
-Afterwards, the loss of all intermediate results from the action recognition are computed using categorical cross-entropy.
-It was decided to weigh both losses equally, i.e., sum them without weighting either the pose estimation or action recognition loss more.
+First, during the training process, the losses of all intermediate results from the pose estimator are computed using the elastic net loss.
+Second, the loss of all intermediate results from the action recognition are computed using categorical cross-entropy.
+It was decided to weigh both losses equally, i.e., sum them without weighting either the pose estimation or action recognition loss more in order to not make any assumptions about which part is more important.
 
-% It was observed that the network started overfitting during training.
-% This is most likely due to the small size of the dataset, compared to the size of the untrained network.
-% It was decided to introduce $L_2$ regularization on the weights using a parameter of $\lambda = 0.9$ to make the network less suceptable to overfitting.
-% TODO: change this if parameters change
-% TODO: on test: confusion matrix for action and per-joint accuracy before and after finetuning. discuss changes
-% TODO: show good / bad example images
+The network needs a high amount of iterations for training until the validation accuracy converges.
+This is to be expected, since no part of the network is pretrained and thus all parts have to be trained from random initialization.
+See \fref{fig:e2e_big} for a graphical representation of the training process.
+Training accuracy of the action recognition part of the network quickly increases and is above the training accuracy of the pose estimator in the beginning.  
+This is to be expected since, at the beginning, the pose information is not reliable.
+Thus, the network focuses on utilizing visual features for classification.
+After approximately $25.000$ iterations, the pose training accuracy surpasses the action train accuracy and continues to converge towards $1$.
+
+HAR validation is "jittery". this indicates uncertainty on unseen data. 
+
 
 \begin{figure}[htb!]
     \centering
     \includegraphics[width=0.8\textwidth]{e2e_big.png}
-    \caption{Loss and validation accuracies of the pipeline trained using an end-to-end approach, without pretraining individual parts of the model. Validation accuracy given as percentage of correctly classified validation datapoints.}
+    \caption{Loss and validation accuracies of the pipeline trained using an end-to-end approach, without pretraining individual parts of the model. Validation accuracy given as percentage of correctly classified validation datapoints. TODO}
     \label{fig:e2e_big}
 \end{figure}
 
-% test results at iteration 230000
-%[ 0.51048951 0.48913043 0.56326531 0.6147541  0.37967914 0.52054795
-%  0.57915058 0.         0.65779468 0.77394636 0.3269962  0.39694656
-%  0.53030303 0.48288973 0.3460076  0.35384615]
-%  mean_acc_single, mean_acc_multi, mean_bb_02, mean_bb_01, mean_upper_02
-%  (0.6714276075363159, 0.6793071031570435, 0.8223645687103271, 0.48881927132606506, 0.3428668975830078)
+\def \e2eFinalIteration {$228.000$ } % TODO
 
-%TODO: explain why it didnt work (or why it did)
+\begin{table}[]
+    \small
+    \centering
+    \begin{tabular}{|c|c|c|c|c|}
+    \hline
+        \textbf{Single clip accuracy} & \textbf{Multi clip accuracy}  & \textbf{PCK @ 0.2} & \textbf{PCK @ 0.1} & \textbf{PCKu @ 0.2}\\ \hline
+        0.81 & 0.84 & 0.83 & 0.51 & 0.36 \\ \hline
+    \end{tabular}
+    \caption{Test results on the JHMDB test set after \e2eFinalIteration iterations. TODO}
+    \label{tab:e2e-quantitative-results}
+\end{table}
+
+% TODO: Compare action to pretrained
+\tref{tab:e2e-quantitative-results}.
+When comparing the pose accuracy of the end-to-end model to the pose estimators trained in \sref{sec:exp-pose-jhmdb}, it is apparent that the end-to-end model is significantly worse in all three metrics.
+Further experimentation is necessary to assess whether or not the model hyperparameters like learning rate and batch size can be optimized in order for the end-to-end model to achieve comparable results to the pretrained model.
+However, the findings are promising, because the network is , in general, able to achieve a high classification accuracy by being trained in an end-to-end approach.
+This suggests that, while the pose estimator might be weaker in comparison to a standalone pose estimator, it is enough to make accurate action classifications.
 
 \begin{figure}[htb!]
     \centering
-    \includegraphics[width=0.8\textwidth]{cm-e2e.png}
+    \includegraphics[width=0.999\textwidth]{cm-e2e.png}
     \caption{TODO}
     \label{fig:cm-e2e}
 \end{figure}
+
+A confusion matrix of the action classifcation on the test dataset is computed to gain a better understanding of the types of missclassification of the network (see \fref{fig:cm-e2e}).
+From the confusion matrix, it becomes clear that the network is highly uncertain between the classes \textit{sit} and \textit{stand}.
+Only $17\%$ of the test datapoints classified as \textit{stand} were actually from the \textit{stand} class.
+In addition, in $39\%$ of the cases where the network predicted \textit{stand}, the ground truth class was \textit{sit}.
+
+% TODO: Intraclass variance: half of each "sit" clip are people standing. see images for examples. Either classes in dataset need to be relabeled or network architecture needs to incorporate more temporal information because 16 frame chunks are not enough. future work!
+% TODO: PUT THIS IN CONCLUSION CHAPTER
+
+% One reason for such a large amount of confusion might be that the image context around the subject does not give a clear indication of the action, especially when considering the \textit{stand} class.
+% Consider the high accuracy of the model on classes such as \textit{pullup} and \textit{golf}, where each image contains the object used in the interaction, in these cases a pullup bar and a golf club.
+% This might also explain why the network is able to correctly estimate the \textit{sit} class in $83\%$ of test data, since a chair or other object the subject is sitting on might lead to useful image features.
+% In addition, pose information of the upper body are very similar in both cases, which leads to another possible point of confusion.
+
+% TODO: said stand, was wave
+$22\%$ of test images are wrongly classified as \textit{stand}, when the actual class is \textit{wave}.
+Would probably be better with more accurate pose at the hands.
+Also intraclass variance
+
+% TODO: show good / bad example images
+
+% TODO: Comparison to JHMDB HAR with pretrained
+
+
+\begin{table}[]
+    \small
+    \centering
+    \scalebox{0.90}{%
+    \begin{tabular}{|c|c|c|c|c|c|c|c|}
+    \hline
+        \textbf{Ankle (r)} & \textbf{Knee (r)}  & \textbf{Hip (r)} & \textbf{Hip (l)} & \textbf{Knee (l)} & \textbf{Ankle (l)} & \textbf{Pelvis} & \textbf{Upper neck} \\ \hline
+        0.55 & 0.52 & 0.63 & 0.64 & 0.48 & 0.50 & 0.56 & 0.72 \\ \hline \hline
+        \textbf{Head top} & \textbf{Wrist (r)} & \textbf{Elbow (r)} & \textbf{Shoulder (r)} & \textbf{Shoulder (l)} & \textbf{Elbow (l)} & \textbf{Wrist (l)} & \textbf{Total} \\ \hline
+        0.75 & 0.31  & 0.37 & 0.47 & 0.54 & 0.45 & 0.47 & 0.51 \\ \hline \hline
+        \textbf{Arms (l)} & \textbf{Arms (r)} & \textbf{Arms (both)} & \textbf{Legs (l)} & \textbf{Legs (r)} & \textbf{Legs (both)} & \textbf{Upper body} & \textbf{Lower body}  \\ \hline
+        0.49 & 0.39 & 0.44 & 0.54 & 0.57 & 0.55 & 0.51 & 0.56 \\ \hline \hline
+    \end{tabular}}
+    \caption{Per joint accuracy, computed on the JHMDB test set using PCK @ 0.1 meassure. In addition, aggregated accuracy values are given in the third row for different sets of joints. \textit{Arms} for both left and right are computed by taking the average of the shoulder, elbow and wrist accuracies. \textit{Legs} are computed the same way, using knee, ankle and hip accuracy values. For \textit{Upper body}, upper neck and head top are added to both \textit{Arms} aggregations. \textit{Lower body} is computed by aggregating both \textit{legs} accuracies as well as pelvis.}
+    \label{tab:e2e-perjoint}
+\end{table}
+
+In \tref{tab:e2e-perjoint}, the accuracy of the poses are given for each joint, as well as for some aggregations like \textit{upper body}.
+On average, the network is more precise on the joints associated with the legs in comparison to the arm joints.
+Also, joints associated with the right side of the subjects are detected with a higher accuracy than the joints associated with the left side.
+% TODO: Why?
+
+%TODO: explain why it didnt work (or why it did)
+% TODO: Idea: show heatmaps per actions or joint accuracies per action. This would be better for explanation
