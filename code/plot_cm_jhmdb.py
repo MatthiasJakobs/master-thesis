@@ -6,7 +6,7 @@ from datasets.JHMDBDataset import actions
 def plot_jhmdb(exp_dir):
     cm = np.load(exp_dir + "cm.np.npy")
 
-    cm = cm / cm.astype(np.float).sum(axis=1)
+    cm = cm / cm.astype(np.float).sum(axis=0)
     fig, ax = plt.subplots()
     im = ax.imshow(cm, interpolation="nearest", cmap=plt.cm.Reds)
     ax.set(xticks=np.arange(cm.shape[1]), yticks=np.arange(cm.shape[0]), xticklabels=actions, yticklabels=actions, xlabel="Predicted class", ylabel="Ground truth class")
