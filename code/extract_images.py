@@ -152,12 +152,13 @@ def extract_mpii_pose(model_path, output_path):
     model.load_state_dict(torch.load(model_path, map_location="cpu"))
     model.eval()
 
-    for i in [100]:
+    for i in range(len(ds)):
         entry = ds[i]
         frames = entry["normalized_image"].unsqueeze(0)
         matrices = entry["trans_matrix"]
-        image_number = entry["image_path"]
-        image_path = "/data/mjakobs/data/mpii/images/0{}.jpg".format(image_number.item())
+        image_number = entry["image_path"].item()
+        image_number = "{}".format(image_number).zfill(9)
+        image_path = "/data/mjakobs/data/mpii/images/{}.jpg".format(image_number)
         _, predicted_poses, _, _ = model(frames)
 
         path = '{}/{}.png'.format(output_path, i)
@@ -171,8 +172,8 @@ def extract_mpii_pose(model_path, output_path):
 
 def main():
     #extract_jhmdb_pose("/tmp/jhmdb_8_model", "/tmp/jhmdb_images")
-    #extract_mpii_pose("/tmp/mpii_8_model", "/tmp/mpii_images")
+    extract_mpii_pose("/tmp/mpii_8_model", "/tmp/mpii_images")
     #extract_har_jhmdb_pose("/tmp/har_jhmdb_nof", "/tmp/har_jhmdb_images")
-    extract_har_pennaction_pose("/tmp/har_penn_model", "/tmp/har_penn_images")
+    #extract_har_pennaction_pose("/tmp/har_penn_model", "/tmp/har_penn_images")
 
 main()
