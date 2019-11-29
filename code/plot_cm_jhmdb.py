@@ -1,9 +1,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from datasets.JHMDBDataset import actions
+from datasets.JHMDBDataset import actions as jhmdb_actions
+from datasets.PennActionDataset import actions as penn_actions
 
-def plot_jhmdb(exp_dir):
+def plot_cm(exp_dir, actions):
     cm = np.load(exp_dir + "cm.np.npy")
 
     cm = cm / cm.astype(np.float).sum(axis=0)
@@ -23,7 +24,8 @@ def plot_jhmdb(exp_dir):
     plt.savefig(exp_dir + "cm.png", dpi=500)
     plt.close()
 
-# exp_dir = "/data/mjakobs/code/master-thesis/code/experiments/eval_har_jhmdb/"
-# plot_jhmdb(exp_dir)
 exp_dir = "/data/mjakobs/code/master-thesis/code/experiments/eval_e2e/"
-plot_jhmdb(exp_dir)
+plot_cm(exp_dir, jhmdb_actions)
+
+exp_dir = "/data/mjakobs/code/master-thesis/code/experiments/eval_pennaction/"
+plot_cm(exp_dir, penn_actions)

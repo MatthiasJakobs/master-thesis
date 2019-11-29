@@ -278,20 +278,14 @@ For all subsequent pose estimation experiments, $L$ is used to compute the loss 
 As discussed before, for evaluating a model on the test dataset, the estimations need to be send to the \textit{Max Planck Institute for Intelligent Systems} for evaluation.
 Because they limit the amount of submissions to $4$, it is not possible to evaluate each trained model on the test data, which is why it was decided to report the validation accuracy for comparison and only submit estimations from the best performing model.
 
-\begin{figure}[htb!]
-    \centering
-    \includegraphics[width=0.7\textwidth]{mpii_vals.png}
-    \caption{Validation accuracies of all evaluated pose estimation configurations on the MPII dataset. Notice that the addition of context heatmaps does not significantly improve upon the accuracy for $nr\_blocks > 2$. }
-    \label{fig:mpii_vals}
-\end{figure}
-
-As can be seen in \fref{fig:mpii_vals} as well as \tref{tab:mpii_results}, the higher the number of prediction blocks, the more accurate the model performs on the validation data.
+As can be seen in \tref{tab:mpii_results}, the higher the number of prediction blocks, the more accurate the model performs on the validation data.
 In addition, using context heatmaps appears to increase the accuracy as well, especially so when using $2$ prediction blocks.
 To test whether or not the increase in accuracy is statistically significant, randomization tests with a significance level of $0.05$ are performed.
 For the randomization test, $3000$ permutations are used.
 As can be seen in \tref{tab:mpii_results}, the only statistically significant increases in accuracy are observed when comparing $2$ and $4$ prediction block models without context heatmaps, as well as between $4$ and $8$ prediction block models when using $2$ context heatmaps.
 This suggests that, while keeping the number of prediction blocks constant, the use of context heatmaps does not influence the accuracy of the model in a significant way.
 % TODO: Talk more about results after rerunning experiments of figure something out
+% TODO: Redo the above once without_context_8 has finished
 
 \begin{table}[]
     \small
@@ -299,20 +293,23 @@ This suggests that, while keeping the number of prediction blocks constant, the 
     \begin{tabular}{|l|l|c|c|}
     \hline
         \textbf{nr\_blocks} & \textbf{nr\_context}  & \textbf{PCKh @ 0.5 (validation)} & \textbf{p-value} \\ \hline
-        \begin{tabular}{@{}c@{}} 2 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}}80.96 \\ 81.56  \end{tabular} & 0.54  \\ \hline
+        \begin{tabular}{@{}c@{}} 2 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 84.15 \\ 84.01  \end{tabular} & 0.85  \\ \hline
     
-        \begin{tabular}{@{}c@{}} 4 \\ 4 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}}83.22 \\ 82.97  \end{tabular} & 0.78  \\ \hline
+        \begin{tabular}{@{}c@{}} 4 \\ 4 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 85.78 \\ 85.64  \end{tabular} & 0.85  \\ \hline
 
-        \begin{tabular}{@{}c@{}} 8 \\ 8 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}}84.67 \\ 84.66  \end{tabular} & 0.97  \\ \hline
+        \begin{tabular}{@{}c@{}} 8 \\ 8 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} TODO \\ 87.00  \end{tabular} & TODO  \\ \hline
 
-        \begin{tabular}{@{}c@{}} 2 \\ 4 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 0 \end{tabular} & \begin{tabular}{@{}c@{}} 80.96 \\ 83.22  \end{tabular} & \textbf{0.02}  \\ \hline
+        \begin{tabular}{@{}c@{}} 2 \\ 4 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 0 \end{tabular} & \begin{tabular}{@{}c@{}} 84.15 \\ 85.78  \end{tabular} & 0.074  \\ \hline
 
-        \begin{tabular}{@{}c@{}} 2 \\ 4 \end{tabular} & \begin{tabular}{@{}c@{}} 2 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 81.56 \\ 82.97  \end{tabular} & 0.16  \\ \hline
+        \begin{tabular}{@{}c@{}} 2 \\ 4 \end{tabular} & \begin{tabular}{@{}c@{}} 2 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 84.01 \\ 85.64  \end{tabular} & 0.076  \\ \hline
 
-        \begin{tabular}{@{}c@{}} 4 \\ 8 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 0 \end{tabular} & \begin{tabular}{@{}c@{}} 83.22 \\ 84.67  \end{tabular} & 0.14  \\ \hline
+        \begin{tabular}{@{}c@{}} 4 \\ 8 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 0 \end{tabular} & \begin{tabular}{@{}c@{}} 85.78 \\ TODO  \end{tabular} & TODO  \\ \hline
 
-        \begin{tabular}{@{}c@{}} 4 \\ 8 \end{tabular} & \begin{tabular}{@{}c@{}} 2 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 82.97 \\ 84.66  \end{tabular} & \textbf{0.081}  \\ \hline
+        \begin{tabular}{@{}c@{}} 4 \\ 8 \end{tabular} & \begin{tabular}{@{}c@{}} 2 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 85.64 \\ 87.00  \end{tabular} & 0.13  \\ \hline
 
+        \begin{tabular}{@{}c@{}} 2 \\ 8 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 0 \end{tabular} & \begin{tabular}{@{}c@{}} 84.15 \\ TODO  \end{tabular} & TODO  \\ \hline
+
+        \begin{tabular}{@{}c@{}} 2 \\ 8 \end{tabular} & \begin{tabular}{@{}c@{}} 2 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 84.01 \\ 87.00  \end{tabular} & \textbf{0.001}  \\ \hline            
     \end{tabular}
     \caption{Different model configurations and their corresponding PCKh validation score. The $p$-values were computed using a randomization test. $p$-values below the significance level of $0.05$ are shown in bold, indicating that the change in accuracy is significant.} % TODO
     \label{tab:mpii_results}
@@ -331,7 +328,7 @@ Because the authors do not mention how this was done in detail, and since the nu
 
 % TODO: Show some images
 
-% TODO: authors report 89 percent accuracy on val and 91.2 on test. Mention that, because it supports the theory that the way the test data was estimated is the reason for discrepancy
+% TODO: authors report 89 percent accuracy (we achieved 87 percent) on val and 91.2 on test. Mention that, because it supports the theory that the way the test data was estimated is the reason for discrepancy
 
 \begin{table}[]
     \centering
@@ -339,12 +336,15 @@ Because the authors do not mention how this was done in detail, and since the nu
     \begin{tabular}{|l|l|l|l|l|l|l|l|l|}
         \hline
         &Head & Shoulder & Elbow & Wrist & Hip & Knee  & Ankle & Total  \\ \hline
-        out recreation& 95.7  & 90.5  & 81.4  & 74.6  & 82.5  & 73.0 & 66.2 & 81.4 \\
-        \cite{luvizon_2d/3d_2018}& 98.1  & 96.6  & 92.0  & 87.5  & 90.6  & 88.0 & 82.7 & 91.2  \\ \hline
+        %out recreation& 95.7  & 90.5  & 81.4  & 74.6  & 82.5  & 73.0 & 66.2 & 81.4 \\
+        our recreation            & 96.3  & 92.0  & 83.6  & 77.3  & 84.5  & 76.3 & 69.9 & 83.5 \\
+        \cite{luvizon_2d/3d_2018} & 98.1  & 96.6  & 92.0  & 87.5  & 90.6  & 88.0 & 82.7 & 91.2  \\ \hline
     \end{tabular}}
     \caption{Our recreation in direct comparison to the original work by \cite{luvizon_2d/3d_2018}. Values represent PCKh using $\alpha = 0.5$.  } %TODO: New values and / or explain differences
     \label{tab:mpii_test}
 \end{table}
+
+% TODO: Discuss differences on a per joint basis
 
 % TODO: zwischenfazit
 
@@ -464,7 +464,24 @@ The test accuracies, computed on the JHMDB test split, are shown for each config
     \label{tab:jhmdb_results_confidence}
 \end{table}
 
-% TODO: Per-joint accuracy
+\begin{table}[]
+    \small
+    \centering
+    \scalebox{0.90}{%
+    \begin{tabular}{|c|c|c|c|c|c|c|c|}
+    \hline
+        \textbf{Ankle (r)} & \textbf{Knee (r)}  & \textbf{Hip (r)} & \textbf{Hip (l)} & \textbf{Knee (l)} & \textbf{Ankle (l)} & \textbf{Pelvis} & \textbf{Upper neck} \\ \hline
+        0.87 & 0.84 & 0.90 & 0.88 & 0.83 & 0.85 & 0.93 & 0.94 \\ \hline \hline
+        \textbf{Head top} & \textbf{Wrist (r)} & \textbf{Elbow (r)} & \textbf{Shoulder (r)} & \textbf{Shoulder (l)} & \textbf{Elbow (l)} & \textbf{Wrist (l)} & \textbf{Total} \\ \hline
+        0.97 & 0.83  & 0.87 & 0.89 & 0.89 & 0.82 & 0.82 & 0.91 \\ \hline \hline
+        \textbf{Arms (l)} & \textbf{Arms (r)} & \textbf{Arms (both)} & \textbf{Legs (l)} & \textbf{Legs (r)} & \textbf{Legs (both)} & \textbf{Upper body} & \textbf{Lower body}  \\ \hline
+        0.84 & 0.86 & 0.85 & 0.85 & 0.87 & 0.86 & 0.88 & 0.87 \\ \hline \hline
+    \end{tabular}}
+    \caption{Per joint accuracy, computed on the JHMDB test set using PCK @ 0.1 meassure. In addition, aggregated accuracy values are given in the third row for different sets of joints. \textit{Arms} for both left and right are computed by taking the average of the shoulder, elbow and wrist accuracies. \textit{Legs} are computed the same way, using knee, ankle and hip accuracy values. For \textit{Upper body}, upper neck and head top are added to both \textit{Arms} aggregations. \textit{Lower body} is computed by aggregating both \textit{legs} accuracies as well as pelvis.}
+    \label{tab:jhmdb-perjoint}
+\end{table}
+% TODO: Rephrase caption above so that it is not identical
+
 % TODO: talk about a general conclusion like \textit{the higher the number of blocks the better} when comparing MPII and JHMDB results
 
 % TODO: report the number of iterations used
@@ -601,6 +618,7 @@ Also intraclass variance
 In \tref{tab:e2e-perjoint}, the accuracy of the poses are given for each joint, as well as for some aggregations like \textit{upper body}.
 On average, the network is more precise on the joints associated with the legs in comparison to the arm joints.
 Also, joints associated with the right side of the subjects are detected with a higher accuracy than the joints associated with the left side.
+% TODO: I think the same thing happens with JHMDB. Check and reference back!
 % TODO: Why?
 
 %TODO: explain why it didnt work (or why it did)

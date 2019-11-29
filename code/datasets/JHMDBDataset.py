@@ -98,7 +98,7 @@ class JHMDBDataset(BaseDataset):
         np.random.set_state(st0)
 
         self.indices = sorted(self.indices)
-        self.items = sorted(self.items)
+        #self.items = sorted(self.items)
 
         if self.use_random_parameters:
             self.angles=torch.IntTensor([-30, -25, -20, -15, -10, -5, 5, 10, 15, 20, 25, 30])

@@ -38,40 +38,53 @@ def perform_significance_test(prob_a, prob_b, length_a, length_b):
 #    print("alpha", alpha)
 #    print("reject null_hypothesis (both come from same distribution)", p_value < alpha)
 
-length_a = 2880
+length_a = 2888
 length_b = length_a
 
-prob_a = 0.8096
-prob_b = 0.8156
+prob_a = 0.8415
+prob_b = 0.8401
 
 perform_significance_test(prob_a, prob_b, length_a, length_b)
 
-prob_a = 0.8322
-prob_b = 0.8297
+prob_a = 0.8578
+prob_b = 0.8564
 
 perform_significance_test(prob_a, prob_b, length_a, length_b)
 
-prob_a = 0.8467
-prob_b = 0.8466
+print("TODO")
+# prob_a = 0.8467
+# prob_b = 0.8466
+
+# perform_significance_test(prob_a, prob_b, length_a, length_b)
+
+prob_a = 0.8415
+prob_b = 0.8578
 
 perform_significance_test(prob_a, prob_b, length_a, length_b)
 
-prob_a = 0.8096
-prob_b = 0.8322
+prob_a = 0.8401
+prob_b = 0.8564
 
 perform_significance_test(prob_a, prob_b, length_a, length_b)
 
-prob_a = 0.8156
-prob_b = 0.8297
+print("TODO")
+# prob_a = 0.8322
+# prob_b = 0.8467
+
+# perform_significance_test(prob_a, prob_b, length_a, length_b)
+
+prob_a = 0.8564
+prob_b = 0.8700
 
 perform_significance_test(prob_a, prob_b, length_a, length_b)
 
-prob_a = 0.8322
-prob_b = 0.8467
+print("TODO")
+# prob_a = 0.8564
+# prob_b = 0.8700
 
-perform_significance_test(prob_a, prob_b, length_a, length_b)
+# perform_significance_test(prob_a, prob_b, length_a, length_b)
 
-prob_a = 0.8297
-prob_b = 0.8466
+prob_a = 0.8401
+prob_b = 0.8700
 
 perform_significance_test(prob_a, prob_b, length_a, length_b)
