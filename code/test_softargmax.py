@@ -227,8 +227,8 @@ def quantitative_evaluation():
         for idx, cov in enumerate(variances):
             for joint in pose:
 
-                x = int(joint[0].item() * 255)
-                y = int(joint[1].item() * 255)
+                x = np.rint([joint[0].item() * 255])[0]
+                y = np.rint([joint[1].item() * 255])[0]
 
                 if joint[2] == 0:
                     continue
@@ -238,7 +238,7 @@ def quantitative_evaluation():
                 output = original_model.predict(heatmap.reshape(1, 255, 255, 1))
 
                 [scale_x, scale_y] = output[0][0]
-                pred_x, pred_y = int(scale_x * 255.0), int(scale_y * 255.0)
+                pred_x, pred_y = np.rint([scale_x * 255.0])[0], np.rint([scale_y * 255.0])[0]
 
                 difference_x = abs(pred_x - x)
                 difference_y = abs(pred_y - y)
@@ -256,7 +256,8 @@ def quantitative_evaluation():
     print("4", variance_accuracies_4 / valid_joints.astype(np.float32))
 
 def qualitative_evaluation():
-    variances = [1, 2, 5, 10, 20, 50]
+#    variances = [1, 2, 5, 10, 20, 50]
+    variances = [50]
 
     width = 255
     height = width
@@ -282,7 +283,13 @@ def qualitative_evaluation():
                     result[x,y] = 1
                 else:
                     result[x,y] = 0
-        
+        if cov == 50:
+            sum_lila = 0
+            for i in range(height):
+                sum_lila += result[200, i]
+            
+            print("lila", sum_lila)
+
         plt.subplot(2, 3, idx + 1)
         plt.grid(False)
         plt.title("c = " + str(cov))
@@ -291,7 +298,7 @@ def qualitative_evaluation():
     plt.savefig("softargmax_qualitative.png")
 
 def main():
-    #qualitative_evaluation()
+    qualitative_evaluation()
     quantitative_evaluation()
 
         # image_number = "{}".format(int(example["image_path"][0].item()))
