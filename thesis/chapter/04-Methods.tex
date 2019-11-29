@@ -173,7 +173,6 @@ The first path, further referred to as \textit{Pose Model}, aggregates the predi
 $b$ refers to the number of frames of the input clip, while $a$ determines the number of joints to detect.
 To ensure that the pose matrix has identical dimensionality, regardless of the original input video length, the authors decide to subdivide the video into chunks of $16$ frames, resulting in $b=16$.
 The last dimension stores the $x$ and $y$ coordinates, respectively, resulting in $z=2$ and a total dimensionality of $16 \times 16 \times 2$, since all datasets are processed in a way to ensure that there are always $16$ joints (see \sref{sec:exp-datasets} for a more detailed explanation).
-An alternative representation to the pose cube is evaluated in \sref{sec:different_pose_representation_experiment}.
 Afterwards, the pose cube is processed by a fully-convolutional neural network, which can be seen in \fref{fig:luvizon_actionrecognitionblock}, before being fed into a so called \textit{action prediction block}.
 The authors decide to use a function called \textit{MaxPlusMin pooling} instead of regular \textit{Max-pooling}.
 This function is implemented by the authors using a \textit{Max-pooling} operation with kernel size $(4,4)$ in the following way:
@@ -199,6 +198,7 @@ Notice that the output of the action prediction block is not the predicted actio
 The predicted actions are only used for computing the loss during training and are not passed further through the network.
 
 \subsubsection{Visual Model}
+\label{sec:deephar_visualmodel}
 \begin{figure}[htb!]
     \centering
     \includegraphics[width=0.6\textwidth]{luvizon_appearanceaction.png}
