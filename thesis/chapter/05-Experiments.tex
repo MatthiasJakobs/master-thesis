@@ -438,35 +438,38 @@ Moreover, there were no statistically significant differences found between the 
 Additionally, using context heatmaps does not significantly increase the accuracy of the pose estimator.
 
 \subsubsection{HAR using Penn Action dataset}
-In order to recreate the Human Activity Recognition results from \cite{luvizon_2d/3d_2018} on the Penn Action dataset, we first train a pose estimator, which is later incorporated into the HAR model.
-The authors used a hybrid dataset for training, consisting of $75$ percent MPII and $25$ percent Penn Action training data.
+To recreate the Human Activity Recognition results from \cite{luvizon_2d/3d_2018} on the Penn Action dataset, we first train a pose estimator.
+Once the pose estimator is trained, its pretrained weights are used in the HAR model.
+The authors used a hybrid dataset for training, consisting of $75\%$ MPII and of $25\%$ Penn Action training data.
 They do not, however, motivate this decision.
-The pose estimator contains $4$ prediction blocks, uses $2$ context heatmaps and was trained using a batch size of $30$ and a learning rate of $10^{-3}$.
-The loss, as well as validation accuracy scores achieved on the Penn Action dataset can be seen in \fref{fig:pose_mixed_results}.
+The pose estimator contains $4$ prediction blocks, uses $2$ context heatmaps and it is trained using a batch size of $30$ and a learning rate of $10^{-3}$.
+The validation accuracy scores achieved on the Penn Action validation dataset can be seen in \fref{fig:pose_mixed_results}.
 % TODO: test on test dataset aswell
 % TODO: Discuss results 
 
 \begin{figure}[htb!]
     \centering
-    \includegraphics[width=0.7\textwidth]{pose_mixed_results.png}
-    \caption{Loss and validation accuracies after training the pose estimator using a mixture dataset of MPII and Penn Action.}
+    \includegraphics[width=0.45\textwidth]{pose_mixed_results.png}
+    \caption{Validation accuracies computed during the training of the pose estimator. The training dataset is a mixture of $75\%$ MPII and $25\%$ Penn Action data. The validation accuracies are computed on the validation split of the Penn Action dataset. }
     \label{fig:pose_mixed_results}
 \end{figure}
 
-Afterwards, the pretrained pose estimator is inserted into the HAR model.
-The model is trained using Penn Action data only.
+The pretrained pose estimator weights are inserted into the HAR model after the training process of the pose estimator finished.
+The model is trained using Penn Action training data.
 Also, the weights of the pose estimator are initially frozen.
-This is done in order to find the point in training where the validation accuracies plateaus, at which point the authors unfreeze the weights and lower the learning rate.
-As an optimizer, Stochastic Gradient Descend is used, with the addition of a momentum value $\gamma = 0.98$ and the use of a method called \textit{Nesterov Accelerated Gradient (NAG)} \cite{nesterov_method_1983}.
-Momentum is used to accelarate the gradient descent process by incorporating a fraction $\gamma$ of the previous step size to compute the next step size to take.
-Consider a regular update to the weights $w$ of a neuron using gradient descent, as explained in \sref{sec:gradient_descent}, given by the following formula:
+The HAR model is then trained until the validation accuracies stops increasing, at which point the authors unfreeze the weights of the pose estimator and lower the learning rate.
+The model is then fine-tuned in an end-to-end approach.
+As an optimizer, the Stochastic Gradient Descend is used, with the addition of a momentum value $\gamma = 0.98$ and the use of a method called \textit{Nesterov Accelerated Gradient (NAG)} \cite{nesterov_method_1983}.
+
+Momentum is used to accelarate the gradient descent process by incorporating a fraction $\gamma$ of the previous gradients when computing the new gradients.
+Consider a regular update to the weights $w$ of a neuron using gradient descent, as explained in \sref{sec:gradient_descent}, given by
 
 \begin{equation}
     w_{t+1} = w_t - \eta \nabla w_t,
 \end{equation}
 
-where $\eta$ refers to the learning rate and $\nabla w_t$ contains the gradients computed using the loss function.
-When using momentum, a update term $\nu_t$ is computed in the following way:
+where $\eta$ refers to the learning rate and $\nabla w_t$ refers to the gradients w.r.t. $w_t$.
+When using momentum, a update term $\nu_t$ is computed following
 
 \begin{equation}
     \nu_t = \gamma \nu_{t-1} + \eta \nabla w_t.
@@ -478,16 +481,16 @@ Afterwards, the new weights are computed by subtracting $\nu_t$ from $w_t$:
     w_{t+1} = w_t - \nu_t.
 \end{equation}
 
-The intuition behind momentum is that the descend can be accelerated by incorporating previous descend operations.
-If the descent in a certain direction was used multiple times before, then the assumption is that the descend in a similar direction further descreases the loss.
-This assumption, however, can lead to the case where the minimum of the loss function surpassed.
-To minimize the probability of this happening while still accelerating the descend towards the local minimum, Nesterov Accelerated Gradient adds an additional step to the momentum process.
+The intuition behind momentum is that the descend towards the local minimum of the loss function can be accelerated by assuming that the gradients do not change significantly.
+If gradients with a similar direction were multiple times before, then the assumption is that the next gradients will be similar as well.
+This assumption, however, can lead to the case where the local minimum of the loss function is surpassed, which is often refered to as \textit{overshooting} the minimum.
+To minimize the probability overshooting while still accelerating the descend towards the local minimum, Nesterov Accelerated Gradient adds an additional step to the momentum process.
 It calculates a \textit{look-ahead} weight $w_{la} = w_{t} \gamma \nu_{t-1}$ and evaluates the gradient using this new weight.
-If the gradient at $w_{la}$ points to a different direction than $\gamma \nu_{t-1}$ it will correct the surpassing of the minimum to an extend by reducing the overall magnitude of the step taken.
+If the gradient at $w_{la}$ points to a different direction than $\gamma \nu_{t-1}$ it will correct the surpassing of the minimum to an extend by reducing changing the direction of the gradient slighlty.
 The following formula describes the update process of weights $w_t$ using the NAG:
 
 \begin{equation}
-    w_{t+1} = w_t - \gamma \nu_{t-1} - \eta \nabla w_{la}.
+    w_{t+1} = w_t - (\gamma \nu_{t-1} + \eta \nabla w_{la}).
 \end{equation}
 
 In the experiment conducted in this thesis, the validation does not increase after the TODO iteration
@@ -512,25 +515,31 @@ A learning rate of $2^{-5}$ is used, as suggested by the authors in their work.
 \label{sec:exp-pose-jhmdb}
 Similar to the experiment performed in \sref{sec:exp-replication}, this thesis evaluates different pose estimator configurations using the JHMDB dataset.
 Specifically, pose estimators with $2, 4$ and $8$ prediction blocks are trained with and without context heatmaps to assess the performance of the network on a more challenging video dataset in terms of action diversity.
-In terms of pose estimator architecture, there are no changes to the experiments on the MPII dataset.
-The pose estimators are trained using an augmentation ratio of $1:6$.
-This increase in ratio from the $1:3$ used in the MPII pose estimation experiment is necessary due to the smaller size of the JHMDB dataset, in order to make the training process more stable.
-The test accuracies, computed on the JHMDB test split, are shown for each configuration in \tref{tab:jhmdb_results}.
+In terms of the pose estimator architecture, there are no changes to the experiments on the MPII dataset.
 
-% TODO: Explain why 8 prediction block results are so bad
+One assumption this thesis makes is that the ground truth bounding boxes for training, validation and test datasets are given.
+This assumption was also made by \cite{luvizon_2d/3d_2018} for training and evaluating the pose estimator on the MPII dataset.
+The accuracies, computed using three different metrics, are shown in \tref{tab:jhmdb_results}.
+As can be seen, the best performing pose estimator configuration is $4$ prediction blocks and $0$ context heatmaps.
+Notice that the test accuracies when using $8$ prediction blocks are significantly lower in comparison to the other configurations.
+This is most likely due to the limited amount of data of the JHMDB dataset.
+This hypothesis is supported by the fact that the accuracies when using context heatmaps are lower, in comparison to not using context heatmaps.
+Context heatmaps introduce additional parameters to the pose estimator model, which need to be trained.
+In general, the higher the number of parameters of a model, the more training data is needed to fit the model.
 
 \begin{table}[]
     \small
     \centering
-    \begin{tabular}{|l|c|c|c|c|c|c|}
+    \begin{tabular}{|l|c|c|c||c|c|c||c|c|c|}
     \hline
-        \textbf{nr\_blocks} & 2 & 2 & 4 & 4 & 8 & 8 \\ \hline
-        \textbf{nr\_context} & 0 & 2 & 0 & 2 & 0 & 2 \\ \hline
-        \textbf{PCK @ 0.2} & \textbf{96.23} & 94.99 & 96.21 & 95.55 & 76.01 & 75.80 \\ \hline
-        \textbf{PCK @ 0.1} & 90.84 & 89.42 & \textbf{90.98} & 90.33 & 53.30 & 55.46 \\ \hline
-        \textbf{PCKu @ 0.2} & 87.34 & 86.57 & \textbf{87.60} & 87.14 & 46.01 & 47.86 \\ \hline
+        & & & \textbf{p-value} & & & \textbf{p-value} & & & \textbf{p-value} \\ \hline
+        \textbf{nr\_blocks} & 2 & 2 &  & 4 & 4 &  & 8 & 8 &  \\ \hline
+    \textbf{nr\_context} & 0 & 2 & & 0 & 2 & & 0 & 2 &\\ \hline
+        \textbf{PCK @ 0.2} & 96.85 & 95.61 & \textbf{0.0} & \textbf{96.94} & 96.06 & \textbf{0.0} & 74.95 & 75.47 & 0.408 \\ \hline
+        \textbf{PCK @ 0.1} & \textbf{92.03} & 90.20 & \textbf{0.0} & 91.69 & 90.95 & 0.072 & 50.13 & 52.14 & \textbf{0.005} \\ \hline
+        \textbf{PCKu @ 0.2} & 87.32 & 86.21 & \textbf{0.031} & \textbf{87.49} & 86.92 &  0.224 & 44.03 & 45.30 & 0.085 \\ \hline
     \end{tabular}
-    \caption{Test accuracies of the different pose estimator configurations, computed on the JHMDB test set. PCK is computed for two threshold values, $\alpha = 0.2$ as well as $\alpha = 0.1$. Additionally, PCKu is computed using $\alpha = 0.2$. Maximum values per metric are shown in bold.}
+    \caption{Test accuracies of the different pose estimator configurations, computed on the JHMDB test set. PCK is computed for two threshold values, $\alpha = 0.2$ as well as $\alpha = 0.1$. Additionally, PCKu is computed using $\alpha = 0.2$. Maximum values per metric, as well as $p$-values below the significance level of $0.05$, are shown in bold.}
     \label{tab:jhmdb_results}
 \end{table}
 
@@ -538,19 +547,16 @@ The test accuracies, computed on the JHMDB test split, are shown for each config
 \begin{table}[]
     \small
     \centering
-    \begin{tabular}{|l|l|c|c|}
-    \hline
-        \textbf{nr\_blocks} & \textbf{nr\_context}  & \textbf{PCK @ 0.1} & \textbf{p-value} \\ \hline
-        \begin{tabular}{@{}c@{}} 2 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 90.84 \\ 89.42  \end{tabular} & \textbf{0.0016}  \\ \hline
-    
-        \begin{tabular}{@{}c@{}} 4 \\ 4 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 90.98 \\ 90.33  \end{tabular} & 0.127  \\ \hline
-
-        \begin{tabular}{@{}c@{}} 2 \\ 4 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 0 \end{tabular} & \begin{tabular}{@{}c@{}} 90.84 \\ 90.98  \end{tabular} & 0.748  \\ \hline
-
-        \begin{tabular}{@{}c@{}} 2 \\ 4 \end{tabular} & \begin{tabular}{@{}c@{}} 2 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 89.41 \\ 90.33  \end{tabular} & \textbf{0.037}  \\ \hline
-
-    \end{tabular}
-    \caption{Different model configurations for estimating pose on the JHMDB dataset, with their corresponding PCK accuracy values, estimated on the test set using $\alpha = 0.1$. The configurations using $8$ prediction blocks are ommited because the results are significantly worse in comparion to the other configurations. The $p$-values were computed using a randomization test. $p$-values below the significance level of $0.05$ are shown in bold, indicating that the change in accuracy is significant.}
+    \begin{tabular}{|l|c|c|c||c|c|c|}
+        \hline
+            & & & \textbf{p-value} & & & \textbf{p-value} \\ \hline
+            \textbf{nr\_blocks} & 2 & 4 &  & 2 & 4 &  \\ \hline
+            \textbf{nr\_context} & 0 & 0 & & 2 & 2 & \\ \hline
+            \textbf{PCK @ 0.2} & 96.85 & \textbf{96.94} & 0.689 & 95.61 & 96.06 & 0.121 \\ \hline
+            \textbf{PCK @ 0.1} & \textbf{92.03} & 91.69 & 0.396 & 90.20 & 90.95 & 0.089 \\ \hline
+            \textbf{PCKu @ 0.2} & 87.32 & \textbf{87.49} & 0.742 & 86.21 & 86.92 & 0.164 \\ \hline
+        \end{tabular}
+    \caption{Different model configurations for estimating pose on the JHMDB dataset, with their corresponding accuracy values. The configurations using $8$ prediction blocks are ommited because the results are significantly worse in comparion to the other configurations. The $p$-values were computed using a randomization test. None of the $p$-values are below the significance level of $0.05$.}
     \label{tab:jhmdb_results_confidence}
 \end{table}
 
@@ -565,9 +571,9 @@ The test accuracies, computed on the JHMDB test split, are shown for each config
         \textbf{Head top} & \textbf{Wrist (r)} & \textbf{Elbow (r)} & \textbf{Shoulder (r)} & \textbf{Shoulder (l)} & \textbf{Elbow (l)} & \textbf{Wrist (l)} & \textbf{Total} \\ \hline
         0.97 & 0.83  & 0.87 & 0.89 & 0.89 & 0.82 & 0.82 & 0.91 \\ \hline \hline
         \textbf{Arms (l)} & \textbf{Arms (r)} & \textbf{Arms (both)} & \textbf{Legs (l)} & \textbf{Legs (r)} & \textbf{Legs (both)} & \textbf{Upper body} & \textbf{Lower body}  \\ \hline
-        0.84 & 0.86 & 0.85 & 0.85 & 0.87 & 0.86 & 0.88 & 0.87 \\ \hline \hline
+        0.84 & 0.86 & 0.85 & 0.85 & 0.87 & 0.86 & 0.88 & 0.87 \\ \hline
     \end{tabular}}
-    \caption{Per joint accuracy, computed on the JHMDB test set using PCK @ 0.1 meassure. In addition, aggregated accuracy values are given in the third row for different sets of joints. \textit{Arms} for both left and right are computed by taking the average of the shoulder, elbow and wrist accuracies. \textit{Legs} are computed the same way, using knee, ankle and hip accuracy values. For \textit{Upper body}, upper neck and head top are added to both \textit{Arms} aggregations. \textit{Lower body} is computed by aggregating both \textit{legs} accuracies as well as pelvis.}
+    \caption{Per joint accuracy w.r.t. PCK @ 0.1, computed on the JHMDB test set using $4$ prediction blocks and $0$ context heatmaps. In addition, aggregated accuracy values are given in the third row for different sets of joints. \textit{Arms} for both left and right are computed by taking the average of the shoulder, elbow and wrist accuracies. \textit{Legs} are computed the same way, using knee, ankle and hip accuracy values. For \textit{Upper body}, upper neck and head top are added to both \textit{Arms} aggregations. \textit{Lower body} is computed by aggregating both \textit{legs} accuracies as well as pelvis.}
     \label{tab:jhmdb-perjoint}
 \end{table}
 % TODO: Rephrase caption above so that it is not identical
