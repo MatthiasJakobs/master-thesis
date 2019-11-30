@@ -122,6 +122,7 @@ These chunks are further referred to as \textit{fragments}.
 \label{sec:exp-jhmdb}
 
 Similar to \cite{zhang_actemes_2013} \sref{sec:exp-penn}, the JHMDB dataset \cite{jhuang_towards_2013} contains annotations for the pose and the action in video clips.
+The JHMDB dataset contains $928$ video clips, totalling $31.838$. 
 The dataset was created by taking a subset of the HMDB action recogntion dataset \cite{kuehne_hmdb:_2011}, which was annotated using the \textit{puppet tool} \cite{zuffi_pictorial_2012}.
 This tool allows to not only annotate the pose of the person but also automatically computes a binary segmentation map of the person, further referred to as the \textit{puppet mask}.
 See \fref{fig:puppet_tool_example} for a visualization of the annotation process and the puppet tool.
@@ -553,7 +554,7 @@ One reason for this might be that context heatmaps benefit from the refinement p
     \label{tab:jhmdb_results}
 \end{table}
 
-In \tref{jhmdb_results_confidence}, the accuracies of different pose estimator configurations are compared using randomization testing.
+In \tref{tab:jhmdb_results_confidence}, the accuracies of different pose estimator configurations are compared using randomization testing.
 The configurations with $8$ prediction blocks are ommited from this comparison, because their accuracies are much lower in comparison to the other configuration and there is no need for statistical significance testing.
 It is found that there are no statistically significant differences between the accuracies of the tested configurations for any metric.
 This is consistend with the findings in \sref{sec:exp-mpii-pose}, where the only significant differences were found between $8$ and $2$ prediction blocks.
@@ -683,7 +684,7 @@ This is to be expected since, at the beginning, the pose information is not reli
 Thus, the network focuses on utilizing visual features for classification.
 After approximately $25.000$ iterations, the pose training accuracy surpasses the action train accuracy and continues to converge towards $1$.
 
-HAR validation is "jittery". this indicates uncertainty on unseen data. 
+% TODO: HAR validation is "jittery". this indicates uncertainty on unseen data. 
 
 
 \begin{figure}[htb!]
@@ -768,4 +769,3 @@ Also, joints associated with the right side of the subjects are detected with a 
 % TODO: Why?
 
 %TODO: explain why it didnt work (or why it did)
-% TODO: Idea: show heatmaps per actions or joint accuracies per action. This would be better for explanation
