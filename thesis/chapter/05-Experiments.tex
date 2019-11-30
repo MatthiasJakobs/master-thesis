@@ -279,25 +279,24 @@ While this behaviour indicates that the Soft-argmax function is less accurate ar
 \label{sec:exp-replication}
 % TODO
 
-First, in order to recreate the work of \cite{luvizon_2d/3d_2018}, a pose estimator using the MPII dataset is trained.
-In addition to the authors work, the number of prediction blocks as well as the number of context heatmaps is varied to observe the effect on the overall accuracy of the model.
-Second, the 2D HAR experiments performed by the authors on the Penn Action datasets are recreated.
-If not otherwise mentioned, the experiment settings mentioned are taken from \cite{luvizon_2d/3d_2018} as well as the supplemental material provided by the authors.
-From now on, for each experiment, an augmentation ratio is given.
-The ratio of $1:a$ expresses that for each training image there are $a$ randomly augmented images in the dataset.
+First, to recreate the work of \cite{luvizon_2d/3d_2018}, a pose estimator using the MPII dataset is trained.
+In addition to the authors work, the number of prediction blocks as well as the number of context heatmaps are varied to observe the effect on the overall accuracy of the model.
+Second, the $2D$ HAR experiments, performed by the authors on the Penn Action datasets, are recreated.
+The experiment settings are taken from \cite{luvizon_2d/3d_2018} as well as the supplemental material provided by the authors, if this thesis does not mention otherwise.
 
 \subsubsection{Pose estimation}
-In their work, the authors use $8$ prediction blocks in their pose estimator for evaluating the accuracy of the model on the MPII dataset.
+In \cite{luvizon_2d/3d_2018}, the authors use $8$ prediction blocks in their pose estimator (see \sref{sec:luvizon_poseestimator}) for evaluating the accuracy of the model on the MPII dataset, using the PCKh metric \sref{sec:exp-pckh}.
 In this thesis, additional experiments using $2$ and $4$ prediction blocks are performed.
-In addition, we chose to evaluate all models without context heatmaps as well as with $2$ context heatmaps, since this what the authors chose for their experiment.
+In addition, we evaluate all models without context heatmaps as well as with $2$ context heatmaps, to gain an insight into how using context maps effects the model performance.
+From now on, this thesis uses the term \textit{model configuration} when refering to models with different number of prediction blocks and context heatmaps.
 
-The training data of the MPII dataset is split into a training and validation set for evaluating the models accuracy on unseen data in intervals of $1000$ iterations.
+The training data of the MPII dataset is split into a training and validation set for evaluating the model's accuracy on unseen data.
 An iteration is defined as the processing of one batch.
-The batch size varies, depending on the experiment, since the models are of different size and thus allow for bigger batch sizes when using smaller models.
+The batch size varies, depending on the experiment, since the models are of different size.
+This means that, for smaller models, a bigger batch size is used since more data fits in GPU memory.
 The batch size is set to $45, 30$ and $20$ for $2, 4$ and $8$ prediction blocks, respectively.
 As an optimizer, the authors use the RMSProp algorithm.
-A initial learning rate of $10^{-3}$ is used in accordance to the work of the authors.
-The augmentation ratio is set to $1:3$, because more augmentation did not lead to higher accuracy in the performed experiments.
+An initial learning rate of $10^{-3}$ is used in accordance to the work of the authors.
 
 \begin{equation}
     \label{eq:elasticnetloss}
@@ -307,10 +306,10 @@ The augmentation ratio is set to $1:3$, because more augmentation did not lead t
 The authors define a loss function named \textit{Elastic Net Loss}.
 For each joint in the pose, the $L_1$ and $L_2$ norms between the estimated and ground truth joint are computed and added.
 Then, these sums are again summed and normalized by the number of joints in the pose.
-See \eref{eq:elasticnetloss} for the formula, where $p_{est}$ referrs to the estimated joint position by the pose estimator and $p$ referrs to the ground truth pose.
+See \eref{eq:elasticnetloss}, where $p_{est}$ refers to the estimated joint position by the pose estimator and $p$ refers to the ground truth pose.
 In addition to computing the Elastic net loss, the authors predict the visibility of each joint.
 The annotations of MPII provide ground truth labels $v \in \{0,1\}$ of whether a joint is occluded or not.
-Binary cross-entropy is used to compute a loss $L_v$ between the predicted visibility vector $v_{est}$ and the ground truth $v$.
+The binary cross-entropy is used to compute a loss $L_v$ between the predicted visibility vector $v_{est}$ and the ground truth $v$.
 Finally, both losses are combined in the following way:
 
 \begin{equation}
@@ -320,75 +319,120 @@ Finally, both losses are combined in the following way:
 For all subsequent pose estimation experiments, $L$ is used to compute the loss of the pose estimator.
 
 As discussed before, for evaluating a model on the test dataset, the estimations need to be send to the \textit{Max Planck Institute for Intelligent Systems} for evaluation.
-Because they limit the amount of submissions to $4$, it is not possible to evaluate each trained model on the test data, which is why it was decided to report the validation accuracy for comparison and only submit estimations from the best performing model.
+The amount of submissions is limit to $4$.
+This means that it is not possible to evaluate all pose estimator configurations on the test dataset.
+Thus, this thesis chooses to report the validation accuracy for comparison between the different model configurations and only submit estimations from the best performing model.
 
-As can be seen in \tref{tab:mpii_results}, the higher the number of prediction blocks, the more accurate the model performs on the validation data.
-In addition, using context heatmaps appears to increase the accuracy only when using $8$ blocks.
-To test whether or not the differences in accuracy are statistically significant, randomization tests with a significance level of $0.05$ are performed.
-For the randomization test, $3000$ permutations are used.
-As can be seen in \tref{tab:mpii_results}, the only statistically significant increases in accuracy are observed when comparing $2$ and $8$ prediction block models with and without context heatmaps.
-This suggests that a certain depth of network is necessary in order for context heatmaps to contribute significantly to the model performance.
- 
-% TODO: Talk more about results
+% \begin{table}[]
+%     \small
+%     \centering
+%     \begin{tabular}{|l|l|c|c|}
+%     \hline
+%         \textbf{nr\_blocks} & \textbf{nr\_context}  & \textbf{PCKh @ 0.5} & \textbf{p-value} \\ \hline
+%         \begin{tabular}{@{}c@{}} 2 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 84.15 \\ 84.01  \end{tabular} & 0.85  \\ \hline
+    
+%         \begin{tabular}{@{}c@{}} 4 \\ 4 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 85.78 \\ 85.64  \end{tabular} & 0.85  \\ \hline
+
+%         \begin{tabular}{@{}c@{}} 8 \\ 8 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 86.71 \\ \textbf{87.00}  \end{tabular} & 0.73  \\ \hline
+
+%         \begin{tabular}{@{}c@{}} 2 \\ 4 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 0 \end{tabular} & \begin{tabular}{@{}c@{}} 84.15 \\ 85.78  \end{tabular} & 0.074  \\ \hline
+
+%         \begin{tabular}{@{}c@{}} 2 \\ 4 \end{tabular} & \begin{tabular}{@{}c@{}} 2 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 84.01 \\ 85.64  \end{tabular} & 0.076  \\ \hline
+
+%         \begin{tabular}{@{}c@{}} 4 \\ 8 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 0 \end{tabular} & \begin{tabular}{@{}c@{}} 85.78 \\ 86.71  \end{tabular} & 0.31  \\ \hline
+
+%         \begin{tabular}{@{}c@{}} 4 \\ 8 \end{tabular} & \begin{tabular}{@{}c@{}} 2 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 85.64 \\ \textbf{87.00}  \end{tabular} & 0.12  \\ \hline
+
+%         \begin{tabular}{@{}c@{}} 2 \\ 8 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 0 \end{tabular} & \begin{tabular}{@{}c@{}} 84.15 \\ 86.71  \end{tabular} & \textbf{0.006}  \\ \hline
+
+%         \begin{tabular}{@{}c@{}} 2 \\ 8 \end{tabular} & \begin{tabular}{@{}c@{}} 2 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 84.01 \\ \textbf{87.00}  \end{tabular} & \textbf{0.001}  \\ \hline
+%     \end{tabular}
+%     \caption{Different model configurations and their corresponding PCKh validation score. The $p$-values were computed using a randomization test. $p$-values below the significance level of $0.05$ are shown in bold, indicating that the change in accuracy is significant. Additionally, the highest accuracy is also shown in bold.} % TODO
+%     \label{tab:mpii_results}
+% \end{table}
 
 \begin{table}[]
     \small
     \centering
-    \begin{tabular}{|l|l|c|c|}
-    \hline
-        \textbf{nr\_blocks} & \textbf{nr\_context}  & \textbf{PCKh @ 0.5 (validation)} & \textbf{p-value} \\ \hline
-        \begin{tabular}{@{}c@{}} 2 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 84.15 \\ 84.01  \end{tabular} & 0.85  \\ \hline
+    \begin{tabular}{ll}
+        \begin{tabular}{|l|l|c|c|}
+            \hline
+            \textbf{blocks} & \textbf{context}  & \textbf{PCKh @ 0.5} & \textbf{p-values} \\ \hline
+            \begin{tabular}{@{}c@{}} 2 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 84.15 \\ 84.01  \end{tabular} & 0.85  \\ \hline
+        
+            \begin{tabular}{@{}c@{}} 4 \\ 4 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 85.78 \\ 85.64  \end{tabular} & 0.85  \\ \hline
     
-        \begin{tabular}{@{}c@{}} 4 \\ 4 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 85.78 \\ 85.64  \end{tabular} & 0.85  \\ \hline
+            \begin{tabular}{@{}c@{}} 8 \\ 8 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 86.71 \\ \textbf{87.00}  \end{tabular} & 0.73  \\ \hline
+    
+            \begin{tabular}{@{}c@{}} 2 \\ 4 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 0 \end{tabular} & \begin{tabular}{@{}c@{}} 84.15 \\ 85.78  \end{tabular} & 0.074  \\ \hline
 
-        \begin{tabular}{@{}c@{}} 8 \\ 8 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 86.71 \\ 87.00  \end{tabular} & 0.73  \\ \hline
+            \begin{tabular}{@{}c@{}} 2 \\ 4 \end{tabular} & \begin{tabular}{@{}c@{}} 2 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 84.01 \\ 85.64  \end{tabular} & 0.076  \\ \hline
 
-        \begin{tabular}{@{}c@{}} 2 \\ 4 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 0 \end{tabular} & \begin{tabular}{@{}c@{}} 84.15 \\ 85.78  \end{tabular} & 0.074  \\ \hline
+        \end{tabular}
+        \begin{tabular}{|l|l|c|c|}
+            \hline
+            \textbf{blocks} & \textbf{context}  & \textbf{PCKh @ 0.5} & \textbf{p-values} \\ \hline
+    
+            \begin{tabular}{@{}c@{}} 4 \\ 8 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 0 \end{tabular} & \begin{tabular}{@{}c@{}} 85.78 \\ 86.71  \end{tabular} & 0.31  \\ \hline
+    
+            \begin{tabular}{@{}c@{}} 4 \\ 8 \end{tabular} & \begin{tabular}{@{}c@{}} 2 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 85.64 \\ \textbf{87.00}  \end{tabular} & 0.12  \\ \hline
+    
+            \begin{tabular}{@{}c@{}} 2 \\ 8 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 0 \end{tabular} & \begin{tabular}{@{}c@{}} 84.15 \\ 86.71  \end{tabular} & \textbf{0.006}  \\ \hline
 
-        \begin{tabular}{@{}c@{}} 2 \\ 4 \end{tabular} & \begin{tabular}{@{}c@{}} 2 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 84.01 \\ 85.64  \end{tabular} & 0.076  \\ \hline
-
-        \begin{tabular}{@{}c@{}} 4 \\ 8 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 0 \end{tabular} & \begin{tabular}{@{}c@{}} 85.78 \\ 86.71  \end{tabular} & 0.31  \\ \hline
-
-        \begin{tabular}{@{}c@{}} 4 \\ 8 \end{tabular} & \begin{tabular}{@{}c@{}} 2 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 85.64 \\ 87.00  \end{tabular} & 0.12  \\ \hline
-
-        \begin{tabular}{@{}c@{}} 2 \\ 8 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 0 \end{tabular} & \begin{tabular}{@{}c@{}} 84.15 \\ 86.71  \end{tabular} & \textbf{0.006}  \\ \hline
-
-        \begin{tabular}{@{}c@{}} 2 \\ 8 \end{tabular} & \begin{tabular}{@{}c@{}} 2 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 84.01 \\ 87.00  \end{tabular} & \textbf{0.001}  \\ \hline            
+            \begin{tabular}{@{}c@{}} 2 \\ 8 \end{tabular} & \begin{tabular}{@{}c@{}} 2 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 84.01 \\ \textbf{87.00}  \end{tabular} & \textbf{0.001}  \\ \hline
+        
+            \begin{tabular}{@{}c@{}} 8 \\ 8* \end{tabular} & \begin{tabular}{@{}c@{}} 2 \\ 2* \end{tabular} & \begin{tabular}{@{}c@{}} 87.00 \\ 89.00*  \end{tabular} & \textbf{0.025}  \\ \hline
+        \end{tabular}                      
     \end{tabular}
-    \caption{Different model configurations and their corresponding PCKh validation score. The $p$-values were computed using a randomization test. $p$-values below the significance level of $0.05$ are shown in bold, indicating that the change in accuracy is significant.} % TODO
+    \caption{Different model configurations and their corresponding PCKh validation score. The $p$-values were computed using a randomization test. $p$-values below the significance level of $0.05$ are shown in bold, indicating that the change in accuracy is significant. Additionally, the highest accuracy is also shown in bold. The configuration marked with a star is the model from \cite{luvizon_2d/3d_2018}} % TODO
     \label{tab:mpii_results}
+\end{table}
+
+
+The PCKh accuracies achieved on the validation dataset from the different model configurations are shown in \tref{tab:mpii_results}.
+For comparison, the authors report a validation accuracy of $89\%$ for $8$ prediction blocks and $2$ context heatmaps. 
+As can be seen in \tref{tab:mpii_results}, the higher the number of prediction blocks, the more accurate the model performs on the validation data.
+In addition, using context heatmaps appears to increase the accuracy only when using $8$ blocks.
+To test whether or not the differences in accuracy between the configurations are statistically significant, this thesis performs randomization tests with a significance level of $0.05$.
+For the randomization tests, $3000$ permutations are used.
+As can be seen in \tref{tab:mpii_results}, the only statistically significant increases in accuracy are observed when comparing $2$ and $8$ prediction block models with and without context heatmaps.
+This suggests that a certain depth of network is necessary in order for context heatmaps to contribute significantly to the model performance.
+ 
+\begin{table}[]
+    \centering
+    \scalebox{0.90}{%
+    \begin{tabular}{|l|l|l|l|l|l|l|l|l|c|}
+        \hline
+        &Head & Shoulder & Elbow & Wrist & Hip & Knee  & Ankle & Total & p-value \\ \hline
+        %out recreation& 95.7  & 90.5  & 81.4  & 74.6  & 82.5  & 73.0 & 66.2 & 81.4 \\
+        our recreation            & 96.3  & 92.0  & 83.6  & 77.3  & 84.5  & 76.3 & 69.9 & 83.5 & \\
+        \cite{luvizon_2d/3d_2018} & 98.1  & 96.6  & 92.0  & 87.5  & 90.6  & 88.0 & 82.7 & 91.2 & \textbf{0.0}  \\ \hline
+    \end{tabular}}
+    \caption{PCKh test results of our recreation in direct comparison to the original work by \cite{luvizon_2d/3d_2018} using $\alpha = 0.5$. The change in total accuracy is statistically significant with a significance level of $0.05$. }
+    \label{tab:mpii_test}
 \end{table}
 
 Next, the best performing model ($8$ prediction blocks, $2$ context heatmaps) is used to estimate the pose on the test dataset and the results were submitted to the \textit{Max Planck Institute for Intelligent Systems}.
 The results can be seen in \tref{tab:mpii_test}, in direct comparison to the values reported by the authors.
 As can be seen, our model performs significantly worse in comparison to the reported values.
-One possible reason is the way the test poses are estimated.
-The authors report that they averaged multiple estimations to compute a final estimation.
-More specifically, they first computed the pose for the regular test image.
-Afterwards, they mirrored the image horizontally, computed the pose on the mirrored version and mirrored the resulting pose once more.
-Moreover, they report that they additionally displaced the bounding box used for cropping the image around the subject, after which they estimate the pose again.
-The final pose is then computed by taking the average of each joint position per image over all computed poses.
-The authors do not describe this method of displacement in detail, which might cause the difference in test accuracy reported.
+One possible reason for this significant difference is the method of how the test poses are computed.
+The authors first estimate the pose for the test image.
+Afterwards, they obtain another pose estimation by mirroring the image horizontally, estimating the pose on the mirrored version and then mirror the estimated pose again.
+Moreover, they report that they randomly displaced the bounding box, which is used for cropping the image around the subject.
+On these cropped image, the authors also estimate the pose.
+The final pose estimation is then computed by taking the average of each joint position per image over all computed poses.
+The authors do not describe the method of displacement in detail, which might cause the difference in test accuracy reported.
 Moreover, they report a mean validation accuracy over all joints of $89$ percent, which is close to the $87$ percent achieved by our model.
 In this thesis, it was decided to compute $4$ displaced bounding boxes by moving the center randomly by $(x_d, y_d) \in [-8, \dots, -3, 3, \dots, 8]$.
 The results suggest that the displacement method the authors use for computing the test poses has a significant impact on the final score, since the discrepancy between our validation and test scores are significantly larger than the ones reported by the authors.
+Some example pose estimations on the validation dataset are given in \fref{fig:mpii_example_results}.
 
-% TODO: Show some images
-
-\begin{table}[]
+\begin{figure}[htb!]
     \centering
-    \scalebox{0.90}{%
-    \begin{tabular}{|l|l|l|l|l|l|l|l|l|}
-        \hline
-        &Head & Shoulder & Elbow & Wrist & Hip & Knee  & Ankle & Total  \\ \hline
-        %out recreation& 95.7  & 90.5  & 81.4  & 74.6  & 82.5  & 73.0 & 66.2 & 81.4 \\
-        our recreation            & 96.3  & 92.0  & 83.6  & 77.3  & 84.5  & 76.3 & 69.9 & 83.5 \\
-        \cite{luvizon_2d/3d_2018} & 98.1  & 96.6  & 92.0  & 87.5  & 90.6  & 88.0 & 82.7 & 91.2  \\ \hline
-    \end{tabular}}
-    \caption{Our recreation in direct comparison to the original work by \cite{luvizon_2d/3d_2018}. Values represent PCKh using $\alpha = 0.5$.  } %TODO: New values and / or explain differences
-    \label{tab:mpii_test}
-\end{table}
-
+    \includegraphics[width=0.99\textwidth]{mpii_example_results.png}
+    \caption{Example images from the validation dataset after training a pose estimator using $8$ prediction blocks and using $2$ context heatmaps. The joints on the right side of the body (from the subjects perspective) are shown in magenta, while the joints on the left side are shown in yellow. The remaining joints are shown in cyan. \textbf{From left to right}: \textbf{1.} The pose estimator was able to estimate the ground truth pose correctly. \textbf{2.} The pose estimator confused right and left joints. Also, the estimator was not able to estimate the right ankle joint position correctly and wrongly estimated the joint position at the left ankle. \textbf{3.} The belt of the subject was wrongly estimated to be the right wrist. \textbf{4.} The pose estimator was not able to estimate the subjects pose, except for the head joint. This is most likely due to the fact that the subject is underwater and because the subject is wearing a diving suit.}
+    \label{fig:mpii_example_results}
+\end{figure}
 In conclusion, while the test accuracy scores are significantly lower in comparison to the scores provided by the authors, this is most likely due to the difference in evaluation technique.
 Moreover, there were no statistically significant differences found between the different model configurations, except for the difference between the $2$ and $8$ prediction block models.
 Additionally, using context heatmaps does not significantly increase the accuracy of the pose estimator.
