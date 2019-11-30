@@ -285,6 +285,7 @@ Second, the $2D$ HAR experiments, performed by the authors on the Penn Action da
 The experiment settings are taken from \cite{luvizon_2d/3d_2018} as well as the supplemental material provided by the authors, if this thesis does not mention otherwise.
 
 \subsubsection{Pose estimation}
+\label{sec:exp-mpii-pose}
 In \cite{luvizon_2d/3d_2018}, the authors use $8$ prediction blocks in their pose estimator (see \sref{sec:luvizon_poseestimator}) for evaluating the accuracy of the model on the MPII dataset, using the PCKh metric \sref{sec:exp-pckh}.
 In this thesis, additional experiments using $2$ and $4$ prediction blocks are performed.
 In addition, we evaluate all models without context heatmaps as well as with $2$ context heatmaps, to gain an insight into how using context maps effects the model performance.
@@ -527,6 +528,15 @@ This hypothesis is supported by the fact that the accuracies when using context 
 Context heatmaps introduce additional parameters to the pose estimator model, which need to be trained.
 In general, the higher the number of parameters of a model, the more training data is needed to fit the model.
 
+The $p$-values in \tref{tab:jhmdb_results} indicate that, for a pose estimator configuration with $2$ prediction blocks, adding context heatmaps significantly decreases the accuracy of the model.
+This is most likely due to an increase in parameters of the pose estimator, which means that more data is necessary to fit the model.
+This also applies to the configurations using $4$ prediction blocks, where the evaluated metrics are also lower when using context heatmaps.
+These findings imply that the utility of context heatmaps is highly dependend on the training dataset size.
+Interestingly, when using $8$ prediction blocks, the opposite appears to be true.
+In \sref{sec:exp-mpii-pose}, it was found that the use of context heatmaps only significantly increased the accuracy of the pose estimator if $8$ prediction blocks were used.
+This finding, in combination with the findings on the pose estimator trained on the JHMDB dataset, indicate that using context heatmaps only positively impacts the accuracy of a pose estimator if a high number of prediction blocks are used.
+One reason for this might be that context heatmaps benefit from the refinement process of the stacked architecture more than the regular heatmaps (see \sref{sec:deephar_architecture}).  
+
 \begin{table}[]
     \small
     \centering
@@ -543,6 +553,10 @@ In general, the higher the number of parameters of a model, the more training da
     \label{tab:jhmdb_results}
 \end{table}
 
+In \tref{jhmdb_results_confidence}, the accuracies of different pose estimator configurations are compared using randomization testing.
+The configurations with $8$ prediction blocks are ommited from this comparison, because their accuracies are much lower in comparison to the other configuration and there is no need for statistical significance testing.
+It is found that there are no statistically significant differences between the accuracies of the tested configurations for any metric.
+This is consistend with the findings in \sref{sec:exp-mpii-pose}, where the only significant differences were found between $8$ and $2$ prediction blocks.
 
 \begin{table}[]
     \small
@@ -560,6 +574,14 @@ In general, the higher the number of parameters of a model, the more training da
     \label{tab:jhmdb_results_confidence}
 \end{table}
 
+Next, the accuracy of best performing pose estimator configuration ($4$ prediction blocks, $0$ context heatmaps) with regards to individual joints and groupings of joints is evaluated in \tref{tab:jhmdb-perjoint}.
+As a metric, PCK using $\alpha = 0.1$ is used, since this metric more precise in comparison to PCK using $\alpha = 0.2$, which aids in determining the differences between the individual joint accuracies.
+In comparison to the joint accuracies computed in \tref{tab:mpii_test}, it becomes apparent that left and right ankles are more accurately estimated on the JHMDB dataset.
+On both datasets, the joints associated with the head and torse region of the subject, i.e., upper neck, pelvis and head, are the most accurate.
+One explaination for this is that there is less confusion with other, similar looking joints.
+For example, while the left ankle might easily be confused with the right ankle, the head and torso region joints do not have a similarly looking counterpart.
+In addition, these joints are less articulated, meaning that they do not change in position between different actions performed.
+
 \begin{table}[]
     \small
     \centering
@@ -569,35 +591,47 @@ In general, the higher the number of parameters of a model, the more training da
         \textbf{Ankle (r)} & \textbf{Knee (r)}  & \textbf{Hip (r)} & \textbf{Hip (l)} & \textbf{Knee (l)} & \textbf{Ankle (l)} & \textbf{Pelvis} & \textbf{Upper neck} \\ \hline
         0.87 & 0.84 & 0.90 & 0.88 & 0.83 & 0.85 & 0.93 & 0.94 \\ \hline \hline
         \textbf{Head top} & \textbf{Wrist (r)} & \textbf{Elbow (r)} & \textbf{Shoulder (r)} & \textbf{Shoulder (l)} & \textbf{Elbow (l)} & \textbf{Wrist (l)} & \textbf{Total} \\ \hline
-        0.97 & 0.83  & 0.87 & 0.89 & 0.89 & 0.82 & 0.82 & 0.91 \\ \hline \hline
+        0.97 & 0.83  & 0.87 & 0.89 & 0.89 & 0.82 & 0.82 & 0.92 \\ \hline \hline
         \textbf{Arms (l)} & \textbf{Arms (r)} & \textbf{Arms (both)} & \textbf{Legs (l)} & \textbf{Legs (r)} & \textbf{Legs (both)} & \textbf{Upper body} & \textbf{Lower body}  \\ \hline
         0.84 & 0.86 & 0.85 & 0.85 & 0.87 & 0.86 & 0.88 & 0.87 \\ \hline
     \end{tabular}}
-    \caption{Per joint accuracy w.r.t. PCK @ 0.1, computed on the JHMDB test set using $4$ prediction blocks and $0$ context heatmaps. In addition, aggregated accuracy values are given in the third row for different sets of joints. \textit{Arms} for both left and right are computed by taking the average of the shoulder, elbow and wrist accuracies. \textit{Legs} are computed the same way, using knee, ankle and hip accuracy values. For \textit{Upper body}, upper neck and head top are added to both \textit{Arms} aggregations. \textit{Lower body} is computed by aggregating both \textit{legs} accuracies as well as pelvis.}
+    \caption{Per joint accuracy w.r.t. PCK @ 0.1, computed on the JHMDB test set using $4$ prediction blocks and $0$ context heatmaps. In addition, aggregated accuracy values are given in the third row for different sets of joints. \textit{Arms} for both left and right are computed by taking the average of the shoulder, elbow and wrist accuracies. \textit{Legs} are computed the same way, using knee, ankle and hip accuracy values. For \textit{Upper body}, upper neck and head top are added to both \textit{Arms} aggregations. \textit{Lower body} is computed by aggregating both \textit{Legs} accuracies and pelvis accuracy.}
     \label{tab:jhmdb-perjoint}
 \end{table}
-% TODO: Rephrase caption above so that it is not identical
+
+As discussed before, this thesis assumed that human bounding boxes are given for training, validation and testing data.
+When comparing our results to the state-of-the-art approach by \cite{song_thin-slicing_2017}, it was noted that our results outperforms the state-of-the-art.
+The authors report a PCK accuracy of $81.6\%$ using $\alpha = 0.2$ and $68.7\%$ using $\alpha = 0.1$.
+In comparison, our best performing model with $4$ prediction blocks and $0$ context heatmaps achieved $96.94\%$ PCK accuracy using $\alpha = 0.2$ and $91.69\%$ using $\alpha = 0.1$.
+However, the authors of \cite{song_thin-slicing_2017} do not mention whether or not they used ground truth bounding boxes for the subject while training or evaluating their model.
+Thus, it was decided to estimate the bounding box of the test data before estimating the pose using the approach outlined in TODO.
+The results can be seen in \tref{tab:jhmdb_results_estimated}.
+When comparing the results to \cite{song_thin-slicing_2017} using estimated bounding boxes on the test data, it becomes clear that our model is not able outperform the state-of-the-art.
+% TODO: Explain estimation of bounding box in Penn Action HAR (since that is what the authors do)
+
 
 \begin{table}[]
     \small
     \centering
-    \begin{tabular}{|l|c|c|c|c|c|c|}
+    \begin{tabular}{|l|c|c|c|c|c|c|c|}
     \hline
-        \textbf{nr\_blocks} & 2 & 2 & 4 & 4 & 8 & 8 \\ \hline
-        \textbf{nr\_context} & 0 & 2 & 0 & 2 & 0 & 2 \\ \hline
-        \textbf{PCK @ 0.2} & 72.20 & \textbf{75.94} & 74.80 & 73.25 & 51.10 & 51.78 \\ \hline
-        \textbf{PCK @ 0.1} & 41.53 & \textbf{45.77} & 43.82 & 41.76 & 20.82 & 21.42 \\ \hline
-        \textbf{PCKu @ 0.2} & 33.77 & \textbf{38.02} & 35.47 & 34.55 & 19.22 & 19.81 \\ \hline
+         & & & & & & & \cite{song_thin-slicing_2017} \\ \hline
+        \textbf{nr\_blocks} & 2 & 2 & 4 & 4 & 8 & 8 & -\\ \hline
+        \textbf{nr\_context} & 0 & 2 & 0 & 2 & 0 & 2 & -\\ \hline
+        \textbf{PCK @ 0.2} & 72.20 & \textbf{75.94} & 74.80 & 73.25 & 51.10 & 51.78 & 81.6 \\ \hline
+        \textbf{PCK @ 0.1} & 41.53 & \textbf{45.77} & 43.82 & 41.76 & 20.82 & 21.42 & 68.70 \\ \hline
+        \textbf{PCKu @ 0.2} & 33.77 & \textbf{38.02} & 35.47 & 34.55 & 19.22 & 19.81 & -\\ \hline
     \end{tabular}
-    \caption{TODO}
+    \caption{Test accuracies of the JHMDB pose estimation models when using estimated bounding boxes for the test data. In comparison to the state-of-the-art approach by \cite{song_thin-slicing_2017}, our model achieves notably lower accuracy values in both metrics. The highest accuracies achieved by our methods are shown in bold.}
     \label{tab:jhmdb_results_estimated}
 \end{table}
 
-
-% TODO: talk about a general conclusion like \textit{the higher the number of blocks the better} when comparing MPII and JHMDB results
-
-% TODO: report the number of iterations used
-% TODO: general conclusion: is this dataset harder? why?
+In conclusion, pose estimation on the JHMDB dataset appears to be harder in comparison to the MPII dataset.
+One reason might be the small size of the JHMDB dataset.
+Also, since the JHMDB dataset is a video dataset, it contains video artifacts such as blur and camera jitter.
+Moreover, the resolution of the frames is significantly lower in comparison to the MPII dataset.
+This means that, since images from both dataset are resized to $256 \times 256$ pixels, the images from the JHMDB dataset contain more artifacts due to scaling and compression. 
+% TODO: Conclusion chapter: mention that, for future work, higher resolution images are also ideal
 
 \subsection{HAR on JHMDB Dataset}
 To assess the performance of the action recognition model on the JHMDB dataset, the pretrained pose estimator with $4$ blocks and $2$ context maps from TODO is used, in order to compare the results to the performance on the Penn Action dataset experiment TODO.
