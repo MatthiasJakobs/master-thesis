@@ -1,4 +1,40 @@
 \chapter{Conclusion}
 \label{sec:chapter6}
+In this thesis, different parts of the approach taken by \cite{luvizon_2d/3d_2018} were evaluated with the dataset used by the authors as well as a more challenging dataset in the form of the JHMDB dataset.
+
+First, the proposed Soft-argmax was evaluated in a qualitative and quantitative manner.
+It was found that, while the Soft-argmax appears to not be able to correctly extract the pose information at the border of the input image, this does not impact its performance on real world data.
+This suggests that the Soft-argmax is a viable alternative to the previously necessary Argmax postprocessing of the joint heatmaps.
+
+Second, while this thesis was not able to achieve identical results in terms of pose estimator accuracy on the MPII dataset, this was most likely due to the way the authors implemented their evaluation methods, which they did not publish.
+It was found that the results on the validation data was only slightly below the validation accuracy reported by the authors, suggesting that the evaluation method is the deciding factor to explain the difference in test accuracy.
+
+Third, HAR PENNACTION TODO.
+
+Fourth, when evaluating the pose estimator on the challenging JHMDB dataset, it was found that the model is able to adapt to a different, smaller, but more complex dataset, achieving accuracy results only slightly below the state-of-the-art approaches in the literature.
+This suggests that the pose estimator architecture used by the authors generalizes well to different use cases and can serve as a baseline for future work in this field.
+
+Fifth, HAR JHMDB TODO.
+
+Sixth, this thesis found that training the network in an end-to-end approach is feasible.
+While the test accuracy achieved is not as high as the results on the pretrained model, the results are promising and future work could improve upon the results presented.
+In comparison to the pretrained model, the amount of training iterations necessary for the end-to-end model is significantly higher, suggesting that the main advantage of pretraining the network is a faster convergence.
+Additionally, it was found that the HAR models struggle with intraclass variance on the JHMDB dataset, because some classes (like \textit{stand}) highly overlap with other classes (like \textit{clap}).
+A network architecture using more temporal information would most likely increase the accuracy on this dataset.
 
 \section{Future Work}
+Finally, this thesis makes some suggestions regarding possible future work, based on the findings presented earlier.
+
+First, the pose estimator architecture used in the HAR pipeline computes the post for each frame in a video clip without taking poses of previous frames into account.
+Utilizing a pose estimator capable of processing video clips directly and utilizing previous poses could lead to better results, since the movement between frames of a video are very small.
+
+Second, a HAR architecture using a larger temporal context would decrease the amount of error due to intraclass variance.
+The model presented in \cite{luvizon_2d/3d_2018} divides each video clip into chunks of $16$ frames, which this thesis found to be too small for some video clips.
+Ideally, the clip size would not determine the network architecture at all.
+To that end, using 3D convolutional layers could be implemented, as well as recurrent layers.
+
+Third, larger, fully annotated video datasets could be gathered.
+While the JHMDB dataset, in terms of action diversity, is a more complex dataset in comparison to the Penn Action dataset, the later dataset is significantly larger in terms of number of frames.
+For large networks, such as the pose estimator with $8$ prediction blocks, it was found that, even using strong augmentation, the JHMDB dataset was too small to train these deep networks.
+One approach could be to increase the size of the JHMDB dataset by annotating more clips found in the HMDB dataset using the proposed puppet tool.
+This approach would increase the usefulness of the dataset for evaluating deep networks found in recent literature.

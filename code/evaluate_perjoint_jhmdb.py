@@ -1,6 +1,8 @@
 import torch
+import numpy as np
 from datasets.JHMDBDataset import JHMDBDataset
 from deephar.models import Mpii_4
+from deephar.evaluation import eval_pck_batch
 
 pretrained_model = "/data/mjakobs/data/pose_jhmdb_perjoint"
 
@@ -11,6 +13,7 @@ else:
 
 with torch.no_grad():
     test_ds = JHMDBDataset("/data/mjakobs/data/jhmdb/", train=False, use_gt_bb=True)
+    model = Mpii_4(num_context=0).to(device)
     model.load_state_dict(torch.load(pretrained_model, map_location=device))
 
     model.eval()
@@ -37,8 +40,8 @@ with torch.no_grad():
 
         assert len(single_clip) == 16
 
-        single_clip = single_clip.unsqueeze(0).to(device)
-        _, predicted_poses, _, _, single_result = self.model(single_clip)
+        single_clip = single_clip.to(device)
+        _, predicted_poses, _, _= model(single_clip)
 
         predicted_poses = predicted_poses.squeeze(0)
 
