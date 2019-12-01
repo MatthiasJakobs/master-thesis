@@ -147,7 +147,7 @@ def extract_jhmdb_pose(model_path, output_path):
             plot(pose, matrices[frame], path)
 
 def extract_mpii_pose(model_path, output_path):
-    ds = MPIIDataset("/data/mjakobs/data/mpii/", train=True, val=False, use_random_parameters=False)
+    ds = MPIIDataset("/data/mjakobs/data/mpii/", train=True, val=True, use_random_parameters=False)
     model = Mpii_8(num_context=2)
     model.load_state_dict(torch.load(model_path, map_location="cpu"))
     model.eval()
