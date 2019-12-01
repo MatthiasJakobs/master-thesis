@@ -216,7 +216,7 @@ class HAR_Testing_Experiment(ExperimentBase):
         self.start_at = start_at
         print(self.start_at)
 
-    def preparation(self, load_model=True, nr_aug=10):
+    def preparation(self, load_model=False, nr_aug=10):
         if "fine_tune" in self.conf:
             self.fine_tune = self.conf["fine_tune"]
         else:
@@ -516,7 +516,7 @@ class HAR_Testing_Experiment(ExperimentBase):
     def test(self, pretrained_model=None):
         with torch.no_grad():
             if pretrained_model is not None:
-                self.preparation(load_model=False)
+                self.preparation()
                 self.model.load_state_dict(torch.load(pretrained_model, map_location=self.device))
 
             self.model.eval()
@@ -539,6 +539,7 @@ class HAR_Testing_Experiment(ExperimentBase):
 
                 ground_class = torch.argmax(actions, 1)
                 single_clip = frames[:, padding:(16 + padding)].squeeze(0)
+                print(len(single_clip))
                 assert len(single_clip) == 16
 
                 spacing = 8
@@ -604,9 +605,9 @@ class HAR_PennAction(HAR_Testing_Experiment):
         if self.pretrained_model is not None:
             self.model.load_state_dict(torch.load(self.pretrained_model, map_location=self.device))
 
-        self.ds_train = PennActionFragmentsDataset("/data/mjakobs/data/pennaction_fragments/", train=True, val=False, use_random_parameters=True, augmentation_amount=10, use_gt_bb=self.use_gt_bb)
+        self.ds_train = PennActionFragmentsDataset("/data/mjakobs/data/pennaction_fragments/", train=True, val=False, use_random_parameters=True, augmentation_amount=6, use_gt_bb=self.use_gt_bb)
         self.ds_val = PennActionFragmentsDataset("/data/mjakobs/data/pennaction_fragments/", train=True, val=True, use_gt_bb=self.use_gt_bb)
-        self.ds_test = PennActionDataset("/data/mjakobs/data/pennaction/", train=False)
+        self.ds_test = PennActionDataset("/data/mjakobs/data/pennaction/", train=False, use_saved_tensors=False)
 
         train_indices, val_indices, test_indices = self.limit_dataset(include_test=True)
 
