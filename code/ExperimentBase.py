@@ -245,6 +245,7 @@ class HAR_Testing_Experiment(ExperimentBase):
         else:
             if load_model:
                 self.model = DeepHar(num_actions=21, use_gt=True, nr_context=self.conf["nr_context"], model_path="/data/mjakobs/data/pretrained_jhmdb", use_timedistributed=self.use_timedistributed).to(self.device)
+                print("Loaded pose estimator")
 
                 if self.pretrained_model is not None:
                     self.model.load_state_dict(torch.load(self.pretrained_model, map_location=self.device))
@@ -254,7 +255,7 @@ class HAR_Testing_Experiment(ExperimentBase):
 
         self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False, use_random_parameters=True, augmentation_amount=nr_aug, use_gt_bb=self.use_gt_bb)
         self.ds_val = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=True, use_gt_bb=self.use_gt_bb)
-        self.ds_test = JHMDBDataset("/data/mjakobs/data/jhmdb/", train=False)
+        self.ds_test = JHMDBDataset("/data/mjakobs/data/jhmdb/", train=False, use_gt_bb=True, use_random_parameters=False)
 
         print("Number of augmentations", str(nr_aug))
         train_indices, val_indices, test_indices = self.limit_dataset(include_test=True)
