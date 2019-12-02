@@ -13,7 +13,7 @@ import torch.optim as optim
 import torch.nn as nn
 from torch.utils.data.sampler import SubsetRandomSampler
 
-#from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix
 
 import csv
 import numpy as np
@@ -216,7 +216,7 @@ class HAR_Testing_Experiment(ExperimentBase):
         self.start_at = start_at
         print(self.start_at)
 
-    def preparation(self, load_model=True, nr_aug=10):
+    def preparation(self, load_model=False, nr_aug=10):
         if "fine_tune" in self.conf:
             self.fine_tune = self.conf["fine_tune"]
         else:
@@ -245,6 +245,7 @@ class HAR_Testing_Experiment(ExperimentBase):
         else:
             if load_model:
                 self.model = DeepHar(num_actions=21, use_gt=True, nr_context=self.conf["nr_context"], model_path="/data/mjakobs/data/pretrained_jhmdb", use_timedistributed=self.use_timedistributed).to(self.device)
+                print("Loaded pose estimator")
 
                 if self.pretrained_model is not None:
                     self.model.load_state_dict(torch.load(self.pretrained_model, map_location=self.device))
@@ -254,7 +255,7 @@ class HAR_Testing_Experiment(ExperimentBase):
 
         self.ds_train = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=False, use_random_parameters=True, augmentation_amount=nr_aug, use_gt_bb=self.use_gt_bb)
         self.ds_val = JHMDBFragmentsDataset("/data/mjakobs/data/jhmdb_fragments/", train=True, val=True, use_gt_bb=self.use_gt_bb)
-        self.ds_test = JHMDBDataset("/data/mjakobs/data/jhmdb/", train=False)
+        self.ds_test = JHMDBDataset("/data/mjakobs/data/jhmdb/", train=False, use_random_parameters=False, use_gt_bb=True)
 
         print("Number of augmentations", str(nr_aug))
         train_indices, val_indices, test_indices = self.limit_dataset(include_test=True)
@@ -516,7 +517,7 @@ class HAR_Testing_Experiment(ExperimentBase):
     def test(self, pretrained_model=None):
         with torch.no_grad():
             if pretrained_model is not None:
-                self.preparation(load_model=False)
+                self.preparation()
                 self.model.load_state_dict(torch.load(pretrained_model, map_location=self.device))
 
             self.model.eval()
@@ -531,7 +532,14 @@ class HAR_Testing_Experiment(ExperimentBase):
             accuracies_multi = []
             conf_x = []
             conf_y = []
+            pck_bb_02 = []
+            pck_bb_01 = []
+
+            per_joint_accuracy = np.zeros(16)
+            number_valids = np.ones(16)
+
             for batch_idx, test_objects in enumerate(self.test_loader):
+                print(batch_idx)
                 frames = test_objects["normalized_frames"].to(self.device)
                 actions = test_objects["action_1h"].to(self.device)
                 sequence_length = test_objects["sequence_length"].to(self.device).item()
@@ -539,13 +547,19 @@ class HAR_Testing_Experiment(ExperimentBase):
 
                 ground_class = torch.argmax(actions, 1)
                 single_clip = frames[:, padding:(16 + padding)].squeeze(0)
-                assert len(single_clip) == 16
+                if len(single_clip) < 16:
+                    print("skipping")
+                    continue
+
+                bboxes = test_objects["bbox"][0, padding:(16 + padding)]
+                trans_matrices = test_objects["trans_matrices"][0, padding:(16 + padding)]
+                ground_poses = test_objects["normalized_poses"][0, padding:(16 + padding)]
 
                 spacing = 8
                 nr_multiple_clips = int((sequence_length - 16) / spacing) + 1
 
                 single_clip = single_clip.unsqueeze(0).to(self.device)
-                _, _, _, _, single_result = self.model(single_clip)
+                _, predicted_poses, _, _, single_result = self.model(single_clip)
 
                 pred_class_multi = torch.IntTensor(nr_multiple_clips).to(self.device)
                 for i in range(nr_multiple_clips):
@@ -570,14 +584,58 @@ class HAR_Testing_Experiment(ExperimentBase):
                 accuracy_multi = correct_multi / float(total)
                 accuracies_single.append(accuracy_single)
                 accuracies_multi.append(accuracy_multi)
-                
+
+                predicted_poses = predicted_poses.squeeze(0)
+                distance_meassures = torch.FloatTensor(len(bboxes))
+
+                for i in range(len(bboxes)):
+                    width = torch.abs(bboxes[i, 0] - bboxes[i,2])
+                    height = torch.abs(bboxes[i, 1] - bboxes[i,3])
+
+                    distance_meassures[i] = torch.max(width, height).item()
+
+                pck_bb_02.append(eval_pck_batch(predicted_poses[:, :, 0:2], ground_poses[:, :, 0:2], trans_matrices, distance_meassures))
+                pck_bb_01.append(eval_pck_batch(predicted_poses[:, :, 0:2], ground_poses[:, :, 0:2], trans_matrices, distance_meassures, threshold=0.1))
+
+                matches, valids = eval_pck_batch(predicted_poses[:, :, 0:2], ground_poses[:, :, 0:2], trans_matrices, distance_meassures, threshold=0.1, return_perjoint=True)
+
+                number_valids = number_valids + np.array(valids[0])
+                for u in range(16):
+                    if valids[i][u]:
+                        per_joint_accuracy[u] = per_joint_accuracy[u] + matches[0][u]
+
                 current = current + 1
+
 
             cm = confusion_matrix(np.array(conf_y), np.array(conf_x))
             np.save("experiments/{}/cm.np".format(self.experiment_name), cm)
             mean_acc_single = torch.mean(torch.Tensor(accuracies_single)).item()
             mean_acc_multi = torch.mean(torch.Tensor(accuracies_multi)).item()
-            return mean_acc_single, mean_acc_multi
+            mean_bb_02 = torch.mean(torch.Tensor(pck_bb_02)).item()
+            mean_bb_01 = torch.mean(torch.Tensor(pck_bb_01)).item()
+
+            per_joint_final = per_joint_accuracy / number_valids
+            print(per_joint_final)
+            left_arm = per_joint_final[13] + per_joint_final[14] + per_joint_final[15]
+            right_arm = per_joint_final[10] + per_joint_final[11] + per_joint_final[12]
+            right_leg = per_joint_final[0] + per_joint_final[1] + per_joint_final[2]
+            left_leg = per_joint_final[3] + per_joint_final[4] + per_joint_final[5]
+            legs_both = left_leg + right_leg
+            arms_both = left_arm + right_arm
+            upper_body_total = arms_both + per_joint_final[8] + per_joint_final[9]
+            lower_body_total = legs_both + per_joint_final[6]
+            print("left_arm", str(left_arm / 3))
+            print("right_arm", str(right_arm / 3))
+            print("left_leg", str(left_leg / 3))
+            print("right_leg", str(right_leg / 3))
+            print("legs_both", str(legs_both / 6))
+            print("arms_both", str(arms_both / 6))
+            print("upper_body", str(upper_body_total / 8))
+            print("lower_body", str(lower_body_total / 7))
+
+            print("mean_acc_single, mean_acc_multi, mean_bb_02, mean_bb_01")
+            return mean_acc_single, mean_acc_multi, mean_bb_02, mean_bb_01
+
 
 class HAR_PennAction(HAR_Testing_Experiment):
 
@@ -604,9 +662,9 @@ class HAR_PennAction(HAR_Testing_Experiment):
         if self.pretrained_model is not None:
             self.model.load_state_dict(torch.load(self.pretrained_model, map_location=self.device))
 
-        self.ds_train = PennActionFragmentsDataset("/data/mjakobs/data/pennaction_fragments/", train=True, val=False, use_random_parameters=True, augmentation_amount=10, use_gt_bb=self.use_gt_bb)
+        self.ds_train = PennActionFragmentsDataset("/data/mjakobs/data/pennaction_fragments/", train=True, val=False, use_random_parameters=True, augmentation_amount=6, use_gt_bb=self.use_gt_bb)
         self.ds_val = PennActionFragmentsDataset("/data/mjakobs/data/pennaction_fragments/", train=True, val=True, use_gt_bb=self.use_gt_bb)
-        self.ds_test = PennActionDataset("/data/mjakobs/data/pennaction/", train=False)
+        self.ds_test = PennActionDataset("/data/mjakobs/data/pennaction/", train=False, use_gt_bb=True, use_saved_tensors=False)
 
         train_indices, val_indices, test_indices = self.limit_dataset(include_test=True)
 
