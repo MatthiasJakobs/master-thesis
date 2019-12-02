@@ -43,13 +43,13 @@ They do not motivate the reason for using this specific value, but it most likel
 Next, they compute the width and height using $s_{new} \cdot 200$, since the scale parameter in the dataset is given w.r.t. a $200 \times 200$ pixel bounding box.
 In addition, the authors also alter the center position $(c_x,  c_y)$ by computing $(c_{x}^{new}, c_y^{new}) = (c_x, c_y + s_{new} \cdot 12)$.
 Again, the authors do not provide a reasoning for increasing the center $y$ position.
-Once the bounding box is computed, the image is cropped to the size of the bounding box around the newly computed center coordinate and rescalled to a size of $256 \times 256$.
+Once the bounding box is computed, the image is cropped to the size of the bounding box around the newly computed center coordinate and rescaled to a size of $256 \times 256$.
 In the case where a joint annotation falls outside of the now cropped image, the authors set the visibility of the joint to $0$ and set the $(x,y)$ coordinates of the joint to $(-1e9, -1e9)$.
 
 Additionally, the authors introduce parameters used for image augmentation by rotating, scaling and mirroring the image randomly.
 These values are sampled from their respective sets whenever augmentation is performed.
 Specifically, they introduce $s_{aug} \in \{0.7, 1, 1.3\}$, which gets multiplied with $s_{new}$ computed earlier.
-This results in zooming into or out of the image by $30\%$ when $s_{aug} \not= 1$. 
+This results in zooming into or out of the image by $30\%$ when $s_{aug} \not= 1$.
 Also, $r_{aug} \in \{-40, -35, \dots, 35, 40\}$ is introduced to rotate the image $r_{aug}$ degrees around its center, possibly introducing black borders around the image.
 Moreover, when augmenting, the image is horizontally mirrored with a chance of $50$ percent.
 See \fref{fig:mpii_example_augmentation} for examples of different augmented images, including augmented pose.
@@ -75,7 +75,7 @@ It contains $2326$ video clips of $15$ different, resulting in $149.355$ frames.
 The actions are mostly sports related and they include \textit{baseball swing}, \textit{clean and jerk}, \textit{jumping jacks}, \textit{pushup}, \textit{strum guitar}, \textit{bench press}, \textit{golf swing}, \textit{baseball pitch}, \textit{situp}, \textit{tennis forehand}, \textit{bowling}, \textit{jump rope}, \textit{pullup}, \textit{squat} and \textit{tennis serve}.
 Additionally, the authors provide annotations for $13$ body joints,
 including \textit{left and right shoulders, elbows, wrists, hips and knees} and \textit{head}.
-Some example images can be seen in \fref{fig:pennaction_example_images}. 
+Some example images can be seen in \fref{fig:pennaction_example_images}.
 
 \begin{figure}[htb!]
     \centering
@@ -104,14 +104,14 @@ Thus, the amount of context added is set to $30$ pixels to make certain that the
 
 Additionally, the authors in \cite{luvizon_2d/3d_2018} decide to process the video clips in chunks of $16$ frames.
 This is important since the network architecture assumes a specific dimensionality for the \textit{pose cube} (see \sref{sec:pose_based_action_recognition}).
-These chunks are further referred to as \textit{fragments}. 
+These chunks are further referred to as \textit{fragments}.
 
 \subsection{JHMDB}
 \label{sec:exp-jhmdb}
 
 Similar to \cite{zhang_actemes_2013} \sref{sec:exp-penn}, the JHMDB dataset \cite{jhuang_towards_2013} contains annotations for the pose and the action in video clips.
-The JHMDB dataset contains $928$ video clips, totalling $31.838$. 
-The dataset was created by taking a subset of the HMDB action recogntion dataset \cite{kuehne_hmdb:_2011}, which was annotated using the \textit{puppet tool} \cite{zuffi_pictorial_2012}.
+The JHMDB dataset contains $928$ video clips, totalling $31.838$.
+The dataset was created by taking a subset of the HMDB action recognition dataset \cite{kuehne_hmdb:_2011}, which was annotated using the \textit{puppet tool} \cite{zuffi_pictorial_2012}.
 This tool allows to not only annotate the pose of the person but also automatically computes a binary segmentation map of the person, further referred to as the \textit{puppet mask}.
 See \fref{fig:puppet_tool_example} for a visualization of the annotation process and the puppet tool.
 
@@ -207,7 +207,7 @@ To investigate this assumption, this thesis performs two experiments.
 % To compute the image coordinates, a multiplication with the width and height of the input image is necessary.
 % Also, the resulting floating point values need to be rounded to the nearest integer in order to be considered image coordinates.
 % Because the rounding process might introduce errors, a threshold of $d$ is defined.
-% By varying $d$, the accuracy of the Soft-argmax can be determined. 
+% By varying $d$, the accuracy of the Soft-argmax can be determined.
 
 In the first experiment, we analyze the accuracy quantitatively on data from the MPII dataset.
 For each joint position $(i,j)$ of a pose, a synthetic joint heatmap is generated by placing a two-dimensional gaussian with mean $(i,j)$ and covariance $c$.
@@ -215,7 +215,7 @@ The Soft-argmax is applied to the heatmap, which results in estimates $(x_{est},
 The distance from $(x_{est},y_{est})$ to $(i,j)$ is computed and an accuracy meassurement is proposed by the following formula:
 
 \begin{equation}
-    f((x_{est}, y_{est}), (i,j), d) = 
+    f((x_{est}, y_{est}), (i,j), d) =
     \begin{cases}
         1 & \text{if} ~ \lvert x_{est} - i \rvert \leq d ~ \text{and} ~ \lvert y_{est} - j \rvert \leq d \\
         0 & \text{otherwise}
@@ -243,12 +243,12 @@ This contrast between $d=1$ and $d=2$ is most likely due to the rounding errors 
     \begin{tabular}{|l|l|l|l|l|l|l|}
     \hline
     threshold & \textbf{$c=1$} & \textbf{$c=2$} & \textbf{$c=5$} & \textbf{$c=10$} & \textbf{$c=20$} & \textbf{$c=50$} \\ \hline
-    $1$ & 93.137 & 93.123 & 93.069 & 92.988 & 92.811 & 92.201 \\ \hline 
-    $2$ & 99.952 & 99.931 & 99.843 & 99.741 & 99.469 & 98.598 \\ \hline 
-    $3$ & 99.959 & 99.945 & 99.891 & 99.809 & 99.639 & 99.054 \\ \hline 
-    $4$ & 99.959 & 99.952 & 99.911 & 99.829 & 99.700 & 99.197 \\ \hline 
+    $1$ & 93.137 & 93.123 & 93.069 & 92.988 & 92.811 & 92.201 \\ \hline
+    $2$ & 99.952 & 99.931 & 99.843 & 99.741 & 99.469 & 98.598 \\ \hline
+    $3$ & 99.959 & 99.945 & 99.891 & 99.809 & 99.639 & 99.054 \\ \hline
+    $4$ & 99.959 & 99.952 & 99.911 & 99.829 & 99.700 & 99.197 \\ \hline
     \end{tabular}}
-    \caption{Mean average accuracy (in percent) of Soft-argmax when detecting ground truth coordinates from synthetic joint heatmaps. Threshold referrs to the amound of pixels the estimate is allowed to deviate from the ground truth annotation. $c$ referres to the covariance used for creating the synthetic heatmaps. The large discrepancy between a threshold of $1$ and a threshold of $2$ is most likely due to rounding errors.}
+    \caption{Mean average accuracy (in percent) of Soft-argmax when detecting ground truth coordinates from synthetic joint heatmaps. Threshold refers to the amount of pixels the estimate is allowed to deviate from the ground truth annotation. $c$ refers to the covariance used for creating the synthetic heatmaps. The large discrepancy between a threshold of $1$ and a threshold of $2$ is most likely due to rounding errors.}
     \label{tab:softargmax_numeric_eval}
 \end{table}
 
@@ -265,7 +265,7 @@ While this behaviour indicates that the Soft-argmax function is less accurate ar
 \begin{figure}[htb!]
     \centering
     \includegraphics[width=0.7\textwidth]{softargmax_variance_test.png}
-    \caption{Evaluation of the accuracy of the Soft-argmax function using synthetic data. Yellow pixels $(i,j)$ indicate where the Soft-argmax function correctly regressed the peak of the gaussian with mean value $(i,j)$, while violett indicates wrong predictions. Notice that the accuracy decreases when approaching the border of the image and when the covariance is increasing. }
+    \caption{Evaluation of the accuracy of the Soft-argmax function using synthetic data. Yellow pixels $(i,j)$ indicate where the Soft-argmax function correctly regressed the peak of the gaussian with mean value $(i,j)$, while violet indicates wrong predictions. Notice that the accuracy decreases when approaching the border of the image and when the covariance is increasing. }
     \label{fig:softargmax_variance_test}
 \end{figure}
 
@@ -324,7 +324,7 @@ Thus, this thesis chooses to report the validation accuracy for comparison betwe
 %     \hline
 %         \textbf{nr\_blocks} & \textbf{nr\_context}  & \textbf{PCKh @ 0.5} & \textbf{p-value} \\ \hline
 %         \begin{tabular}{@{}c@{}} 2 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 84.15 \\ 84.01  \end{tabular} & 0.85  \\ \hline
-    
+
 %         \begin{tabular}{@{}c@{}} 4 \\ 4 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 85.78 \\ 85.64  \end{tabular} & 0.85  \\ \hline
 
 %         \begin{tabular}{@{}c@{}} 8 \\ 8 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 86.71 \\ \textbf{87.00}  \end{tabular} & 0.73  \\ \hline
@@ -352,11 +352,11 @@ Thus, this thesis chooses to report the validation accuracy for comparison betwe
             \hline
             \textbf{blocks} & \textbf{context}  & \textbf{PCKh @ 0.5} & \textbf{p-values} \\ \hline
             \begin{tabular}{@{}c@{}} 2 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 84.15 \\ 84.01  \end{tabular} & 0.85  \\ \hline
-        
+
             \begin{tabular}{@{}c@{}} 4 \\ 4 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 85.78 \\ 85.64  \end{tabular} & 0.85  \\ \hline
-    
+
             \begin{tabular}{@{}c@{}} 8 \\ 8 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 86.71 \\ \textbf{87.00}  \end{tabular} & 0.73  \\ \hline
-    
+
             \begin{tabular}{@{}c@{}} 2 \\ 4 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 0 \end{tabular} & \begin{tabular}{@{}c@{}} 84.15 \\ 85.78  \end{tabular} & 0.074  \\ \hline
 
             \begin{tabular}{@{}c@{}} 2 \\ 4 \end{tabular} & \begin{tabular}{@{}c@{}} 2 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 84.01 \\ 85.64  \end{tabular} & 0.076  \\ \hline
@@ -365,17 +365,17 @@ Thus, this thesis chooses to report the validation accuracy for comparison betwe
         \begin{tabular}{|l|l|c|c|}
             \hline
             \textbf{blocks} & \textbf{context}  & \textbf{PCKh @ 0.5} & \textbf{p-values} \\ \hline
-    
+
             \begin{tabular}{@{}c@{}} 4 \\ 8 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 0 \end{tabular} & \begin{tabular}{@{}c@{}} 85.78 \\ 86.71  \end{tabular} & 0.31  \\ \hline
-    
+
             \begin{tabular}{@{}c@{}} 4 \\ 8 \end{tabular} & \begin{tabular}{@{}c@{}} 2 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 85.64 \\ \textbf{87.00}  \end{tabular} & 0.12  \\ \hline
-    
+
             \begin{tabular}{@{}c@{}} 2 \\ 8 \end{tabular} & \begin{tabular}{@{}c@{}} 0 \\ 0 \end{tabular} & \begin{tabular}{@{}c@{}} 84.15 \\ 86.71  \end{tabular} & \textbf{0.006}  \\ \hline
 
             \begin{tabular}{@{}c@{}} 2 \\ 8 \end{tabular} & \begin{tabular}{@{}c@{}} 2 \\ 2 \end{tabular} & \begin{tabular}{@{}c@{}} 84.01 \\ \textbf{87.00}  \end{tabular} & \textbf{0.001}  \\ \hline
-        
+
             \begin{tabular}{@{}c@{}} 8 \\ 8* \end{tabular} & \begin{tabular}{@{}c@{}} 2 \\ 2* \end{tabular} & \begin{tabular}{@{}c@{}} 87.00 \\ 89.00*  \end{tabular} & \textbf{0.025}  \\ \hline
-        \end{tabular}                      
+        \end{tabular}
     \end{tabular}
     \caption{Different model configurations and their corresponding PCKh validation score. The $p$-values were computed using a randomization test. $p$-values below the significance level of $0.05$ are shown in bold, indicating that the change in accuracy is significant. Additionally, the highest accuracy is also shown in bold. The configuration marked with a star is the model from \cite{luvizon_2d/3d_2018}}
     \label{tab:mpii_results}
@@ -383,14 +383,14 @@ Thus, this thesis chooses to report the validation accuracy for comparison betwe
 
 
 The PCKh accuracies achieved on the validation dataset from the different model configurations are shown in \tref{tab:mpii_results}.
-For comparison, the authors report a validation accuracy of $89\%$ for $8$ prediction blocks and $2$ context heatmaps. 
+For comparison, the authors report a validation accuracy of $89\%$ for $8$ prediction blocks and $2$ context heatmaps.
 As can be seen in \tref{tab:mpii_results}, the higher the number of prediction blocks, the more accurate the model performs on the validation data.
 In addition, using context heatmaps appears to increase the accuracy only when using $8$ blocks.
 To test whether or not the differences in accuracy between the configurations are statistically significant, this thesis performs randomization tests with a significance level of $0.05$.
 For the randomization tests, $3000$ permutations are used.
 As can be seen in \tref{tab:mpii_results}, the only statistically significant increases in accuracy are observed when comparing $2$ and $8$ prediction block models with and without context heatmaps.
 This suggests that a certain depth of network is necessary in order for context heatmaps to contribute significantly to the model performance.
- 
+
 \begin{table}[]
     \centering
     \scalebox{0.90}{%
@@ -433,7 +433,7 @@ Additionally, using context heatmaps does not significantly increase the accurac
 \subsubsection{HAR using Penn Action dataset}
 \label{sec:exp-har-pennaction}
 To recreate the Human Activity Recognition results from \cite{luvizon_2d/3d_2018} on the Penn Action dataset, we first train a pose estimator.
-Once the pose estimator is trained, its pretrained weights are transfered to the HAR model.
+Once the pose estimator is trained, its pretrained weights are transferred to the HAR model.
 The authors used a hybrid dataset for training, consisting of $75\%$ MPII and of $25\%$ Penn Action training data.
 They do not, however, motivate this decision.
 The pose estimator contains $4$ prediction blocks, uses $2$ context heatmaps and it is trained using a batch size of $30$ and a learning rate of $10^{-3}$.
@@ -471,7 +471,7 @@ This leads to a higher prediction error in the Penn Action test dataset.
 It can also be seen in \tref{tab:pose-mixed-perjoint} that the pose estimator more accurately estimates joints on the right side of the body (from the position of the subject in the image) in comparison to the left body side.
 To evaluate whether this difference is statistically significant, we used a randomization test with a significance level of $0.05$.
 The resulting $p$-value for the change in accuracy between left and right arms is $0.0$, while the $p$-value for the difference between right and left legs is $0.0$.
-The $p$-values are zero because they are too small for the floating point precision of the machine, which means that the change in accuracy between left and right sides are statistically significant.  
+The $p$-values are zero because they are too small for the floating point precision of the machine, which means that the change in accuracy between left and right sides are statistically significant.
 One reason for the significant difference in accuracy might be that, for most people, the predominant side of their body is the right side.
 This might then lead to an overrepresentation of actions performed by right-handed people in the dataset.
 Some example images of the predicted poses on the test dataset can be seen in \fref{fig:pose_mixed_examples}.
@@ -497,7 +497,7 @@ Some example images of the predicted poses on the test dataset can be seen in \f
         \textbf{Arms (l)} & \textbf{Arms (r)} & \textbf{Arms (both)} & \textbf{Legs (l)} & \textbf{Legs (r)} & \textbf{Legs (both)} & \textbf{Upper body} &   \\ \hline
         54.92 & 56.45 & 55.68 & 66.34 & 68.11 & 67.22 & 46.37 & \\ \hline \hline
     \end{tabular}}
-    \caption{Per joint accuracy, computed on the Penn Action test set using PCK @ 0.1 meassure. In addition, aggregated accuracy values are given in the third row for different sets of joints. \textit{Arms} for both left and right are computed by taking the average of the shoulder, elbow and wrist accuracies. \textit{Legs} are computed the same way, using knee, ankle and hip accuracy values. For \textit{Upper body}, the upper neck is added to \textit{Arms (both)}.}
+    \caption{Per joint accuracy, computed on the Penn Action test set using PCK @ 0.1 measure. In addition, aggregated accuracy values are given in the third row for different sets of joints. \textit{Arms} for both left and right are computed by taking the average of the shoulder, elbow and wrist accuracies. \textit{Legs} are computed the same way, using knee, ankle and hip accuracy values. For \textit{Upper body}, the upper neck is added to \textit{Arms (both)}.}
     \label{tab:pose-mixed-perjoint}
 \end{table}
 
@@ -508,7 +508,7 @@ The HAR model is then trained until the validation accuracies stops increasing, 
 The model is then fine-tuned in an end-to-end approach.
 As an optimizer, the Stochastic Gradient Descend is used, with the addition of a momentum value $\gamma = 0.98$ and the use of a method called \textit{Nesterov Accelerated Gradient (NAG)} \cite{nesterov_method_1983}.
 
-Momentum is used to accelarate the gradient descent process by incorporating a fraction $\gamma$ of the previous gradients when computing the new gradients.
+Momentum is used to accelerate the gradient descent process by incorporating a fraction $\gamma$ of the previous gradients when computing the new gradients.
 Consider a regular update to the weights $w$ of a neuron using gradient descent, as explained in \sref{sec:gradient_descent}, given by
 
 \begin{equation}
@@ -530,10 +530,10 @@ Afterwards, the new weights are computed by subtracting $\nu_t$ from $w_t$:
 
 The intuition behind momentum is that the descend towards the local minimum of the loss function can be accelerated by assuming that the gradients do not change significantly.
 If gradients with a similar direction were multiple times before, then the assumption is that the next gradients will be similar as well.
-This assumption, however, can lead to the case where the local minimum of the loss function is surpassed, which is often refered to as \textit{overshooting} the minimum.
+This assumption, however, can lead to the case where the local minimum of the loss function is surpassed, which is often referred to as \textit{overshooting} the minimum.
 To minimize the probability overshooting while still accelerating the descend towards the local minimum, Nesterov Accelerated Gradient adds an additional step to the momentum process.
 It calculates a \textit{look-ahead} weight $w_{la} = w_{t} \gamma \nu_{t-1}$ and evaluates the gradient using this new weight.
-If the gradient at $w_{la}$ points to a different direction than $\gamma \nu_{t-1}$ it will correct the surpassing of the minimum to an extend by reducing changing the direction of the gradient slighlty.
+If the gradient at $w_{la}$ points to a different direction than $\gamma \nu_{t-1}$ it will correct the surpassing of the minimum to an extend by reducing changing the direction of the gradient slightly.
 The following formula describes the update process of weights $w_t$ using the NAG:
 
 \begin{equation}
@@ -551,16 +551,16 @@ The results of the training process can be seen in \fref{fig:har_pennaction_resu
 A learning rate of $2^{-5}$ is used, as suggested by the authors in their work.
 The training process with frozen pose estimator weights is shown to the left of the blue vertical line.
 We show the validation accuracy, which is computed by predicting the action for every $16$ frame fragment in the validation dataset.
-Additionally, we show the training accuracy of the pose estimator using the PCK metric with $\alpha = 0.2$, as well as the training accuracy of the action classifcation.
+Additionally, we show the training accuracy of the pose estimator using the PCK metric with $\alpha = 0.2$, as well as the training accuracy of the action classification.
 As expected, the pose estimation training accuracy does not change, because the weights are frozen.
 Unexpectedly, the validation accuracy did not increase after unfreezing the pose estimator weights and after finetuning the network.
 In fact, the training accuracy of the action classification also decreased.
 Because finetuning the network did not lead to a better result in terms of validation accuracy, it was decided to continue the evaluation using the non-finetuned model.
-The results on the Penn Action testset for the model at iteration $5000$ can be seen in \tref{tab:pennaction_test_results}.
+The results on the Penn Action test dataset for the model at iteration $5000$ can be seen in \tref{tab:pennaction_test_results}.
 In comparison to the results provided by \cite{luvizon_2d/3d_2018}, it is apparent that our model performs significantly worse.
-One possible explaination could be that the pose estimator of the authors achieved a higher accuracy, which will lead to a higher action classification accuracy.
+One possible explanation could be that the pose estimator of the authors achieved a higher accuracy, which will lead to a higher action classification accuracy.
 Since the authors did not publish an evaluation of the pose estimator, a comparison between their pose estimator and the one trained in this thesis is not possible.
-Another possible explaination could be that the authors forgot to mention a crucial step in training their model.
+Another possible explanation could be that the authors forgot to mention a crucial step in training their model.
 For example, they do not mention how many iterations both the pose estimator and action recognition model were trained.
 
 \begin{table}[]
@@ -584,17 +584,17 @@ For example, they do not mention how many iterations both the pose estimator and
 
 To gain a better insight into the types of errors the network produces, we computed a confusion matrix of the test data.
 A confusion matrix shows not only the accuracy of the model for each action, but it also shows which classes the model often confuses.
-The confusion matrix is shown in \fref{fig:cm-pennaction}. 
+The confusion matrix is shown in \fref{fig:cm-pennaction}.
 As can be seen, the network is most uncertain when predicting the class \textit{clean and jerk}.
 Clean and jerk is a weight lifting action, where the person bends their knees while holding a weight lifting bar and then lifts the weights while standing up.
 See \fref{fig:cleanandjerk} for an example of this action.
 Notice that the \textit{clean and jerk} action starts with bend knees.
 This is similar to the action of \textit{squat}, which might explain why the network gets confused between these two classes.
-In \sref{sec:deephar_architecture}, it was explained that the network processes a video in sets of $16$ consequitive frames.
+In \sref{sec:deephar_architecture}, it was explained that the network processes a video in sets of $16$ consecutive frames.
 This means that, if a person takes a long time to stand up after bending their knees, the network might classify the $16$ frame excerpt as \textit{squats}, because the poses are very similar.
 A network architecture, which takes more frames of a video into account before predicting an action, might be able to distinguish these classes better.
 On the other hand, actions with highly distinct poses, such as \textit{sit ups} and \textit{jumping jacks}, are seldom confused with other classes.
-These two findings indicate that very precise pose information is necessary to reduce the amount confusion between similar classes. 
+These two findings indicate that very precise pose information is necessary to reduce the amount confusion between similar classes.
 
 \begin{figure}[htb!]
     \centering
@@ -606,7 +606,7 @@ These two findings indicate that very precise pose information is necessary to r
 In conclusion, while our results do not match the results in \cite{luvizon_2d/3d_2018}, this is most likely due to the performance of the pose estimator.
 More experimentation towards increasing the accuracy of the pose estimator would be necessary to decrease the amount of confusion between certain actions.
 It was shown that the pose estimator is more accurate on joints of the person's right side, as opposed to the left side.
-For future work, a deeper investigation into this phenomenon would be necessary. 
+For future work, a deeper investigation into this phenomenon would be necessary.
 
 \subsection{Pose estimation on JHMDB dataset}
 \label{sec:exp-pose-jhmdb}
@@ -627,11 +627,11 @@ In general, the higher the number of parameters of a model, the more training da
 The $p$-values in \tref{tab:jhmdb_results} indicate that, for a pose estimator configuration with $2$ prediction blocks, adding context heatmaps significantly decreases the accuracy of the model.
 This is most likely due to an increase in parameters of the pose estimator, which means that more data is necessary to fit the model.
 This also applies to the configurations using $4$ prediction blocks, where the evaluated metrics are also lower when using context heatmaps.
-These findings imply that the utility of context heatmaps is highly dependend on the training dataset size.
+These findings imply that the utility of context heatmaps is highly dependent on the training dataset size.
 Interestingly, when using $8$ prediction blocks, the opposite appears to be true.
 In \sref{sec:exp-mpii-pose}, it was found that the use of context heatmaps only significantly increased the accuracy of the pose estimator if $8$ prediction blocks were used.
 This finding, in combination with the findings on the pose estimator trained on the JHMDB dataset, indicate that using context heatmaps only positively impacts the accuracy of a pose estimator if a high number of prediction blocks are used.
-One reason for this might be that context heatmaps benefit from the refinement process of the stacked architecture more than the regular heatmaps (see \sref{sec:deephar_architecture}).  
+One reason for this might be that context heatmaps benefit from the refinement process of the stacked architecture more than the regular heatmaps (see \sref{sec:deephar_architecture}).
 
 \begin{table}[]
     \small
@@ -650,9 +650,9 @@ One reason for this might be that context heatmaps benefit from the refinement p
 \end{table}
 
 In \tref{tab:jhmdb_results_confidence}, the accuracies of different pose estimator configurations are compared using randomization testing.
-The configurations with $8$ prediction blocks are ommited from this comparison, because their accuracies are much lower in comparison to the other configuration and there is no need for statistical significance testing.
+The configurations with $8$ prediction blocks are omitted from this comparison, because their accuracies are much lower in comparison to the other configuration and there is no need for statistical significance testing.
 It is found that there are no statistically significant differences between the accuracies of the tested configurations for any metric.
-This is consistend with the findings in \sref{sec:exp-mpii-pose}, where the only significant differences were found between $8$ and $2$ prediction blocks.
+This is consistent with the findings in \sref{sec:exp-mpii-pose}, where the only significant differences were found between $8$ and $2$ prediction blocks.
 
 \begin{table}[]
     \small
@@ -666,15 +666,15 @@ This is consistend with the findings in \sref{sec:exp-mpii-pose}, where the only
             \textbf{PCK @ 0.1} & \textbf{92.03} & 91.69 & 0.396 & 90.20 & 90.95 & 0.089 \\ \hline
             \textbf{PCKu @ 0.2} & 87.32 & \textbf{87.49} & 0.742 & 86.21 & 86.92 & 0.164 \\ \hline
         \end{tabular}
-    \caption{Different model configurations for estimating pose on the JHMDB dataset, with their corresponding accuracy values. The configurations using $8$ prediction blocks are ommited because the results are significantly worse in comparion to the other configurations. The $p$-values were computed using a randomization test. None of the $p$-values are below the significance level of $0.05$.}
+    \caption{Different model configurations for estimating pose on the JHMDB dataset, with their corresponding accuracy values. The configurations using $8$ prediction blocks are omitted because the results are significantly worse in comparison to the other configurations. The $p$-values were computed using a randomization test. None of the $p$-values are below the significance level of $0.05$.}
     \label{tab:jhmdb_results_confidence}
 \end{table}
 
 Next, the accuracy of best performing pose estimator configuration ($4$ prediction blocks, $0$ context heatmaps) with regards to individual joints and groupings of joints is evaluated in \tref{tab:jhmdb-perjoint}.
 As a metric, PCK using $\alpha = 0.1$ is used, since this metric more precise in comparison to PCK using $\alpha = 0.2$, which aids in determining the differences between the individual joint accuracies.
 In comparison to the joint accuracies computed in \tref{tab:mpii_test}, it becomes apparent that left and right ankles are more accurately estimated on the JHMDB dataset.
-On both datasets, the joints associated with the head and torse region of the subject, i.e., upper neck, pelvis and head, are the most accurate.
-One explaination for this is that there is less confusion with other, similar looking joints.
+On both datasets, the joints associated with the head and torso region of the subject, i.e., upper neck, pelvis and head, are the most accurate.
+One explanation for this is that there is less confusion with other, similar looking joints.
 For example, while the left ankle might easily be confused with the right ankle, the head and torso region joints do not have a similarly looking counterpart.
 In addition, these joints are less articulated, meaning that they do not change in position between different actions performed.
 Similar to \sref{sec:exp-har-pennaction}, right arms and legs are more accurately detected.
@@ -732,7 +732,7 @@ In conclusion, pose estimation on the JHMDB dataset appears to be harder in comp
 One reason might be the small size of the JHMDB dataset.
 Also, since the JHMDB dataset is a video dataset, it contains video artifacts such as blur and camera jitter.
 Moreover, the resolution of the frames is significantly lower in comparison to the MPII dataset.
-This means that, since images from both dataset are resized to $256 \times 256$ pixels, the images from the JHMDB dataset contain more artifacts due to scaling and compression. 
+This means that, since images from both dataset are resized to $256 \times 256$ pixels, the images from the JHMDB dataset contain more artifacts due to scaling and compression.
 % TODO: Conclusion chapter: mention that, for future work, higher resolution images are also ideal
 
 \subsection{HAR on JHMDB Dataset}
@@ -741,13 +741,13 @@ The batch size is set to $12$ since the GPU used for experimentation did not all
 Keep in mind that, since JHMDB is a video dataset, each item in the batch contains $16$ frames (see \sref{sec:exp-jhmdb}).
 Effectively, this leads to a batch size of $16 \cdot batch\_size$ for the pose estimator since the pose for each frame is computed independently, before aggregating the estimated poses into the pose cube (see \sref{sec:pose_based_action_recognition}).
 As an initial learning rate, $2^{-5}$ is chosen, since this is the value used in the Penn Action HAR experiment.
-Similar to before, the point where the validation data accuracy does not increase further is found by training the model with a pose estimator whos weights are fixed.
+Similar to before, the point where the validation data accuracy does not increase further is found by training the model with a pose estimator with fixed weights.
 The results of the training process can be seen in \fref{fig:har_jhmdb_combined}.
 It is observed that the action training accuracy quickly approaches $100\%$ while the validation accuracy does not show an upward trend throughout the training process.
 This is especially interesting considering the results in \sref{sec:e2e}.
-One explaination could be that the network overfit the training data, which is supported by the fact that both training accuracies computed quickly approach $100\%$.
+One explanation could be that the network overfit the training data, which is supported by the fact that both training accuracies computed quickly approach $100\%$.
 In the time of writing this thesis, we did not find a solution to this problem.
-In order to not discuss possibly erroneous results, it was decided to ommit a discussion of testing results regarding this experiment.
+In order to not discuss possibly erroneous results, it was decided to omit a discussion of testing results regarding this experiment.
 
 \begin{figure}[htb!]
     \centering
@@ -772,7 +772,7 @@ It was decided to weigh both losses equally, i.e., sum them without weighting ei
     \caption{Training and validation accuracies of the HAR model trained using an end-to-end approach, without pretraining individual parts of the model. Validation accuracy given as percentage of correctly classified validation video clips.}
     \label{fig:e2e_big}
 \end{figure}
-\def \e2eFinalIteration {$228.000$ } 
+\def \e2eFinalIteration {$228.000$ }
 
 The network needs a high amount of iterations for training until the validation accuracy stops increasing.
 This is to be expected, since no part of the network is pretrained and thus all parts have to be trained from random initialization.
@@ -810,7 +810,7 @@ The results of the evaluation on the JHMDB test set can be seen in \tref{tab:e2e
 When comparing the pose accuracy of the end-to-end model to the pose estimators trained in \sref{sec:exp-pose-jhmdb}, it is apparent that the end-to-end model is significantly worse in all three metrics related to pose estimation (see \tref{tab:e2e-pose}).
 Further experimentation is necessary to assess whether or not the model hyperparameters like learning rate and batch size can be optimized in order for the end-to-end model to achieve comparable results to the pretrained model.
 In comparison to the state-of-the-art approaches for HAR on the JHMDB dataset in \sref{sec:potion} and \sref{sec:three-stream}, the action recognition is also significantly lower (see \tref{tab:e2e-quantitative-results}).
-However, the findings are promising, because the network is, in general, able to achieve a high classification accuracy on the action recoognition metrics by being trained in an end-to-end approach.
+However, the findings are promising, because the network is, in general, able to achieve a high classification accuracy on the action recognition metrics by being trained in an end-to-end approach.
 This suggests that, while the pose estimator might be weaker in comparison to a standalone pose estimator, it is enough to make accurate action classifications.
 In future work, an investigation into changing the architecture of the HAR model might lead to comparable results to the literature.
 
@@ -821,7 +821,7 @@ In future work, an investigation into changing the architecture of the HAR model
     \label{fig:cm-e2e}
 \end{figure}
 
-A confusion matrix of the action classifcation on the test dataset is computed to gain a better understanding of the types of missclassification of the network (see \fref{fig:cm-e2e}).
+A confusion matrix of the action classification on the test dataset is computed to gain a better understanding of the types of misclassification of the network (see \fref{fig:cm-e2e}).
 From the confusion matrix, it becomes clear that the network is highly uncertain between the classes \textit{sit} and \textit{stand}.
 Only $38\%$ of the test datapoints classified as \textit{stand} were actually from the \textit{stand} class.
 In addition, in $29\%$ of the cases where the network predicted \textit{stand}, the ground truth class was \textit{sit}.
@@ -846,8 +846,8 @@ On average, the network is more precise on the joints associated with the legs i
 Also, joints associated with the right side of the subjects are detected with a higher accuracy than the joints associated with the left side.
 The differences in accuracies are statistically significant with a $p$-value too close to zero to be accurately reported ($p=0.0$).
 This finding supports the findings in \sref{sec:exp-har-pennaction} and \sref{sec:exp-pose-jhmdb}.
-This indicates that, indepent of the dataset, the pose estimator is able to more accurately estimate right side body joints from left side body joints.
-Whether this is due to the fact that most images in these datasets feature right-handed persons of because of the particular pose estimator architecture needs to be evaluated in future work. 
+This indicates that, independent of the dataset, the pose estimator is able to more accurately estimate right side body joints from left side body joints.
+Whether this is due to the fact that most images in these datasets feature right-handed persons of because of the particular pose estimator architecture needs to be evaluated in future work.
 
 \begin{table}[]
     \small
@@ -868,4 +868,4 @@ Whether this is due to the fact that most images in these datasets feature right
 
 In conclusion, while the end-to-end approach does not achieve state-of-the-art performance for action recognition on the JHMDB benchmark, it is a promising approach, since the training process complexity is significantly lower.
 Instead of pretraining weights of a pose estimator, which involves separate hyperparameter tuning, the end-to-end approach can be learned from randomly initialized weights.
-With changes in the model architecture, such as using more temporal context, and by using a larger dataset, the network might be able to reach a performance close to the state-of-the-art. 
+With changes in the model architecture, such as using more temporal context, and by using a larger dataset, the network might be able to reach a performance close to the state-of-the-art.

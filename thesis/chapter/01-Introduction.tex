@@ -1,7 +1,7 @@
 \chapter{Introduction}
 
 Understanding human behaviour is one of the main goals of artificial intelligence research.
-One approach towards achieving this goal is called Human Activity Recognition. 
+One approach towards achieving this goal is called Human Activity Recognition.
 Human Activity Recognition (HAR) is the process of recognizing specific gestures or actions performed by humans from different sources, e.g., images, videos or sensor data.
 Knowledge of actions performed by humans is useful in different application contexts, such as video surveillance, human-machine interaction or
 for evaluating worker performance in a warehouse setting \cite{reining_towards_2018}.
@@ -30,7 +30,7 @@ Second, the model is evaluated using a more challenging benchmark to gain a bett
 Third, the network is trained in an end-to-end approach.
 The authors in \cite{luvizon_2d/3d_2018} use a technique called pretraining for the pose estimator part of the network.
 Pretraining means that the pose estimator part of the network is trained indepently of the rest of the network.
-The pretrained parameters of the pose estimator are then transfered to the complete network and the network is finetuned.
+The pretrained parameters of the pose estimator are then transferred to the complete network and the network is finetuned.
 A different approach for training the network is called end-to-end learning and refers to the method where the parameters of the network are initialized randomly.
 From this random initialization, the entire network is trained jointly.
 While pretraining certain parts of a network often leads to a faster convergence of the model, it also adds more complexity to the training process, because two training processes need to be optimized.

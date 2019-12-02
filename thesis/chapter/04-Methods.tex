@@ -3,7 +3,7 @@
 \label{sec:chapter4}
 In the previous chapter, approaches for estimating pose from still images and predicting actions from video were presented.
 Although some approaches for HAR incorporate pose information as features in their decision process, estimating the pose and predicting actions were not used in conjunction during the training process.
-For example, \cite{choutas_potion:_2018} \sref{sec:potion} estimated the human pose using a dedicated model, before using the information to train their model. 
+For example, \cite{choutas_potion:_2018} \sref{sec:potion} estimated the human pose using a dedicated model, before using the information to train their model.
 
 This chapter presents the approach by \cite{luvizon_2d/3d_2018}, who argue that training the pose estimator and action recognition model jointly may help in the learning process.
 In Section \ref{sec:softargmax}, the authors present a novel way to infer joint coordinates from a heatmap, which allows the model to be fully differentiable and thus able to be trained in an end-to-end approach.
@@ -22,7 +22,7 @@ Such a heatmap requires the use of the argmax function in a postprocessing step 
 Thus, the authors propose the \textit{Soft-argmax} function as an differentiable alternative to the regular argmax function \sref{sec:softargmax}.
 
 In addition, the authors propose methods to use both $3D$ and $2D$ pose datasets while training their network.
-However, these are not discussed here since this thesis focuses on $2D$ pose information. 
+However, these are not discussed here since this thesis focuses on $2D$ pose information.
 
 \subsection{Soft-argmax}
 \label{sec:softargmax}
@@ -73,7 +73,7 @@ First, a feature extraction block, referred to as \textit{Stem}, is used to extr
 These features are used to predict the joint heatmaps in the pose estimation block.
 The heatmaps are used to compute the $x$ and $y$ coordinates of each joint position using the Soft-argmax function.
 Second, the estimated poses are used to predict the action performed in the video clip.
-Third, the computed image features from the Stem block are similarly used for a separate action prediction. 
+Third, the computed image features from the Stem block are similarly used for a separate action prediction.
 Both predictions are combined to form the final action prediction of the network.
 Throughout the network, the authors use the ReLU activation function if not otherwise stated.
 See \fref{fig:luvizon_overview} for a visualization of the network and its separate components.
@@ -124,7 +124,7 @@ Additionally, the number of matrix multiplications needed to compute the convolu
 %     \begin{split}
 %         &a^2 * p + p * m < a^2 * p * m \\
 %         &\Leftrightarrow p * (a^2 + m) < p * a^2 * m \\
-%         &\Leftrightarrow a^2 + m < a^2 * m  
+%         &\Leftrightarrow a^2 + m < a^2 * m
 %     \end{split}
 % \end{equation}
 
@@ -139,7 +139,7 @@ Additionally, the number of matrix multiplications needed to compute the convolu
         \includegraphics[width=0.5\textwidth]{luvizon_predictionblock.png}
         \label{fig:luvizon_predictionblock}
     }
-    \caption{\textbf{Left:} The feature extraction network used in \cite{luvizon_2d/3d_2018}, also referred to as \textit{Stem}. Each RGB frame of the video is resized to $256 \times 256 \times 3$. \textit{SR} refers to a \textit{depthwise separable convolution}. \textit{C} refers to a regular convolutional layer. The extracted features are of size $32 \times 32 \times 576$. 
+    \caption{\textbf{Left:} The feature extraction network used in \cite{luvizon_2d/3d_2018}, also referred to as \textit{Stem}. Each RGB frame of the video is resized to $256 \times 256 \times 3$. \textit{SR} refers to a \textit{depthwise separable convolution}. \textit{C} refers to a regular convolutional layer. The extracted features are of size $32 \times 32 \times 576$.
     \textbf{Right:} One \textit{prediction block} used in the pose estimation network in \cite{luvizon_2d/3d_2018}. Notice that the input and output dimensionality are identical, which allows the authors to connect multiple blocks together. \textit{C} and \textit{SC} refer to regular convolutional layers and depthwise separable convolutional layers, respectively. \textit{SR} refers to a \textit{Separable residual block}. The estimated pose of each prediction block can then also be used for intermediate supervision \sref{sec:luvizon_intermediate_supervision}. Images taken from \cite{luvizon_2d/3d_2018} supplementary material.}
 \end{figure}
 
@@ -202,7 +202,7 @@ However, the authors do not explain the benefit of such a pooling operation over
 \end{figure}
 
 The purpose of the fully-convolutional block is to extract features from the pose matrix.
-A processing block called \textit{action prediction block} is used to classify the action performed, based on the features computed from either the pose or the appearance cube. 
+A processing block called \textit{action prediction block} is used to classify the action performed, based on the features computed from either the pose or the appearance cube.
 
 The \textit{action prediction block} is similar to the \textit{prediction block} used in the pose estimator, and follows the ideas of stacking, since the input and the output dimensions of the action prediction block are identical.
 As an intermediate representation, \textit{action heatmaps} are created, which are in turn used in training and to predict the action performed in the video clip using the Softmax activation function for evaluation.
@@ -242,7 +242,7 @@ A visualization of the shallow feature extractor can be seen in \fref{fig:luvizo
 The action prediction block is identical to the one presented in the \textit{Pose Model} (see \fref{fig:luvizon_actionrecognitionblock}).
 
 Recall that each action prediction block computes action heatmaps, which are used in training by passing them through a \textit{Max-pooling} layer, followed by applying the Softmax activation function.
-For combining both the predictions based on the pose cube and appearance cube, the authors take the output of the last action prediction block in both network paths, add the action heatmaps and apply a \textit{Max-Pooling} and Softmax activation to form the final action classification of the video clip. 
+For combining both the predictions based on the pose cube and appearance cube, the authors take the output of the last action prediction block in both network paths, add the action heatmaps and apply a \textit{Max-Pooling} and Softmax activation to form the final action classification of the video clip.
 
 \subsection{Intermediate supervision}
 \label{sec:luvizon_intermediate_supervision}
@@ -251,7 +251,7 @@ Instead of only using the final output of the network to compute the error and s
 After each prediction block in the pose estimator, a intermediate prediction is performed by applying Soft-argmax to the joint heatmaps created by that prediction block.
 Similarly, in each action prediction block, intermediate results are created by performing pooling and Softmax to the action heatmaps, which can be seen in \fref{fig:luvizon_poseaction}.
 The authors claim that this approach increases the accuracy of the overall network, since the network needs to be able to predict the action as early and as accurately as possible.
-However, they do not provide evidence to proof their claim.  
+However, they do not provide evidence to proof their claim.
 
 \subsection{Limitations}
 \label{sec:deephar_limitations}
@@ -261,13 +261,13 @@ First, the authors evaluate their model for $2D$ action recognition solely on th
 While they do not focus exclusively on $2D$ action recognition in their paper, a comparison to state-of-the-art results on other complex datasets such as JHMDB would be desirable.
 This is especially true considering that Penn Action focuses on $15$ different actions, which are predominantly from the sports domain, while JHMDB contains $21$ classes, including every day activity such as \textit{brushing hair} and \textit{climb stairs}.
 Thus, the JHMDB dataset is a more complex dataset in terms of action diversity.
-We thus argue that evaluation on the JHMDB dataset will lead to valuable insight into the effectiveness of the authors approach outside of the domain of sports action recognition. 
+We thus argue that evaluation on the JHMDB dataset will lead to valuable insight into the effectiveness of the authors approach outside of the domain of sports action recognition.
 
 Second, they argue that their approach for training the action recognition network constitutes end-to-end learning.
 This would imply that the network weights are not pretrained.
 However, as discussed earlier, the pose estimator is pretrained.
 While this approach leads to competitive results, it is misleading to call it end-to-end training.
-Later in their paper, the authors refer to their approach as fine-tuning on a pretrained model, which is a more accurate description of the process. 
+Later in their paper, the authors refer to their approach as fine-tuning on a pretrained model, which is a more accurate description of the process.
 
 Third, certain choices of hyperparameters used for configuring and training the model  are not evaluated in the original work.
 For example, the authors decided to utilize context heatmaps (as discussed in \sref{sec:luvizon_poseestimator}) as well as setting the number of prediction blocks of their pose estimator to $8$.
@@ -293,5 +293,5 @@ Thus, in this thesis, it was decided to train and evaluate the network on the JH
 Even though this dataset is smaller in overall number of images, it contains more diverse classes.
 
 Third, the authors presented the Soft-argmax approach in \cite{luvizon_human_2017} without evaluating the accuracy of the approach.
-Thus, this thesis quantitavely and qualitatively evaluates the accuracy by using synthetic test images derived from the ground truth pose positions.
+Thus, this thesis quantitatively and qualitatively evaluates the accuracy by using synthetic test images derived from the ground truth pose positions.
 These experiments will give an insight into whether or not the Soft-argmax is a suitable approach for computing the joint positions from heatmaps, when compared to using the argmax in a postprocessing step.
