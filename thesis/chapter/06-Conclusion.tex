@@ -1,40 +1,62 @@
 \chapter{Conclusion}
 \label{sec:chapter6}
-In this thesis, different parts of the approach taken by \cite{luvizon_2d/3d_2018} were evaluated with the dataset used by the authors as well as a more challenging dataset in the form of the JHMDB dataset.
+In \cite{luvizon_2d/3d_2018}, the authors presented a convolutional neural network for Human Activity Recognition, which is able to jointly learn the pose of a person and the action performed in video clips.
+The authors introduced the Soft-argmax function \cite{luvizon_human_2017}, which allows for this novel approach of learning.
+One downside of the approach by \cite{luvizon_2d/3d_2018} is that they only evaluated their network on the Penn Action dataset.
+This thesis evaluated the performance of the network using the more complex, albeit smaller JHMDB dataset \cite{jhuang_towards_2013}.
+We also performed two experiments to evaluate the accuracy of the Soft-argmax function.
+Finally, the network was trained without using pretrained parameters for the pose estimator to investigate whether or not pretraining is necessary.
 
-First, the proposed Soft-argmax was evaluated in a qualitative and quantitative manner.
-It was found that, while the Soft-argmax appears to not be able to correctly extract the pose information at the border of the input image, this does not impact its performance on real world data.
-This suggests that the Soft-argmax is a viable alternative to the previously necessary Argmax postprocessing of the joint heatmaps.
+First, the Soft-argmax was evaluated in a qualitative and quantitative manner.
+It was found that the Soft-argmax appears to not be able to correctly extract the pose information at the border of the input image.
+However, this does not impact its performance on extracting pose from synthetic pose heatmaps from the MPII dataset.
+This suggests that the Soft-argmax is a viable alternative to the argmax function, which was previously necessary to extract pose coordinates joint heatmaps.
 
-Second, while this thesis was not able to achieve identical results in terms of pose estimator accuracy on the MPII dataset, this was most likely due to the way the authors implemented their evaluation methods, which they did not publish.
-It was found that the results on the validation data was only slightly below the validation accuracy reported by the authors, suggesting that the evaluation method is the deciding factor to explain the difference in test accuracy.
+Second, this thesis was not able to achieve identical results in terms of pose estimator accuracy on the MPII dataset.
+The authors report a pose accuracy, using the PCKh metric, of $91.2$ percent.
+This thesis achieved $84.10$ percent accuracy using the same metric.
+The authors used multiple pose estimations of the test images, which were averaged to get the final pose estimation.
+However, the authors did not publish a detailed explaination of this procedure.
+It was found that the results on the validation data was only slightly below the validation accuracy reported by the authors ($87$ percent PCKh accuracy in comparison to $89$ percent).
+This suggests that their procedure for estimating the pose of the test images is the deciding factor to explain the difference in test accuracy.
 
-Third, HAR PENNACTION TODO.
+Third, we were not able to recreate the results of the authors regarding the accuracy of the HAR model.
+The authors achieved $97.40$ percent accuracy, in comparison to $81.66$ percent achieved in this thesis.
+This discrepancy is most likely due to the fact that the pose estimator, whose weights were pretrained on a mixture dataset of MPII and Penn Action data, was not accurate enough.
+A comparison of pose estimator accuracy with \cite{luvizon_2d/3d_2018} was not possible because the authors did not publish their results for this experiment.
+When investigating the accuracy of the pose estimator for each type of joint, it was found that the pose estimator performed significantly better on joints associated with the right side of the persons body, in comparison to the left side of the person.
+These findings could be replicated with the JHMDB dataset, suggesting that either the model is predisposed to be more accurate on right side body joints or that both datasets contain a bias towards right side body joints.
+This bias could be that both datasets are unbalanced w.r.t. the handedness of the subjects in the videos. 
 
-Fourth, when evaluating the pose estimator on the challenging JHMDB dataset, it was found that the model is able to adapt to a different, smaller, but more complex dataset, achieving accuracy results only slightly below the state-of-the-art approaches in the literature.
-This suggests that the pose estimator architecture used by the authors generalizes well to different use cases and can serve as a baseline for future work in this field.
+Fourth, when evaluating the pose estimator on the challenging JHMDB dataset, it was found that the pose estimator is able to adapt to a different, smaller, but more complex dataset, achieving accuracy results only slightly below the state-of-the-art approaches in the literature.
+This suggests that the pose estimator architecture generalizes well to different use cases and and it can serve as a baseline for future work in this field.
 
-Fifth, HAR JHMDB TODO.
+Fifth, this thesis tried to train the HAR model from \cite{luvizon_2d/3d_2018} on the more challenging JHMDB dataset.
+However, the results appeared to be erroneous, which is why further analysis was ommited in order to not report and interpret wrong results.
 
-Sixth, this thesis found that training the network in an end-to-end approach is feasible.
-While the test accuracy achieved is not as high as the results on the pretrained model, the results are promising and future work could improve upon the results presented.
-In comparison to the pretrained model, the amount of training iterations necessary for the end-to-end model is significantly higher, suggesting that the main advantage of pretraining the network is a faster convergence.
-Additionally, it was found that the HAR models struggle with intraclass variance on the JHMDB dataset, because some classes (like \textit{stand}) highly overlap with other classes (like \textit{clap}).
+Sixth, it was found that training the network in an end-to-end approach is feasible.
+The accuracy of the end-to-end model ($68.09$ percent) was significantly lower in comparison to the state-of-the-art approaches for HAR on the JHMDB dataset by \cite{choutas_potion:_2018} ($87.90$ percent) and \cite{khalid_multi-modal_2018} ($78.81$ percent).
+However, the results are promising and future work could improve upon the results presented.
+Additionally, it was found that the HAR models struggle with interclass variance on the JHMDB dataset, because some classes (like \textit{sit}) are very similar to other classes (like \textit{stand}).
+A video clip labeled as \textit{sit} often contains persons in the process of sitting down, which means that some frames contain persons standing as well.
 A network architecture using more temporal information would most likely increase the accuracy on this dataset.
 
 \section{Future Work}
-Finally, this thesis makes some suggestions regarding possible future work, based on the findings presented earlier.
+Finally, this thesis makes some suggestions regarding possible future work, based on the findings presented earlier. First, the pose estimator architecture used in the HAR pipeline computes the pose for each frame in a video clip without taking poses of previous frames into account.
+Utilizing a pose estimator capable of processing video clips directly and utilizing previous poses could lead to better results, since the change in pose between consecutive frames of a video are very small.
 
-First, the pose estimator architecture used in the HAR pipeline computes the post for each frame in a video clip without taking poses of previous frames into account.
-Utilizing a pose estimator capable of processing video clips directly and utilizing previous poses could lead to better results, since the movement between frames of a video are very small.
-
-Second, a HAR architecture using a larger temporal context would decrease the amount of error due to intraclass variance.
-The model presented in \cite{luvizon_2d/3d_2018} divides each video clip into chunks of $16$ frames, which this thesis found to be too small for some video clips.
-Ideally, the clip size would not determine the network architecture at all.
+Second, a HAR architecture using a larger temporal context would decrease the amount of error due to interclass variance.
+The model presented in \cite{luvizon_2d/3d_2018} divides each video clip into chunks of $16$ frames, which this thesis found leads to confusion when predicting the actions.
+This is because, for actions such as \textit{sit} and \textit{stand}, large parts of the video clips are identical.
+Ideally, the clip size would not determine the network architecture.
 To that end, using 3D convolutional layers could be implemented, as well as recurrent layers.
 
-Third, larger, fully annotated video datasets could be gathered.
+Third, larger and fully annotated video datasets could be gathered.
 While the JHMDB dataset, in terms of action diversity, is a more complex dataset in comparison to the Penn Action dataset, the later dataset is significantly larger in terms of number of frames.
-For large networks, such as the pose estimator with $8$ prediction blocks, it was found that, even using strong augmentation, the JHMDB dataset was too small to train these deep networks.
-One approach could be to increase the size of the JHMDB dataset by annotating more clips found in the HMDB dataset using the proposed puppet tool.
-This approach would increase the usefulness of the dataset for evaluating deep networks found in recent literature.
+For large networks, such as the pose estimator with $8$ prediction blocks, it was found that, even using strong augmentation, the JHMDB dataset did not contain enough data to train large pose estimators.
+One approach could be to increase the size of the JHMDB dataset by annotating more clips found in the HMDB dataset \cite{kuehne_hmdb:_2011} using the proposed puppet tool.
+This approach would make the JHMDB dataset more useful for evaluating deep neural networks found in modern literature.
+Additionally, the images in the JHMDB dataset are small compared to the MPII dataset.
+\cite{luvizon_2d/3d_2018} resizes the images to $256 \times 256$ pixels, after cropping the image around the person.
+This leads to artifacts in the JHMDB dataset, because the cropped images need to be scaled up.
+A dataset containing fully annotated, high resolution images would result in less artifacts and, possibly, higher pose estimation accuracy.

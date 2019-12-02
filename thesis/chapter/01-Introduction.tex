@@ -1,52 +1,47 @@
 \chapter{Introduction}
 
-% \begin{itemize}
-%     \item Motivation
-%     \item Objective
-%     \item Outline
-% \end{itemize}
+Understanding human behaviour is one of the main goals of artificial intelligence research.
+One approach towards achieving this goal is called Human Activity Recognition. 
+Human Activity Recognition (HAR) is the process of recognizing specific gestures or actions performed by humans from different sources, e.g., images, videos or sensor data.
+Knowledge of actions performed by humans is useful in different application contexts, such as video surveillance, human-machine interaction or
+for evaluating worker performance in a warehouse setting \cite{reining_towards_2018}.
 
-% Motivation
-% - HAR used in different contexts
-% - Pose information important feature
-%     - Mostly trained separately
-% - Due to introdction of Soft-argmax: End-to-end training possible.
-% - Before: Many good approaches had to use postprocessing. Directly regressing not good enough
+One approach for predicting human actions is to use pose information as an input to a HAR machine learning model, such as a neural network.
+A pose is a set of keypoints on the person's body, usually joints between limbs.
+For images, a pose is usually given by a set of pixel coordinates.
+Each pixel coordinate refers to one estimated joint position.
+Poses are estimated using a dedicated machine learning model, which is often based on neural networks as well.
+In \cite{jhuang_towards_2013}, the authors find that using human pose information is useful when training HAR models, more so than other features such as image features.
 
-Understanding the environment and, in particular, understanding human behaviour is one of the main goals of artificial intelligence research.
-Human Activity Recognition (HAR) is the process of recognizing a gesture or action a person performs from different media, like still images of videos.
-By gaining an understanding of actions performed by humans, machines can, for example, react to changing circumstances and make better decisions of what to do next.
-HAR is used in different contexts, like video surveillance, human-machine interaction or
-for evaluating worker performance \cite{reining_towards_2018}.
-
-Human Activity recognition and pose estimation are fields, which have been studied in computer vision research for a number of years.
-For example, an early work in the field of pose estimation by \cite{fischler_representation_1973} dates back over $40$ years.
-A pose is a set of keypoints on the persons body, usually joints between limbs, which can be extracted from images.
-In \cite{jhuang_towards_2013}, the authors find that using human pose information is a useful feature when learning models to detect human activity, more so than other features used for evaluation like image features.
-In the past, pose was often determined using a separate model to the one which classifies the action performed.
-In \cite{luvizon_2d/3d_2018}, the authors argue that jointly learning both pose and action using Convolutional neural networks in a single model may improve the overall accuracy of the model.
-They postulate that the pose estimator and the activity classifier can learn from each other by combining them into a single model.
-This was previously not possible with many pose estimators since the output needed additional, non differential postprocessing steps, in order to be used for action recognition.
-Thus, the two networks were not able to be connected and trained together.
-With the introduction of the Soft-argmax function in \cite{luvizon_human_2017}, the authors presented an approach for extracting exact pose in a way which allows for the combination of both networks into one, fully differentiable network.
-
+In Human Activity Recognition research, a pose estimation model is often used to precompute the pose for each image.
+In \cite{luvizon_2d/3d_2018}, the authors argue that jointly learning the pose and the action using a convolutional neural networks may improve the learning process of the action predictor.
+This approach of jointly learning was previously not possible with many pose estimators since the output needed additional postprocessing steps.
+Many pose estimation models output joint heatmaps, which contain the likelihood of a joint being present for each pixel in the input image.
+A function called argmax extracts the pixel coordinates with the highest likelihood from the joint heatmaps.
+The argmax function is, however, not differentiable.
+The optimization algorithms used for training neural networks require a fully differentiable network for learning the parameters of the network.
+With the introduction of the Soft-argmax function in \cite{luvizon_human_2017}, the authors presented an approach for extracting exact pose from the joint heatmaps using a differentiable function.
+This function makes it possible to train the pose estimator and action recognition model jointly.
 % Objective
-% - Evaluating the results of the authors on a more challenging dataset
-% - Extending the training procedure for end-to-end learning
 
-One objective is to use the method proposed by \cite{luvizon_2d/3d_2018} to first, recreate their results, with the addition of determining the performance of the model using different hyperparameters.
-Second, the model is evaluated using more challenging benchmarks to gain a better understanding of how well the model performs on different data.
-Third, the network is trained in an end-to-end approach, since the authors pretrained the pose estimator in their work.
-This means that the weights of the network are initialized randomly and the entire network is trained using a single dataset.
-While pretraining certain parts of a network leads to a faster convergence, it is also more time consuming than training the complete model starting from the randomly initialized weights.
+The first objective of this thesis is to use the Convolutional neural network model proposed by \cite{luvizon_2d/3d_2018} to recreate their results.
+This includes investigating the performance of the network using different hyperparameters.
+Second, the model is evaluated using a more challenging benchmark to gain a better understanding of how well the model performs on different data.
+Third, the network is trained in an end-to-end approach.
+The authors in \cite{luvizon_2d/3d_2018} use a technique called pretraining for the pose estimator part of the network.
+Pretraining means that the pose estimator part of the network is trained indepently of the rest of the network.
+The pretrained parameters of the pose estimator are then transfered to the complete network and the network is finetuned.
+A different approach for training the network is called end-to-end learning and refers to the method where the parameters of the network are initialized randomly.
+From this random initialization, the entire network is trained jointly.
+While pretraining certain parts of a network often leads to a faster convergence of the model, it also adds more complexity to the training process, because two training processes need to be optimized.
 
 % Outline
-This thesis is divided into six chapters, which includes this introduction.
-In Chapter \ref{sec:chapter2}, this thesis explains the fundamentals of Human Activity recognition in the context of video data, pose estimation using still images as well as how artificial and convolutional neural networks are able to learn from data.
-Afterwards, the recent relevant work in the fields of HAR and pose estimation are discussed in detail in Chapter \ref{sec:chapter3}.
+This thesis is divided into six chapters, including this introduction.
+Chapter \ref{sec:chapter2} explains the fundamentals of Human Activity Recognition in the context of video data, pose estimation using image data as well as artificial and convolutional neural networks.
+Recent relevant work in the fields of HAR and pose estimation are discussed in detail in Chapter \ref{sec:chapter3}.
 There, a focus is set on Human Activity Recognition methods using pose information.
-Next, a detailed explanation of the methods of \cite{luvizon_2d/3d_2018} are presented in Section \ref{sec:chapter4}, because their work forms the foundation of this work.
-Additionally, limitations as well as further experiments conducted in this thesis are presented.
-In Chapter \ref{sec:chapter5}, the experiments, as well as the used datasets and metrics, are explained, in addition to discussing the results.
-Finally, a conclusion of the findings from the experiments are presented in Chapter \ref{sec:chapter6}, as well as a discussion of the approach by \cite{luvizon_2d/3d_2018} for jointly learning human action and pose.
-
+Next, a detailed explanation of the methods of \cite{luvizon_2d/3d_2018} are presented in Section \ref{sec:chapter4}.
+Chapter \ref{sec:chapter4} also discusses limitations to the approach by \cite{luvizon_2d/3d_2018} and further experiments conducted in this thesis.
+In Chapter \ref{sec:chapter5}, the experiments, as well as the used datasets and metrics, are explained.
+Moreover, the results of the proposed experiments are discussed.
+Finally, a conclusion of the findings from the experiments are presented in Chapter \ref{sec:chapter6}.
