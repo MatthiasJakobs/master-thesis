@@ -90,7 +90,7 @@
                 \item Often: Human Activity Recognition approached separately from pose estimation
                 \item Pose is used for HAR, but not learned jointly.
                 \begin{itemize}
-                    \item Shown to be very important feature \footnotemark
+                    \item Pose shown to be very important feature \footnotemark
                 \end{itemize}
                 \item Idea: Both can benefit from each other
                 \item Luvizon et al. \footnotemark~ propose approach for jointly learning both
@@ -369,7 +369,8 @@
                   \end{itemize}
                   \item 928 clips of 21 actions ($31.838$ total frames)
                   \begin{itemize}
-                      \item More diverse than Penn Action in terms of actions
+                      \item Smaller than Penn Action
+                      \item More diverse in terms of actions
                   \end{itemize}
               \end{itemize}
           \end{itemize}
@@ -398,6 +399,7 @@
             \begin{itemize}
                 \item Threshold to account for rounding error
             \end{itemize}
+            \item Results suggest that problems may arise if joint position at border of image
         \end{itemize}
     \end{itemize}
     \begin{figure}
@@ -410,7 +412,7 @@
     \begin{itemize}
         \item Quantitative evaluation
         \begin{itemize}
-            \item Place $2D$ gaussian with covariance $c$ at each joint position $(i,j)$
+            \item Place $2D$ gaussian with covariance $c$ at each joint position $(i,j)$ for example poses
             \item Regress coordinates as before
             \item Taken from $1000$ random validation images from MPII dataset
         \end{itemize}
@@ -437,7 +439,7 @@
             \item \textit{Probability of Correct Keypoints} with regards to head size (\textit{PCKh})
             \begin{itemize}
                 \item Meassure distance between ground truth keypoint and estimation
-                \item If smaller than ($\alpha \cdot \text{head bbox size}$): correctly estimated
+                \item If smaller than ($\alpha \cdot head_bbox_diameter$): correctly estimated
                 \item Used for highly articulated poses
                 \item In literature: $\alpha \in \{0.2, 0.5\}$
             \end{itemize}    
@@ -446,7 +448,7 @@
                 \item Problem with highly articulated poses
                 \item Used whenever no head size given
                 \item Can be computed from all datasets used
-                \item $\alpha = 0.2$ used in literature
+                \item $\alpha \in \{0.1, 0.2\}$ used in literature
             \end{itemize}
         \end{itemize}
         \item Action recognition
@@ -458,7 +460,7 @@
     \end{itemize}
 \end{myframe}
 
-\begin{myframe}[Recreate experiments - 2D Pose estimation]
+\begin{myframe}[Recreate experiments - 2D pose estimation]
     \begin{itemize}
         \item Recreate results for using different parameters
         \item \textit{Validation accuracies}
@@ -515,6 +517,7 @@
         \begin{itemize}
             \item Large discrepancy most likely due to testing procedure
             \item $89\%$ validation accuracy vs. $91.2\%$ testing accuracy
+            \item $p$-value of $0$ means that the value is too small for floating point resolution
         \end{itemize}
     \end{itemize}
     \begin{table}[]
@@ -607,10 +610,10 @@
             45.3 & 54.86  & 69.12 & 67.71 & 54.53 & 42.50 & 59.28 \\ \hline \hline
             
             \textbf{Arms (l)} & \textbf{Arms (r)} & \textbf{Arms (both)} & \textbf{Legs (l)} & \textbf{Legs (r)} & \textbf{Legs (both)} & \textbf{Upper body} \\ \hline
-            \textit{54.92} & \textit{56.45} & 55.68 & \textit{66.34} & \textit{68.11} & 67.22 & 46.37\\ \hline
+            \textbf{54.92} & \textbf{56.45} & 55.68 & \textbf{66.34} & \textbf{68.11} & 67.22 & 46.37\\ \hline
             
         \end{tabular}}
-        \caption{Per joint accuracies of the pose estimator trained on mixed data}
+        \caption{Per joint accuracies of the pose estimator trained on mixed data. Left and right limb combinations shown in bold.}
         \label{tab:pose-mixed-perjoint}
     \end{table}    
 \end{myframe}
@@ -670,7 +673,7 @@
     \begin{itemize}
         \item Used ground truth bounding boxes as in \footnotemark
         \item Additionally: \textit{PCK} w.r.t. upper body size (\textit{PCKu})
-        \item Dataset more challenging because of video artifacts
+        \item Dataset more challenging because of video artifacts and lower image resolution
         \item Comparison: \footnotemark[2] achieve $81.6\%$ PCK @ $0.2$ and $68.7\%$ PCK @ $0.1$
         \item Unclear whether or not \footnotemark[2] use ground truth bounding box
         \item Per joint accuracy: Right side limbs better accuracy in comparison to left side limbs (as before)
