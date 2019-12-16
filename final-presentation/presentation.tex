@@ -439,7 +439,7 @@
             \item \textit{Probability of Correct Keypoints} with regards to head size (\textit{PCKh})
             \begin{itemize}
                 \item Meassure distance between ground truth keypoint and estimation
-                \item If smaller than ($\alpha \cdot head_bbox_diameter$): correctly estimated
+                \item If smaller than ($\alpha \cdot head\_bbox\_diameter$): correctly estimated
                 \item Used for highly articulated poses
                 \item In literature: $\alpha \in \{0.2, 0.5\}$
             \end{itemize}    
@@ -455,9 +455,10 @@
         \begin{itemize}
             \item Simple accuracy meassurement in literature
             \item $F_1$ meassure not needed since all datasets are balanced w.r.t. classes
-            \item Single and Multi Clip accuracy
+            \item Single and Multi Clip accuracy \footnotemark[1]
         \end{itemize}
     \end{itemize}
+    \footnotetext[1]{\cite{luvizon_2d/3d_2018}}
 \end{myframe}
 
 \begin{myframe}[Recreate experiments - 2D pose estimation]
@@ -658,7 +659,7 @@
         \item Model is most uncertain with the class \textit{clean and jerk}.
         \begin{itemize}
             \item Contains similar poses to \textit{squats} and \textit{jumping jacks} classes, which might explain the confusion
-            \item Better pose estimator might reduce the confusion
+            \item Better pose estimator and more temporal information might reduce the confusion
         \end{itemize}
     \end{itemize}
     \begin{figure}[htb!]
